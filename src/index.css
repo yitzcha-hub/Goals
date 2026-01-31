@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 120 40% 95%;
+    --foreground: 140 30% 10%;
+    --card: 120 30% 98%;
+    --card-foreground: 140 30% 10%;
+    --popover: 120 30% 98%;
+    --popover-foreground: 140 30% 10%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 24 95% 53%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 84 40% 92%;
+    --muted-foreground: 140 20% 40%;
+    --accent: 33 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 120 30% 85%;
+    --input: 120 30% 85%;
+    --ring: 142 76% 36%;
+    --radius: 0.5rem;
+    --chart-1: 142 76% 36%;
+    --chart-2: 24 95% 53%;
+    --chart-3: 84 85% 50%;
+    --chart-4: 33 100% 50%;
+    --chart-5: 160 84% 39%;
+  }
+
+  .dark {
+    --background: 140 30% 8%;
+    --foreground: 84 40% 95%;
+    --card: 140 25% 12%;
+    --card-foreground: 84 40% 95%;
+    --popover: 140 25% 12%;
+    --popover-foreground: 84 40% 95%;
+    --primary: 84 85% 55%;
+    --primary-foreground: 140 30% 10%;
+    --secondary: 24 95% 60%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 140 20% 18%;
+    --muted-foreground: 84 30% 65%;
+    --accent: 33 100% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 140 20% 18%;
+    --input: 140 20% 18%;
+    --ring: 84 85% 55%;
+    --chart-1: 142 76% 45%;
+    --chart-2: 24 95% 60%;
+    --chart-3: 84 85% 55%;
+    --chart-4: 33 100% 55%;
+    --chart-5: 160 84% 45%;
+  }
+}
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Tour highlight effect */
+.tour-highlight {
+  position: relative;
+  z-index: 45;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  animation: pulse-highlight 2s infinite;
+}
+
+@keyframes pulse-highlight {
+  0%, 100% {
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 20px rgba(249, 115, 22, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 30px rgba(249, 115, 22, 0.8);
+  }
+}
