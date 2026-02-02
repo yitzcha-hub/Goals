@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { ThemeToggle } from './ThemeToggle';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useManifestationDatabase } from '@/hooks/useManifestationDatabase';
 import { 
   Leaf, LogOut, Target, Calendar, Star, Heart, BookOpen, 
   Award, TrendingUp, Plus, Camera, Check, Trash2, Edit2,
@@ -63,15 +63,25 @@ const ManifestationDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
   const { isPremium, tier } = useSubscription();
   const [activeTab, setActiveTab] = useState('overview');
-  
-  // State management with localStorage persistence
-  const [goals, setGoals] = useLocalStorage<Goal[]>('manifestation-goals', []);
-  const [todos, setTodos] = useLocalStorage<TodoItem[]>('manifestation-todos', []);
-  const [gratitudeEntries, setGratitudeEntries] = useLocalStorage<GratitudeEntry[]>('manifestation-gratitude', []);
-  const [journalEntries, setJournalEntries] = useLocalStorage<JournalEntry[]>('manifestation-journal', []);
-  const [totalPoints, setTotalPoints] = useLocalStorage<number>('manifestation-points', 0);
-  const [streak, setStreak] = useLocalStorage<number>('manifestation-streak', 0);
-  
+
+  const {
+    goals,
+    todos,
+    gratitudeEntries,
+    journalEntries,
+    totalPoints,
+    streak,
+    loading: dbLoading,
+    addGoal: addGoalDb,
+    updateGoalProgress: updateGoalProgressDb,
+    deleteGoal: deleteGoalDb,
+    addTodo: addTodoDb,
+    toggleTodo: toggleTodoDb,
+    deleteTodo: deleteTodoDb,
+    addGratitude: addGratitudeDb,
+    addJournalEntry: addJournalEntryDb,
+  } = useManifestationDatabase();
+
   // Dialog states
   const [showGoalDialog, setShowGoalDialog] = useState(false);
   const [showTodoDialog, setShowTodoDialog] = useState(false);
@@ -147,19 +157,15 @@ const ManifestationDashboard: React.FC = () => {
   ];
 
   const addSuggestedGoal = (suggested: typeof suggestedGoals[0]) => {
-    const goal: Goal = {
-      id: Date.now().toString(),
+    addGoalDb({
       title: suggested.title,
       description: suggested.description,
       timeline: suggested.timeline,
       priority: suggested.priority,
       imageUrl: suggested.imageUrl,
       progress: 0,
-      createdAt: new Date().toISOString(),
       recommendations: generateRecommendations({ timeline: suggested.timeline })
-    };
-    setGoals([...goals, goal]);
-    setTotalPoints(totalPoints + 10);
+    });
   };
 
 
@@ -185,95 +191,56 @@ const ManifestationDashboard: React.FC = () => {
   // Goal functions
   const addGoal = () => {
     if (!newGoal.title.trim()) return;
-    const goal: Goal = {
-      id: Date.now().toString(),
+    addGoalDb({
       ...newGoal,
       progress: 0,
-      createdAt: new Date().toISOString(),
       recommendations: generateRecommendations(newGoal)
-    };
-    setGoals([...goals, goal]);
+    });
     setNewGoal({ title: '', description: '', timeline: '30', priority: 'medium', imageUrl: '' });
     setShowGoalDialog(false);
-    setTotalPoints(totalPoints + 10);
   };
 
   const updateGoalProgress = (goalId: string, progress: number) => {
-    setGoals(goals.map(g => {
-      if (g.id === goalId) {
-        const wasComplete = g.progress === 10;
-        const isNowComplete = progress === 10;
-        if (!wasComplete && isNowComplete) {
-          setTotalPoints(prev => prev + 100);
-        }
-        return { ...g, progress };
-      }
-      return g;
-    }));
+    updateGoalProgressDb(goalId, progress);
   };
 
   const deleteGoal = (goalId: string) => {
-    setGoals(goals.filter(g => g.id !== goalId));
+    deleteGoalDb(goalId);
   };
 
   // Todo functions
   const addTodo = () => {
     if (!newTodo.trim()) return;
-    const todo: TodoItem = {
-      id: Date.now().toString(),
-      title: newTodo,
-      completed: false,
-      points: 5,
-      createdAt: new Date().toISOString()
-    };
-    setTodos([...todos, todo]);
+    addTodoDb({ title: newTodo, completed: false, points: 5 });
     setNewTodo('');
     setShowTodoDialog(false);
   };
 
   const toggleTodo = (todoId: string) => {
-    setTodos(todos.map(t => {
-      if (t.id === todoId) {
-        if (!t.completed) {
-          setTotalPoints(prev => prev + t.points);
-        }
-        return { ...t, completed: !t.completed };
-      }
-      return t;
-    }));
+    toggleTodoDb(todoId);
   };
 
   const deleteTodo = (todoId: string) => {
-    setTodos(todos.filter(t => t.id !== todoId));
+    deleteTodoDb(todoId);
   };
 
   // Gratitude functions
   const addGratitude = () => {
     if (!newGratitude.trim()) return;
-    const entry: GratitudeEntry = {
-      id: Date.now().toString(),
-      content: newGratitude,
-      date: new Date().toISOString()
-    };
-    setGratitudeEntries([entry, ...gratitudeEntries]);
+    addGratitudeDb(newGratitude);
     setNewGratitude('');
     setShowGratitudeDialog(false);
-    setTotalPoints(totalPoints + 5);
-    setStreak(streak + 1);
   };
 
   // Journal functions
   const addJournalEntry = () => {
     if (!newJournal.title.trim() || !newJournal.content.trim()) return;
-    const entry: JournalEntry = {
-      id: Date.now().toString(),
+    addJournalEntryDb({
       ...newJournal,
-      date: new Date().toISOString()
-    };
-    setJournalEntries([entry, ...journalEntries]);
+      date: new Date().toISOString().split('T')[0]
+    });
     setNewJournal({ title: '', content: '', mood: 'good', imageUrl: '' });
     setShowJournalDialog(false);
-    setTotalPoints(totalPoints + 15);
   };
 
   const getGoalsByTimeline = (timeline: string) => goals.filter(g => g.timeline === timeline);

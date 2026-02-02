@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { Leaf, Target, CheckCircle2, Plus, Home, Heart, BookOpen, Award, Calendar, TrendingUp, Flame, HelpCircle } from 'lucide-react';
@@ -11,11 +11,10 @@ import DemoGoalDialog from '@/components/DemoGoalDialog';
 import DemoGoalDetailView from '@/components/DemoGoalDetailView';
 import { useNavigate } from 'react-router-dom';
 
-const DemoLayout: React.FC = () => {
-  const navigate = useNavigate();
-  const [selectedGoal, setSelectedGoal] = useState<any>(null);
-  
-  const [demoGoals, setDemoGoals] = useState([
+const DEMO_STORAGE_GOALS = 'goals_app_demo_layout_goals';
+const DEMO_STORAGE_TASKS = 'goals_app_demo_layout_tasks';
+
+const DEFAULT_DEMO_GOALS = [
     { 
       id: '1', 
       title: 'Launch My Dream Business', 
@@ -118,7 +117,50 @@ const DemoLayout: React.FC = () => {
         { id: 's4', title: 'Hit $50k goal', completed: false }
       ]
     }
-  ]);
+];
+
+const DEFAULT_DEMO_TASKS = [
+  { id: '1', title: 'Morning meditation - 15 minutes', completed: true, points: 5 },
+  { id: '2', title: 'Review weekly goals', completed: true, points: 5 },
+  { id: '3', title: 'Call mom', completed: true, points: 5 },
+  { id: '4', title: 'Workout session', completed: true, points: 5 },
+  { id: '5', title: 'Read for 30 minutes', completed: true, points: 5 },
+  { id: '6', title: 'Prepare healthy lunch', completed: false, points: 5 },
+  { id: '7', title: 'Evening walk', completed: false, points: 5 },
+  { id: '8', title: 'Journal before bed', completed: false, points: 5 }
+];
+
+const DemoLayout: React.FC = () => {
+  const navigate = useNavigate();
+  const [selectedGoal, setSelectedGoal] = useState<any>(null);
+
+  const [demoGoals, setDemoGoals] = useState(() => {
+    try {
+      const raw = localStorage.getItem(DEMO_STORAGE_GOALS);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return DEFAULT_DEMO_GOALS;
+  });
+
+  const [demoTasks, setDemoTasks] = useState(() => {
+    try {
+      const raw = localStorage.getItem(DEMO_STORAGE_TASKS);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return DEFAULT_DEMO_TASKS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DEMO_STORAGE_GOALS, JSON.stringify(demoGoals));
+    } catch {}
+  }, [demoGoals]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DEMO_STORAGE_TASKS, JSON.stringify(demoTasks));
+    } catch {}
+  }, [demoTasks]);
 
   const timelineLabels: Record<string, string> = {
     '30': '30 Days',
@@ -136,27 +178,16 @@ const DemoLayout: React.FC = () => {
   ]);
 
   const handleAddGoal = (newGoal: any) => {
-    setDemoGoals([...demoGoals, { ...newGoal, progress: 0, timeline: '90', priority: 'medium' }]);
+    setDemoGoals(prev => [...prev, { ...newGoal, progress: 0, timeline: '90', priority: 'medium' }]);
   };
 
   const handleUpdateGoal = (updatedGoal: any) => {
-    setDemoGoals(demoGoals.map(g => g.id === updatedGoal.id ? updatedGoal : g));
+    setDemoGoals(prev => prev.map(g => g.id === updatedGoal.id ? updatedGoal : g));
   };
 
   const updateGoalProgress = (goalId: string, progress: number) => {
-    setDemoGoals(demoGoals.map(g => g.id === goalId ? { ...g, progress } : g));
+    setDemoGoals(prev => prev.map(g => g.id === goalId ? { ...g, progress } : g));
   };
-
-  const [demoTasks, setDemoTasks] = useState([
-    { id: '1', title: 'Morning meditation - 15 minutes', completed: true, points: 5 },
-    { id: '2', title: 'Review weekly goals', completed: true, points: 5 },
-    { id: '3', title: 'Call mom', completed: true, points: 5 },
-    { id: '4', title: 'Workout session', completed: true, points: 5 },
-    { id: '5', title: 'Read for 30 minutes', completed: true, points: 5 },
-    { id: '6', title: 'Prepare healthy lunch', completed: false, points: 5 },
-    { id: '7', title: 'Evening walk', completed: false, points: 5 },
-    { id: '8', title: 'Journal before bed', completed: false, points: 5 }
-  ]);
 
   const totalPoints = 1250;
   const streak = 14;

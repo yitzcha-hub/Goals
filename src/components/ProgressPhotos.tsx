@@ -1,20 +1,18 @@
 import { useState } from 'react';
-import { Camera, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Camera, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { savePhoto, getPhoto } from '@/lib/indexedDB';
+import { useProgressPhotos } from '@/hooks/useProgressPhotos';
 import { useToast } from '@/hooks/use-toast';
 
-interface ProgressPhoto {
-  id: string;
-  url: string;
-  caption: string;
-  timestamp: number;
+interface ProgressPhotosProps {
+  goalId: string;
 }
 
-export const ProgressPhotos = ({ goalId }: { goalId: string }) => {
-  const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
+export const ProgressPhotos = ({ goalId }: ProgressPhotosProps) => {
+  const { photos, loading, uploadPhoto, deletePhoto } = useProgressPhotos(goalId);
   const [caption, setCaption] = useState('');
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,19 +24,35 @@ export const ProgressPhotos = ({ goalId }: { goalId: string }) => {
       return;
     }
 
-    const id = crypto.randomUUID();
-    await savePhoto(id, file);
-    
-    const url = URL.createObjectURL(file);
-    const newPhoto: ProgressPhoto = { id, url, caption, timestamp: Date.now() };
-    setPhotos([newPhoto, ...photos]);
-    setCaption('');
-    toast({ title: 'Photo uploaded!', description: 'Progress photo saved' });
+    setUploading(true);
+    try {
+      await uploadPhoto(file, caption);
+      setCaption('');
+      toast({ title: 'Photo uploaded!', description: 'Progress photo saved to your account' });
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Upload failed', description: 'Please try again', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const deletePhoto = (id: string) => {
-    setPhotos(photos.filter(p => p.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePhoto(id);
+      toast({ title: 'Photo removed' });
+    } catch (err) {
+      toast({ title: 'Failed to remove photo', variant: 'destructive' });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -51,13 +65,13 @@ export const ProgressPhotos = ({ goalId }: { goalId: string }) => {
           className="flex-1 px-3 py-2 border rounded-lg"
         />
         <label className="cursor-pointer">
-          <Button type="button" asChild>
+          <Button type="button" asChild disabled={uploading}>
             <span>
-              <Camera className="w-4 h-4 mr-2" />
+              {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
               Upload
             </span>
           </Button>
-          <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+          <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" disabled={uploading} />
         </label>
       </div>
 
@@ -69,7 +83,7 @@ export const ProgressPhotos = ({ goalId }: { goalId: string }) => {
               size="icon"
               variant="destructive"
               className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"
-              onClick={() => deletePhoto(photo.id)}
+              onClick={() => handleDelete(photo.id)}
             >
               <X className="w-4 h-4" />
             </Button>

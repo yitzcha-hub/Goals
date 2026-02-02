@@ -29,18 +29,6 @@ const providers: { id: OAuthProvider; label: string; icon: React.ReactNode }[] =
       </svg>
     ),
   },
-  {
-    id: 'azure',
-    label: 'Microsoft',
-    icon: (
-      <svg className="h-4 w-4" viewBox="0 0 23 23" aria-hidden>
-        <path fill="#f35325" d="M1 1h10v10H1z" />
-        <path fill="#81bc06" d="M12 1h10v10H12z" />
-        <path fill="#05a6f0" d="M1 12h10v10H1z" />
-        <path fill="#ffba08" d="M12 12h10v10H12z" />
-      </svg>
-    ),
-  },
 ];
 
 interface OAuthButtonsProps {

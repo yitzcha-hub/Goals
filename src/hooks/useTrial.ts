@@ -25,7 +25,7 @@ export const useTrial = () => {
         .select('*')
         .eq('user_id', user.id)
         .in('status', ['active', 'trialing'])
-        .single();
+        .maybeSingle();
 
       if (existing) {
         toast({

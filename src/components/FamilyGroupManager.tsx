@@ -61,7 +61,7 @@ const FamilyGroupManager: React.FC = () => {
     const { data } = await supabase
       .from('family_members')
       .select('*')
-      .eq('group_id', groupId);
+      .eq('family_group_id', groupId);
 
     if (data) setMembers(data);
   };

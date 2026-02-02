@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -9,17 +9,18 @@ import BudgetComparison from './BudgetComparison';
 import FinancialReport from './FinancialReport';
 import BudgetAlert from './BudgetAlert';
 import { DollarSign, TrendingUp, FileText } from 'lucide-react';
+import { useConstructionBudget } from '@/hooks/useConstructionBudget';
 
 const phases = [
   'Foundation Complete',
-  'Framing Done', 
+  'Framing Done',
   'Roofing Finished',
   'Electrical/Plumbing',
   'Interior Finishing'
 ];
 
 interface Expense {
-  id: number;
+  id: string;
   phase: string;
   category: string;
   amount: number;
@@ -29,33 +30,15 @@ interface Expense {
 }
 
 export default function BudgetTracker() {
-  const [budgets, setBudgets] = useState<Record<string, number>>(() => {
-    const saved = localStorage.getItem('construction-budgets');
-    return saved ? JSON.parse(saved) : {};
-  });
-  
-  const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem('construction-expenses');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('construction-budgets', JSON.stringify(budgets));
-  }, [budgets]);
-
-  useEffect(() => {
-    localStorage.setItem('construction-expenses', JSON.stringify(expenses));
-  }, [expenses]);
+  const { budgets, expenses, loading, setBudget, addExpense } = useConstructionBudget();
 
   const handleBudgetChange = (phase: string, amount: string) => {
-    setBudgets(prev => ({
-      ...prev,
-      [phase]: parseFloat(amount) || 0
-    }));
+    const value = parseFloat(amount) || 0;
+    setBudget(phase, value);
   };
 
-  const handleExpenseAdded = (expense: Expense) => {
-    setExpenses(prev => [...prev, expense]);
+  const handleExpenseAdded = (expense: { phase: string; category: string; amount: number; description: string; date: string; receiptUrl?: string }) => {
+    addExpense(expense);
   };
 
   const getPhaseSpent = (phase: string) => {

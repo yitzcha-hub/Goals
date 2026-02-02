@@ -82,6 +82,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPass
             {loading ? 'Signing In...' : 'Sign In'}
           </Button>
         </form>
+        <div className="relative my-4">
+          <Separator />
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+            Or continue with
+          </span>
+        </div>
+        <OAuthButtons actionLabel="Sign in" />
         <div className="mt-4 text-center space-y-2">
           <button
             type="button"
@@ -102,10 +109,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPass
           </div>
         </div>
         {/* SSO: Gmail (Google) and Outlook (Microsoft) - shown at top */}
-        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
-          <p className="text-sm font-medium text-foreground text-center">Sign in with Google or Microsoft</p>
-          <OAuthButtons actionLabel="Sign in" />
-        </div>
       </CardContent>
     </Card>
   );

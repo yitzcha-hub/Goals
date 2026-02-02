@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { WeeklyFitnessChart } from './WeeklyFitnessChart';
 import { FitnessCalendarView } from './FitnessCalendarView';
+import { useFitnessActivity } from '@/hooks/useFitnessActivity';
 
 interface DailyActivity {
   date: string;
@@ -20,18 +21,27 @@ interface DailyActivity {
 }
 
 export const FitnessActivityTracker = () => {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const { activityHistory, saveActivity } = useFitnessActivity();
+  const todayFromHistory = activityHistory[todayStr];
+
   const [todayActivity, setTodayActivity] = useState<DailyActivity>({
-    date: new Date().toISOString().split('T')[0],
-    steps: 0,
-    calories: 0,
-    distance: 0,
-    activeMinutes: 0
+    date: todayStr,
+    steps: todayFromHistory?.steps ?? 0,
+    calories: todayFromHistory?.calories ?? 0,
+    distance: todayFromHistory?.distance ?? 0,
+    activeMinutes: todayFromHistory?.activeMinutes ?? 0
   });
 
-  const [activityHistory, setActivityHistory] = useState<Record<string, DailyActivity>>({});
   const [manualSteps, setManualSteps] = useState('');
   const [manualCalories, setManualCalories] = useState('');
   const [manualMinutes, setManualMinutes] = useState('');
+
+  useEffect(() => {
+    if (todayFromHistory) {
+      setTodayActivity(todayFromHistory);
+    }
+  }, [todayFromHistory?.date, todayFromHistory?.steps, todayFromHistory?.calories, todayFromHistory?.distance, todayFromHistory?.activeMinutes]);
 
   const goals = {
     steps: 10000,
@@ -40,27 +50,11 @@ export const FitnessActivityTracker = () => {
   };
 
   useEffect(() => {
-    loadActivityData();
     requestMotionPermission();
   }, []);
 
-  const loadActivityData = () => {
-    const historyStored = localStorage.getItem('fitness_activity_history');
-    if (historyStored) {
-      const history = JSON.parse(historyStored);
-      setActivityHistory(history);
-      
-      const today = new Date().toISOString().split('T')[0];
-      if (history[today]) {
-        setTodayActivity(history[today]);
-      }
-    }
-  };
-
-  const saveActivity = (activity: DailyActivity) => {
-    const updated = { ...activityHistory, [activity.date]: activity };
-    localStorage.setItem('fitness_activity_history', JSON.stringify(updated));
-    setActivityHistory(updated);
+  const persistActivity = (activity: DailyActivity) => {
+    saveActivity(activity);
     setTodayActivity(activity);
   };
 
@@ -95,9 +89,9 @@ export const FitnessActivityTracker = () => {
 
   const incrementSteps = (count: number) => {
     const updated = { ...todayActivity, steps: todayActivity.steps + count };
-    updated.distance = (updated.steps * 0.0005).toFixed(2) as any;
+    updated.distance = Number((updated.steps * 0.0005).toFixed(2));
     updated.calories = Math.floor(updated.steps * 0.04);
-    saveActivity(updated);
+    persistActivity(updated);
   };
 
   const handleManualEntry = () => {
@@ -105,15 +99,16 @@ export const FitnessActivityTracker = () => {
     const calories = parseInt(manualCalories) || 0;
     const minutes = parseInt(manualMinutes) || 0;
 
+    const newSteps = todayActivity.steps + steps;
     const updated = {
       ...todayActivity,
-      steps: todayActivity.steps + steps,
+      steps: newSteps,
       calories: todayActivity.calories + calories,
       activeMinutes: todayActivity.activeMinutes + minutes,
-      distance: ((todayActivity.steps + steps) * 0.0005).toFixed(2) as any
+      distance: Number((newSteps * 0.0005).toFixed(2))
     };
 
-    saveActivity(updated);
+    persistActivity(updated);
     setManualSteps('');
     setManualCalories('');
     setManualMinutes('');

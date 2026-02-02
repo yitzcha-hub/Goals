@@ -47,11 +47,11 @@ export const useReminders = () => {
       .from('reminder_preferences')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (data) {
       setPreferences(data);
-    } else if (!error || error.code === 'PGRST116') {
+    } else if (!error) {
       const defaultPrefs: ReminderPreferences = {
         goal_deadline_enabled: true,
         goal_deadline_timing: 24,
@@ -114,7 +114,7 @@ export const useReminders = () => {
         .from('reminder_preferences')
         .select('fcm_token')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       
       // Schedule push notification if enabled
       if (prefs?.fcm_token && preferences?.push_enabled) {

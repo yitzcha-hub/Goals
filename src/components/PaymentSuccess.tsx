@@ -5,36 +5,30 @@ import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const PaymentSuccess: React.FC = () => {
   const { user } = useAuth();
+  const { refresh: refreshSubscription } = useSubscription();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Extract session_id from URL params
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
-    
+
     if (sessionId) {
-      // Store subscription info
-      localStorage.setItem('subscription_active', 'true');
-      localStorage.setItem('subscription_session', sessionId);
-      
-      // Trigger confetti celebration
       confetti({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 }
       });
-      
-      setTimeout(() => {
-        setLoading(false);
-      }, 1000);
+      refreshSubscription();
+      setTimeout(() => setLoading(false), 1000);
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [refreshSubscription]);
 
   const handleContinue = () => {
     navigate('/');

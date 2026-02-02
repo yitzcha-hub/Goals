@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,7 +13,10 @@ import JournalTemplateLibrary from './JournalTemplateLibrary';
 import CustomTemplateDialog from './CustomTemplateDialog';
 import TemplateAnalyticsDashboard from './TemplateAnalyticsDashboard';
 import { JournalTemplate } from '@/types/journalTemplate';
+import { useDatabase } from '@/hooks/useDatabase';
 
+const MOOD_TO_NUM: Record<string, number> = { great: 5, good: 4, okay: 3, tough: 2 };
+const NUM_TO_MOOD: Record<number, string> = { 5: 'great', 4: 'good', 3: 'okay', 2: 'tough', 1: 'okay' };
 
 interface JournalEntryType {
   id: string;
@@ -28,9 +31,23 @@ interface JournalEntryType {
   templateName?: string;
 }
 
+function dbToEntry(row: { id: string; title?: string; content: string; mood?: number; created_at: string; updated_at: string }): JournalEntryType {
+  return {
+    id: row.id,
+    date: row.created_at.split('T')[0],
+    title: row.title ?? '',
+    content: row.content,
+    mood: row.mood != null ? (NUM_TO_MOOD[row.mood] ?? 'good') : 'good',
+    tags: [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
 
 const Journal: React.FC = () => {
-  const [entries, setEntries] = useState<JournalEntryType[]>([]);
+  const { journalEntries, addJournalEntry, updateJournalEntry, deleteJournalEntry } = useDatabase();
+  const entries = useMemo(() => journalEntries.map(dbToEntry), [journalEntries]);
+
   const [activeTab, setActiveTab] = useState('entries');
   const [editingEntry, setEditingEntry] = useState<JournalEntryType | null>(null);
   const [showNewEntry, setShowNewEntry] = useState(false);
@@ -39,7 +56,7 @@ const Journal: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<JournalTemplate | null>(null);
   const [customTemplates, setCustomTemplates] = useState<JournalTemplate[]>([]);
 
-  // Load custom templates from localStorage
+  // Load custom templates from localStorage (UI preference only)
   useEffect(() => {
     const savedTemplates = localStorage.getItem('customJournalTemplates');
     if (savedTemplates) {
@@ -47,45 +64,30 @@ const Journal: React.FC = () => {
     }
   }, []);
 
-  // Save custom templates to localStorage
   useEffect(() => {
     localStorage.setItem('customJournalTemplates', JSON.stringify(customTemplates));
   }, [customTemplates]);
 
-
-  // Load entries from localStorage on component mount
-  useEffect(() => {
-    const savedEntries = localStorage.getItem('journalEntries');
-    if (savedEntries) {
-      setEntries(JSON.parse(savedEntries));
-    }
-  }, []);
-
-  // Save entries to localStorage whenever entries change
-  useEffect(() => {
-    localStorage.setItem('journalEntries', JSON.stringify(entries));
-  }, [entries]);
-
-  const handleSaveEntry = (entry: JournalEntryType) => {
+  const handleSaveEntry = async (entry: JournalEntryType) => {
+    const moodNum = MOOD_TO_NUM[entry.mood] ?? 4;
     if (editingEntry) {
-      setEntries(prev => prev.map(e => e.id === entry.id ? entry : e));
+      await updateJournalEntry(editingEntry.id, { title: entry.title, content: entry.content, mood: moodNum });
       setEditingEntry(null);
     } else {
-      setEntries(prev => [...prev, entry]);
+      await addJournalEntry({ title: entry.title, content: entry.content, mood: moodNum });
       setShowNewEntry(false);
       setSelectedTemplate(null);
     }
   };
-
 
   const handleEditEntry = (entry: JournalEntryType) => {
     setEditingEntry(entry);
     setActiveTab('write');
   };
 
-  const handleDeleteEntry = (id: string) => {
+  const handleDeleteEntry = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
-      setEntries(prev => prev.filter(e => e.id !== id));
+      await deleteJournalEntry(id);
     }
   };
 

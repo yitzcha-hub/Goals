@@ -36,7 +36,7 @@ const BillingHistory: React.FC = () => {
         .from('subscriptions')
         .select('stripe_customer_id')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
       if (!subscription?.stripe_customer_id) {
         setLoading(false);

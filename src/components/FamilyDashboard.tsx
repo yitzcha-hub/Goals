@@ -48,7 +48,7 @@ export function FamilyDashboard() {
       .from('family_members')
       .select('family_group_id, family_groups(*)')
       .eq('user_id', user?.id)
-      .single();
+      .maybeSingle();
 
     if (memberData) {
       setFamilyGroup(memberData.family_groups);
