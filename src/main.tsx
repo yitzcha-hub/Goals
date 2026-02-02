@@ -1,9 +1,15 @@
-
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import ErrorBoundary from './components/ErrorBoundary.tsx'
 import './index.css'
 
+// When the page is restored from back-forward cache (bfcache), show fresh content
+// so the user doesn't see a stale snapshot from browser history.
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    window.location.reload()
+  }
+})
 
 // Register service worker for offline functionality
 if ('serviceWorker' in navigator) {
