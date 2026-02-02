@@ -10,6 +10,7 @@ import Contact from "./pages/Contact";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import { EmailVerification } from "./pages/EmailVerification";
+import { AuthCallback } from "./pages/AuthCallback";
 import Demo from "./pages/Demo";
 import Help from "./pages/Help";
 import Forums from "./pages/Forums";
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/verify-email" element={<EmailVerification />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/forums" element={<Forums />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/journal" element={<Journal />} />

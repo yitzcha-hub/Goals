@@ -3,8 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { OAuthButtons } from './OAuthButtons';
 
 interface SignUpFormProps {
   onToggleMode: () => void;
@@ -68,7 +70,13 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
         <CardDescription>Create your account and get instant access to all features</CardDescription>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="space-y-4">
+        <div className="relative my-4">
+          <Separator />
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+            or continue with email
+          </span>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -126,6 +134,11 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
               Sign in
             </button>
           </div>
+        </div>
+        {/* SSO: Gmail (Google) and Outlook (Microsoft) - shown at top */}
+        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+          <p className="text-sm font-medium text-foreground text-center">Sign up with Google or Microsoft</p>
+          <OAuthButtons actionLabel="Sign up" />
         </div>
       </CardContent>
     </Card>

@@ -48,7 +48,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ trigger, defaultMode = 'lo
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-md p-0 border-0 bg-transparent">
+      <DialogContent className="sm:max-w-md p-0 border-0 bg-transparent max-h-[90vh] overflow-y-auto">
         <DialogTitle className="sr-only">Authentication</DialogTitle>
         {renderForm()}
       </DialogContent>
