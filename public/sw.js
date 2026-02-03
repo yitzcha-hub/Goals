@@ -15,6 +15,22 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  const isApi = url.pathname.startsWith('/api/');
+
+  if (isApi) {
+    // API: network only; on failure return 503 so the promise doesn't reject (avoids uncaught in SW)
+    event.respondWith(
+      fetch(event.request).catch(function () {
+        return new Response(JSON.stringify({ error: 'Network error' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -25,11 +41,14 @@ self.addEventListener('fetch', (event) => {
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
+          // Only cache http/https requests (Cache API rejects chrome-extension:, etc.)
+          const requestUrl = event.request.url;
+          if (requestUrl.startsWith('http://') || requestUrl.startsWith('https://')) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, responseToCache))
+              .catch(() => {});
+          }
           return response;
         });
       })

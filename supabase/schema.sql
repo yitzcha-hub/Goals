@@ -93,13 +93,20 @@ CREATE TABLE IF NOT EXISTS public.forum_replies (
 );
 
 -- =============================================================================
--- 3. SUBSCRIPTIONS (Stripe / trials)
+-- 3. SUBSCRIPTIONS (Stripe payment integration - monthly & annual plans)
+-- =============================================================================
+-- Populated by Stripe webhooks (api/webhooks) from events:
+--   customer.subscription.created, customer.subscription.updated,
+--   customer.subscription.deleted, invoice.payment_failed
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.subscriptions (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'trialing', 'canceled', 'past_due', 'unpaid')),
+  status text NOT NULL DEFAULT 'active' CHECK (status IN (
+    'active', 'trialing', 'canceled', 'past_due', 'unpaid',
+    'incomplete', 'incomplete_expired', 'paused'
+  )),
   plan_name text,
   stripe_subscription_id text,
   stripe_customer_id text,
@@ -116,6 +123,10 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (user_id)
 );
+
+-- Indexes for Stripe webhook and customer lookups
+CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_subscription_id ON public.subscriptions(stripe_subscription_id) WHERE stripe_subscription_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_customer_id ON public.subscriptions(stripe_customer_id) WHERE stripe_customer_id IS NOT NULL;
 
 -- =============================================================================
 -- 4. REMINDERS
@@ -857,6 +868,8 @@ BEGIN
   CREATE TRIGGER set_journal_entries_updated_at BEFORE UPDATE ON public.journal_entries FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
   DROP TRIGGER IF EXISTS set_forum_threads_updated_at ON public.forum_threads;
   CREATE TRIGGER set_forum_threads_updated_at BEFORE UPDATE ON public.forum_threads FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+  DROP TRIGGER IF EXISTS set_subscriptions_updated_at ON public.subscriptions;
+  CREATE TRIGGER set_subscriptions_updated_at BEFORE UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 END
 $$;
 
@@ -881,3 +894,13 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated;
+
+-- =============================================================================
+-- STRIPE MIGRATION (run if subscriptions table already existed with old schema)
+-- Expands status CHECK to support all Stripe subscription lifecycle states
+-- =============================================================================
+ALTER TABLE public.subscriptions DROP CONSTRAINT IF EXISTS subscriptions_status_check;
+ALTER TABLE public.subscriptions ADD CONSTRAINT subscriptions_status_check CHECK (status IN (
+  'active', 'trialing', 'canceled', 'past_due', 'unpaid',
+  'incomplete', 'incomplete_expired', 'paused'
+));

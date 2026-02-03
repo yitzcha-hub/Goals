@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { TrialBanner } from './TrialBanner';
@@ -20,7 +21,7 @@ import { useManifestationDatabase } from '@/hooks/useManifestationDatabase';
 import { 
   Leaf, LogOut, Target, Calendar, Star, Heart, BookOpen, 
   Award, TrendingUp, Plus, Camera, Check, Trash2, Edit2,
-  ChevronRight, Gift, Flame, Sun, Moon, Image
+  ChevronRight, Gift, Flame, Sun, Moon, Image, CreditCard, Settings
 } from 'lucide-react';
 
 interface Goal {
@@ -61,6 +62,7 @@ interface JournalEntry {
 
 const ManifestationDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const { isPremium, tier } = useSubscription();
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -287,6 +289,21 @@ const ManifestationDashboard: React.FC = () => {
                 </Avatar>
                 <span className="text-sm font-medium dark:text-white">{user?.email?.split('@')[0]}</span>
               </div>
+              {!isPremium && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => navigate('/pricing')}
+                  className="bg-gradient-to-r from-green-600 to-lime-500 hover:from-green-700 hover:to-lime-600"
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Subscribe
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => navigate('/settings')} className="text-green-700 hover:bg-green-50">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
               <Button variant="outline" size="sm" onClick={() => signOut()} className="border-green-300 text-green-700 hover:bg-green-50">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out

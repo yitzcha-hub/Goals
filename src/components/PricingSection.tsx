@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Check, Loader2, Leaf, Flame } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { useTrial } from '@/hooks/useTrial';
@@ -29,32 +28,52 @@ const PricingSection: React.FC = () => {
 
     setLoading(planName);
     try {
-      const { data, error } = await supabase.functions.invoke('stripe-payments', {
-        body: { 
-          action: 'create-checkout-session',
-          priceId: priceId
-        }
+      // Use same-origin so it works with vercel dev (port 5000) and with Vite proxy to API
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId, userId: user.id }),
       });
 
-      if (error) throw error;
-      
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(
+          res.ok
+            ? 'Invalid response from server.'
+            : 'Checkout is not available. Run the app with API support (npm run dev:api) when testing locally.'
+        );
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+
       if (data?.url) {
         window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
       }
     } catch (error) {
+      const message =
+        error instanceof SyntaxError || (error instanceof Error && error.message.includes('Checkout is not available'))
+          ? 'Checkout is not available. Run the app with API support (npm run dev:api) when testing locally.'
+          : error instanceof Error
+            ? error.message
+            : 'Failed to start subscription. Please try again.';
       console.error('Subscription error:', error);
-      alert('Failed to start subscription. Please try again.');
+      alert(message);
     } finally {
       setLoading(null);
     }
   };
+
+  const monthlyPriceId = import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY;
+  const annualPriceId = import.meta.env.VITE_STRIPE_PRICE_ID_ANNUAL;
 
   const plans = [
     {
       name: 'Monthly',
       price: '$4.99',
       period: '/month',
-      priceId: 'price_monthly',
+      priceId: monthlyPriceId || 'price_monthly',
       description: 'Pay as you go',
       features: [
         'All goal timelines (30 days - 5 years)',
@@ -73,7 +92,7 @@ const PricingSection: React.FC = () => {
       name: 'Annual',
       price: '$39.99',
       period: '/year',
-      priceId: 'price_yearly',
+      priceId: annualPriceId || 'price_yearly',
       description: 'Save $20 per year',
       monthlyEquivalent: '$3.33/month',
       features: [

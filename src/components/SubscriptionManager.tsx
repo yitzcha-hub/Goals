@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, CreditCard, AlertCircle, CheckCircle, Users } from 'lucide-react';
+import { Calendar, CreditCard, AlertCircle, CheckCircle, Users, Clock, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import FamilyGroupManager from './FamilyGroupManager';
 
 interface Subscription {
@@ -14,15 +15,28 @@ interface Subscription {
   status: string;
   current_period_end: number;
   current_period_start: number;
+  trial_start?: number | null;
+  trial_end?: number | null;
   plan: {
     amount: number;
     currency: string;
     interval: string;
+    nickname?: string;
   };
 }
 
 const SubscriptionManager: React.FC = () => {
   const { user } = useAuth();
+  const {
+    status,
+    isTrial,
+    trialDaysRemaining,
+    trialDaysUsed,
+    subscribedDaysInPeriod,
+    periodLengthDays,
+    periodEnd,
+    periodStart,
+  } = useSubscription();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
@@ -35,12 +49,11 @@ const SubscriptionManager: React.FC = () => {
 
   const fetchSubscription = async () => {
     try {
-      // Fetch subscription from database
       const { data, error } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user?.id)
-        .eq('status', 'active')
+        .in('status', ['active', 'trialing'])
         .maybeSingle();
 
       if (error) {
@@ -49,20 +62,21 @@ const SubscriptionManager: React.FC = () => {
 
       if (data) {
         setSubscription({
-          id: data.stripe_subscription_id,
+          id: data.stripe_subscription_id ?? data.id,
           status: data.status,
-          current_period_start: data.current_period_start,
-          current_period_end: data.current_period_end,
-          cancel_at_period_end: data.cancel_at_period_end,
+          current_period_start: data.current_period_start ?? 0,
+          current_period_end: data.current_period_end ?? 0,
           trial_start: data.trial_start,
           trial_end: data.trial_end,
           plan: {
-            amount: data.plan_amount,
-            currency: data.plan_currency,
-            interval: data.plan_interval,
-            nickname: data.plan_name
-          }
+            amount: data.plan_amount ?? 0,
+            currency: data.plan_currency ?? 'usd',
+            interval: data.plan_interval ?? 'month',
+            nickname: data.plan_name,
+          },
         });
+      } else {
+        setSubscription(null);
       }
     } catch (error) {
       console.error('Failed to fetch subscription:', error);
@@ -111,13 +125,13 @@ const SubscriptionManager: React.FC = () => {
             <CreditCard className="h-5 w-5" />
             Subscription
           </CardTitle>
-          <CardDescription>You don't have an active subscription</CardDescription>
+          <CardDescription>You don&apos;t have an active subscription</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600 mb-4">
             Subscribe to unlock all premium features and start achieving your goals.
           </p>
-          <Button onClick={() => window.location.href = '/#pricing'}>
+          <Button onClick={() => window.location.href = '/pricing'}>
             View Plans
           </Button>
         </CardContent>
@@ -139,8 +153,9 @@ const SubscriptionManager: React.FC = () => {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       active: { label: 'Active', variant: 'default' as const, icon: CheckCircle },
+      trialing: { label: 'Trial', variant: 'secondary' as const, icon: Clock },
       canceled: { label: 'Canceled', variant: 'secondary' as const, icon: AlertCircle },
-      past_due: { label: 'Past Due', variant: 'destructive' as const, icon: AlertCircle }
+      past_due: { label: 'Past Due', variant: 'destructive' as const, icon: AlertCircle },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.active;
@@ -155,6 +170,8 @@ const SubscriptionManager: React.FC = () => {
   };
 
   const isFamilyPlan = subscription.plan.nickname?.includes('Family');
+  const showTrialDays = isTrial && (trialDaysRemaining != null || trialDaysUsed != null);
+  const showSubscribedDays = status === 'active' && subscribedDaysInPeriod != null && periodLengthDays != null;
 
   return (
     <Tabs defaultValue="subscription" className="w-full">
@@ -185,17 +202,63 @@ const SubscriptionManager: React.FC = () => {
               {getStatusBadge(subscription.status)}
             </div>
 
+            {(showTrialDays || showSubscribedDays) && (
+              <>
+                <Separator />
+                <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
+                  <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    Active days
+                  </span>
+                  {showTrialDays && (
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {trialDaysRemaining != null && (
+                        <div>
+                          <span className="text-muted-foreground">Trial days left</span>
+                          <p className="font-semibold">{trialDaysRemaining} days</p>
+                        </div>
+                      )}
+                      {trialDaysUsed != null && (
+                        <div>
+                          <span className="text-muted-foreground">Trial days used</span>
+                          <p className="font-semibold">{trialDaysUsed} days</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {showSubscribedDays && (
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Subscribed days this period</span>
+                        <p className="font-semibold">{subscribedDaysInPeriod} of {periodLengthDays} days</p>
+                      </div>
+                      {periodStart != null && periodEnd != null && (
+                        <div>
+                          <span className="text-muted-foreground">Period</span>
+                          <p className="font-medium">
+                            {formatDate(periodStart)} – {formatDate(periodEnd)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
             <Separator />
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="text-sm text-gray-600">Plan</span>
                 <p className="font-medium">
-                  {formatAmount(subscription.plan.amount, subscription.plan.currency)} / {subscription.plan.interval}
+                  {subscription.plan.amount
+                    ? formatAmount(subscription.plan.amount, subscription.plan.currency) + ' / ' + subscription.plan.interval
+                    : subscription.plan.nickname ?? 'Premium'}
                 </p>
               </div>
               <div>
-                <span className="text-sm text-gray-600">Next billing</span>
+                <span className="text-sm text-gray-600">{isTrial ? 'Trial ends' : 'Next billing'}</span>
                 <p className="font-medium flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   {formatDate(subscription.current_period_end)}

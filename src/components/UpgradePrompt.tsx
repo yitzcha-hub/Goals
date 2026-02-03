@@ -75,7 +75,7 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({ feature, inline = false }
                 {loading ? 'Starting...' : 'Start 7-Day Free Trial'}
               </Button>
               <Button 
-                onClick={() => window.location.href = '/#pricing'} 
+                onClick={() => window.location.href = '/pricing'} 
                 variant="outline"
               >
                 View Plans
@@ -121,7 +121,7 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({ feature, inline = false }
             {loading ? 'Starting Trial...' : '🎉 Start 7-Day Free Trial'}
           </Button>
           <Button 
-            onClick={() => window.location.href = '/#pricing'} 
+            onClick={() => window.location.href = '/pricing'} 
             variant="outline"
             className="w-full"
           >

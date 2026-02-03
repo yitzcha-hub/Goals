@@ -52,13 +52,12 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
         variant: 'destructive',
       });
     } else {
+      onToggleMode(); // Switch to login modal
       toast({
-        title: '🎉 Welcome to DEPO!',
-        description: 'Your 7-day free trial has started. Enjoy full access to all features!',
+        title: '🎉 Success! Check your email',
+        description: 'We sent you a verification link. Click it to verify your account, then sign in below.',
       });
     }
-
-
 
     setLoading(false);
   };

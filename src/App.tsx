@@ -19,6 +19,7 @@ import Forums from "./pages/Forums";
 import Calendar from "./pages/Calendar";
 import Journal from "./pages/Journal";
 import PaymentSuccessPage from "./pages/PaymentSuccess";
+import Pricing from "./pages/Pricing";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 
@@ -39,7 +40,7 @@ const App = () => (
         <AuthProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <StorageModeProvider>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/journal" element={<Journal />} />
               <Route path="/payment-success" element={<PaymentSuccessPage />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<Admin />} />
 

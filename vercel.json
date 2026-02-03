@@ -1,7 +1,8 @@
 {
   "rewrites": [
+    { "source": "/", "destination": "/index.html" },
     {
-      "source": "/(.*)",
+      "source": "/:path((?!api)(?!src)(?!assets)(?!@)(?!node_modules)(?!.*\\.).*)",
       "destination": "/index.html"
     }
   ],

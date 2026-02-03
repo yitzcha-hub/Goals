@@ -9,6 +9,7 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import DemoGoalDialog from '@/components/DemoGoalDialog';
 import DemoGoalDetailView from '@/components/DemoGoalDetailView';
+import PricingSection from '@/components/PricingSection';
 import { useNavigate } from 'react-router-dom';
 
 const DEMO_STORAGE_GOALS = 'goals_app_demo_layout_goals';
@@ -470,39 +471,9 @@ const DemoLayout: React.FC = () => {
             </div>
           </div>
 
-          {/* Pricing Preview */}
-          <div id="pricing" className="bg-gradient-to-br from-green-50 to-lime-50 rounded-2xl p-8 border border-green-100">
-            <div className="text-center mb-8">
-              <Badge className="mb-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white">
-                <Flame className="h-3 w-3 mr-1" />
-                7 Day FREE Trial
-              </Badge>
-              <h3 className="text-3xl font-bold text-gray-800 mb-2">Simple Pricing</h3>
-              <p className="text-gray-600">Start free, then choose your plan</p>
-
-            </div>
-            <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-              <Card className="border-2 border-green-200 bg-white">
-                <CardContent className="p-6 text-center">
-                  <h4 className="font-semibold text-lg mb-2">Monthly</h4>
-                  <p className="text-3xl font-bold text-gray-800 mb-1">$4.99</p>
-                  <p className="text-gray-500 text-sm">/month</p>
-                </CardContent>
-              </Card>
-              <Card className="border-2 border-orange-400 shadow-lg bg-white relative">
-                <CardContent className="p-6 text-center">
-                  <Badge className="mb-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white">
-                    <Flame className="h-3 w-3 mr-1" />
-                    Best Value
-                  </Badge>
-                  <h4 className="font-semibold text-lg mb-2">Annual</h4>
-                  <p className="text-3xl font-bold text-orange-600 mb-1">$39.99</p>
-                  <p className="text-gray-500 text-sm">/year</p>
-                  <p className="text-green-600 text-sm font-medium mt-1">Save over $19!</p>
-                </CardContent>
-              </Card>
-            </div>
-
+          {/* Pricing with Subscribe buttons */}
+          <div id="pricing">
+            <PricingSection />
           </div>
 
           {/* CTA Section */}
