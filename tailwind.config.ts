@@ -67,7 +67,7 @@ export default {
       },
       fontFamily: {
         mono: ['JetBrains Mono', 'monospace'],
-        sans: ['Inter', 'sans-serif'],
+        sans: ['DM Sans', 'sans-serif'],
       },
       borderRadius: {
         lg: 'calc(var(--radius) + 2px)',
@@ -91,12 +91,27 @@ export default {
           from: { transform: 'translateY(10px)', opacity: '0' },
           to: { transform: 'translateY(0)', opacity: '1' },
         },
+        'slide-up': {
+          from: { transform: 'translateY(20px)' },
+          to: { transform: 'translateY(0)' },
+        },
+        'vision-reveal': {
+          from: { opacity: '0', transform: 'translateY(24px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'vision-scale': {
+          from: { opacity: '0', transform: 'scale(0.96)' },
+          to: { opacity: '1', transform: 'scale(1)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in': 'fade-in 0.3s ease-out',
         'slide-in': 'slide-in 0.3s ease-out',
+        'slide-up': 'slide-up 0.5s ease-out forwards',
+        'vision-reveal': 'vision-reveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'vision-scale': 'vision-scale 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards',
       },
       typography: {
         DEFAULT: {

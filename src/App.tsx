@@ -20,6 +20,9 @@ import Calendar from "./pages/Calendar";
 import Journal from "./pages/Journal";
 import PaymentSuccessPage from "./pages/PaymentSuccess";
 import Pricing from "./pages/Pricing";
+import Features from "./pages/Features";
+import UseCase from "./pages/UseCase";
+import FAQ from "./pages/FAQ";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 
@@ -56,6 +59,9 @@ const App = () => (
               <Route path="/journal" element={<Journal />} />
               <Route path="/payment-success" element={<PaymentSuccessPage />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/use-case" element={<UseCase />} />
+              <Route path="/faq" element={<FAQ />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<Admin />} />
 

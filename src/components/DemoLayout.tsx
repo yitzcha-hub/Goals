@@ -270,7 +270,7 @@ const DemoLayout: React.FC = () => {
           <h1 
             className="text-5xl md:text-7xl lg:text-8xl mb-4 text-white drop-shadow-lg"
             style={{ 
-              fontFamily: "'Caveat', cursive",
+              fontFamily: "'DM Sans', sans-serif",
               textShadow: '2px 2px 4px rgba(0,0,0,0.5), 0 0 40px rgba(255,255,255,0.1)',
               letterSpacing: '0.02em'
             }}

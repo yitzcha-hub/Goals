@@ -1,594 +1,419 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AuthModal } from '@/components/auth/AuthModal';
-import { NewsletterSignup } from './NewsletterSignup';
 import { ProductTour } from './ProductTour';
 import { OfflineIndicator } from './OfflineIndicator';
 import ManifestationDashboard from './ManifestationDashboard';
-import { useNotifications } from '@/hooks/useNotifications';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-
-import { LogIn, User, Leaf, Heart, Target, Calendar, Star, Check, Camera, BookOpen, Award, TrendingUp, Sun, Moon, Compass, Zap, Flame } from 'lucide-react';
+import { LandingHeader } from '@/components/LandingHeader';
+import { LandingFooter } from '@/components/LandingFooter';
+import { Leaf, Target, Calendar, Check, BookOpen, Sparkles, Users, BarChart3, Smartphone, AppWindow, UserX, TrendingUp, ArrowRight, Zap } from 'lucide-react';
+import heroBg1 from '@/assets/images/happy-boss-drawing-graph-training-colleagues_1262-1840.jpg';
+import heroBg2 from '@/assets/images/happy-group-creative-young-business-people_252847-6131.jpg';
+import stepImg1 from '@/assets/images/Choose-who-you-want-to-become.jpg';
+import stepImg2 from '@/assets/images/Write-your-goals-and-development-plan.jpg';
+import stepImg3 from '@/assets/images/Attach-goals-to-time.jpg';
+import stepImg4 from '@/assets/images/Get-AI-feedback-on-your-progress.jpg';
+import goalsImg from '@/assets/images/Goals.jpg';
+import writtenPlanImg from '@/assets/images/Written-plan.jpg';
+import aiAnalysisImg from '@/assets/images/AI-analysis.jpg';
+import familyConnectionImg from '@/assets/images/familiy-connection.jpg';
 
 const AppLayout: React.FC = () => {
   const navigate = useNavigate();
-  const {
-    user,
-    loading
-  } = useAuth();
+  const location = useLocation();
+  const { user, loading } = useAuth();
   const [isTourActive, setIsTourActive] = useState(false);
-  const [api, setApi] = useState<any>();
-  const [current, setCurrent] = useState(0);
-
-  const heroSlides = [
-    {
-      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1759369590933_f4250ffb.webp',
-      title: 'Ready to Change Course?',
-      subtitle: 'Chart a new direction, navigate your journey with confidence, and reach the shores of your aspirations'
-    },
-    {
-      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760533818931_242e080d.webp',
-      title: 'Take a Different Path',
-      subtitle: 'Every journey begins with a single step. Start climbing toward your dreams today'
-    },
-    {
-      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760533972699_07a498da.webp',
-      title: 'Build Deeper Connections',
-      subtitle: 'Strengthen relationships, create meaningful bonds, and discover the power of authentic connection'
-    },
-    {
-      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1759516904849_23425d6f.webp',
-      title: 'Lock In, Start Today, Greater Tomorrows',
-      subtitle: 'Embrace adventure, pursue your passions, and create unforgettable memories along the way'
-    },
-
-
-    {
-      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760535111149_1ed7b966.webp',
-      title: 'Dreams Start Here',
-      subtitle: 'Life doesn\'t wait, neither should You'
-    }
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const heroTaglines = [
+    'Learn from the goal-setting and development of successful people, and get AI guidance to evaluate and improve your own path - Success',
+    'A private personal growth system that helps you set goals, create a written plan, stay accountable, and measure your progress over time.',
   ];
-
-
-
-
-  const features = [
-    {
-      icon: Calendar,
-      title: '30, 60, 90 Day Goals',
-      description: 'Set short-term goals with clear timelines to build momentum and see progress quickly.',
-      color: 'bg-green-500'
-    },
-    {
-      icon: Target,
-      title: '1 Year Goals',
-      description: 'Plan your medium-term future with meaningful milestones that shape your life.',
-      color: 'bg-orange-500'
-
-    },
-    {
-      icon: Compass,
-      title: '5 Year Vision',
-      description: 'Create your long-term vision and watch as your dreams become reality step by step.',
-      color: 'bg-emerald-500'
-    },
-    {
-      icon: TrendingUp,
-      title: '0-10 Progress Scale',
-      description: 'Track exactly where you are on each goal with our intuitive progress slider.',
-      color: 'bg-amber-500'
-    },
-    {
-      icon: Camera,
-      title: 'Vision Board Photos',
-      description: 'Upload images of your dreams and goals to visualize your success every day.',
-      color: 'bg-lime-600'
-    },
-    {
-      icon: Zap,
-      title: 'Smart Recommendations',
-      description: 'Get AI-powered suggestions on what to focus on next to achieve your goals faster.',
-      color: 'bg-orange-600'
-    },
-    {
-      icon: Check,
-      title: 'To-Do List',
-      description: 'Separate task list for daily items that need done - earn rewards for completing them!',
-      color: 'bg-teal-500'
-    },
-    {
-      icon: Award,
-      title: 'Rewards System',
-      description: 'Earn points and achievements for every goal you progress on and task you complete.',
-      color: 'bg-amber-400'
-    },
-    {
-      icon: Heart,
-      title: 'Gratitude Journal',
-      description: 'Record what you\'re thankful for and watch your positivity grow over time.',
-      color: 'bg-orange-400'
-    },
-    {
-      icon: BookOpen,
-      title: 'Life Journal',
-      description: 'Document your journey with entries and photos - a life worth living is worth recording.',
-      color: 'bg-emerald-400'
-    },
-    {
-      icon: Flame,
-      title: 'Focus on YOU',
-      description: 'No social comparison, no feeds of others - this is YOUR space to grow and thrive.',
-      color: 'bg-orange-500'
-    },
-    {
-      icon: Leaf,
-      title: 'Feel Good Design',
-      description: 'Built to make you feel accomplished and motivated, not inadequate like social media.',
-      color: 'bg-green-500'
-    }
-  ];
-
-
-  const testimonials = [
-    {
-      name: 'Sarah M.',
-      role: 'Entrepreneur',
-      quote: 'This app changed my life. I finally feel in control of my future and celebrate my own wins without comparing to others.',
-      avatar: 'S'
-    },
-    {
-      name: 'James K.',
-      role: 'Teacher',
-      quote: 'The 0-10 scale makes it so easy to see my progress. I\'ve achieved more in 3 months than I did all last year!',
-      avatar: 'J'
-    },
-    {
-      name: 'Maria L.',
-      role: 'Healthcare Worker',
-      quote: 'The gratitude journal has transformed my mindset. I wake up excited to document my journey every day.',
-      avatar: 'M'
-    },
-    {
-      name: 'David R.',
-      role: 'Software Developer',
-      quote: 'Finally an app that\'s about MY goals, not showing off to others. The 5-year vision feature is incredible.',
-      avatar: 'D'
-    }
-  ];
+  const [heroTaglineIndex, setHeroTaglineIndex] = useState(0);
 
   useEffect(() => {
-    if (!api) return;
-    
-    api.on('select', () => {
-      setCurrent(api.selectedScrollSnap());
+    const t = setInterval(() => {
+      setHeroTaglineIndex((i) => (i + 1) % 2);
+    }, 10000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    if (location.pathname !== '/') return;
+    const sections = ['how-it-works', 'problem'];
+    const vis: Record<string, number> = {};
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = entry.target.id;
+          vis[id] = entry.isIntersecting ? entry.intersectionRatio : 0;
+        });
+        const best = sections.reduce<{ id: string; ratio: number } | null>((acc, id) => {
+          const r = vis[id] ?? 0;
+          if (r <= 0) return acc;
+          if (!acc || r > acc.ratio) return { id, ratio: r };
+          return acc;
+        }, null);
+        setActiveSection(best?.id ?? null);
+      },
+      { rootMargin: '-20% 0px -60% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }
+    );
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
     });
-    
-    const interval = setInterval(() => {
-      if (api) {
-        api.scrollNext();
-      }
-    }, 7000);
+    return () => observer.disconnect();
+  }, [location.pathname]);
 
 
-    return () => clearInterval(interval);
-  }, [api]);
+  const scrollToSection = useCallback((id: string) => {
+    setMobileMenuOpen(false);
+    if (location.pathname !== '/') {
+      navigate('/');
+      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 100);
+    } else {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [location.pathname, navigate]);
+
+  const navItems = [
+    { label: 'Features', path: '/features', onClick: () => { setMobileMenuOpen(false); navigate('/features'); } },
+    { label: 'Use Cases', path: '/use-case', onClick: () => { setMobileMenuOpen(false); navigate('/use-case'); } },
+    { label: 'Pricing', path: '/pricing', onClick: () => { setMobileMenuOpen(false); navigate('/pricing'); } },
+    { label: 'About Us', path: '/about', onClick: () => { setMobileMenuOpen(false); navigate('/about'); } },
+    { label: 'FAQ', path: '/faq', onClick: () => { setMobileMenuOpen(false); navigate('/faq'); } },
+  ];
+
+  const pillars = [
+    { title: 'Goals', meaning: 'Direction', icon: Target, desc: 'Know where you\'re headed.', img: goalsImg, size: 'large' as const },
+    { title: 'Written Plan', meaning: 'Clarity', icon: BookOpen, desc: 'Put your path in words.', img: writtenPlanImg, size: 'normal' as const },
+    { title: 'Measuring', meaning: 'Awareness', icon: BarChart3, desc: 'See how you\'re doing.', img: aiAnalysisImg, size: 'normal' as const },
+    { title: 'Accountability', meaning: 'Consistency', icon: Users, desc: 'Stay on track together.', img: familyConnectionImg, size: 'large' as const },
+  ];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-100 via-lime-50 to-emerald-100">
-        <div className="text-center">
-          <Leaf className="h-16 w-16 text-green-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-green-800 font-medium">Loading your growth journey...</p>
+      <div className="flex items-center justify-center min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)' }}>
+        <div className="text-center" style={{ color: 'var(--landing-primary)' }}>
+          <Leaf className="h-16 w-16 mx-auto mb-4 animate-pulse" />
+          <p className="font-medium">Loading...</p>
         </div>
       </div>
     );
   }
 
-  // Show personalized dashboard for authenticated users
   if (user) {
     return <ManifestationDashboard />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-100 via-lime-50 to-emerald-100">
-      {/* Header */}
-      <div className="bg-white/90 backdrop-blur-md shadow-sm py-4 px-4 sticky top-0 z-50 border-b border-green-200">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-lime-400 rounded-xl flex items-center justify-center">
-              <Leaf className="h-6 w-6 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-lime-500 bg-clip-text text-transparent">
-              Goals and Development
-            </h1>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Button 
-              onClick={() => navigate('/demo')} 
-              variant="ghost" 
-              className="text-green-700 hover:text-orange-600 hover:bg-orange-50"
-            >
-              See Demo
-            </Button>
-            
-            <Button 
-              onClick={() => navigate('/about')} 
-              variant="ghost" 
-              className="text-green-700 hover:text-orange-600 hover:bg-orange-50"
-            >
-              About
-            </Button>
+    <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+      <LandingHeader
+        navItems={navItems}
+        activeSection={activeSection}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+      />
 
-            <AuthModal 
+      {/* 1. Hero — The Big Idea */}
+      <section
+        id="hero"
+        className="relative py-20 sm:py-28 px-4 min-h-[28rem] flex items-center justify-center overflow-hidden"
+      >
+        {/* Background images — switch with description, crossfade */}
+        <div className="absolute inset-0" aria-hidden>
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-in-out"
+            style={{
+              backgroundImage: `url(${heroBg1})`,
+              opacity: heroTaglineIndex === 0 ? 1 : 0,
+            }}
+          />
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-in-out"
+            style={{
+              backgroundImage: `url(${heroBg2})`,
+              opacity: heroTaglineIndex === 1 ? 1 : 0,
+            }}
+          />
+        </div>
+        <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.85 }} aria-hidden />
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <h1
+            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up"
+            style={{
+              backgroundImage: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              animationDelay: '0.1s',
+            }}
+          >
+            Become the person you want to be.
+          </h1>
+          <p
+            className="text-lg sm:text-xl mb-10 font-bold max-w-2xl mx-auto bg-clip-text text-transparent animate-slide-up transition-opacity duration-500"
+            style={{
+              backgroundImage: 'linear-gradient(135deg, #4a5568 0%, #2d3748 50%, #1a1a1a 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              animationDelay: '0.25s',
+            }}
+            key={heroTaglineIndex}
+          >
+            {heroTaglines[heroTaglineIndex]}
+          </p>
+          <div
+            className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up"
+            style={{ animationDelay: '0.4s' }}
+          >
+            <AuthModal
               trigger={
-                <Button className="bg-gradient-to-r from-orange-500 to-amber-400 hover:from-orange-600 hover:to-amber-500 text-white">
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Sign In
+                <Button size="lg" variant="default" className="hero-cta-primary">
+                  Start 7-day free trial
                 </Button>
-              } 
+              }
+              defaultMode="signup"
             />
-          </div>
-        </div>
-      </div>
-
-      {/* Hero Section with Carousel */}
-      {heroSlides && heroSlides.length > 0 && (
-        <Carousel 
-          setApi={setApi} 
-          className="w-full"
-          opts={{
-            loop: true,
-          }}
-        >
-          <CarouselContent>
-            {heroSlides.map((slide, index) => (
-              <CarouselItem key={index}>
-                <section 
-                  className="relative h-[500px] flex items-center justify-center text-center px-4" 
-                  style={{
-                    backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3)), url('${slide.image}')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
-                >
-
-                  <div className="max-w-4xl mx-auto text-white">
-                    <h1 className="text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg text-white">
-                      {slide.title}
-                    </h1>
-                    <p className="text-lg md:text-xl mb-8 text-white/90 drop-shadow-md font-medium max-w-2xl mx-auto">
-                      {slide.subtitle}
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                      <AuthModal 
-                        trigger={
-                          <Button size="lg" className="bg-gradient-to-r from-orange-500 to-amber-400 text-white hover:from-orange-600 hover:to-amber-500 shadow-lg text-base font-semibold px-8">
-                            <Flame className="h-5 w-5 mr-2" />
-                            Start Your 7 Day Free Trial
-                          </Button>
-                        }
-                        defaultMode="signup"
-                      />
-
-
-                      <Button 
-                        size="lg" 
-                        className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-green-800 text-base font-semibold px-8"
-                        onClick={() => navigate('/demo')}
-                      >
-                        See Demo
-                      </Button>
-                    </div>
-                  </div>
-
-                </section>
-
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="left-4" />
-          <CarouselNext className="right-4" />
-        </Carousel>
-      )}
-
-      {/* Value Proposition */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto text-center">
-          <Badge className="mb-4 bg-orange-100 text-orange-800 border-orange-300">
-            Your Personal Growth Sanctuary
-          </Badge>
-          <h2 className="text-4xl font-bold text-gray-800 mb-6">
-            This Is About <span className="bg-gradient-to-r from-green-600 to-orange-500 bg-clip-text text-transparent">YOU</span>, Not Others
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            Unlike social media where everyone shows their highlight reel, Goals and Development is your private space 
-            to dream, plan, and achieve. No comparisons. No judgment. Just your journey to becoming your best self.
-          </p>
-          <div className="grid md:grid-cols-3 gap-8 mt-12">
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-green-50 to-lime-50 border border-green-200 hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Heart className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Feel Good</h3>
-              <p className="text-gray-600">Designed to celebrate YOUR wins and make you feel accomplished every day.</p>
-            </div>
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Target className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Stay Focused</h3>
-              <p className="text-gray-600">Clear goal timelines from 30 days to 5 years keep you on track.</p>
-            </div>
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Leaf className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Grow Naturally</h3>
-              <p className="text-gray-600">Upload vision photos and watch your dreams become reality.</p>
-            </div>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => navigate('/demo')}
+              className="hero-cta-outline"
+            >
+              Watch demo
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-16 px-4 bg-gradient-to-br from-green-50 via-lime-50 to-emerald-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-amber-100 text-amber-800 border-amber-300">
-              <Zap className="h-3 w-3 mr-1 inline" />
-              Powerful Features
-            </Badge>
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Everything You Need to Achieve Your Goals</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Powerful features designed to help you set, track, and achieve your goals at every timeline
+      {/* 2. The Problem → Solution (Transformation) */}
+      <section id="problem" className="py-24 px-4 relative overflow-hidden" style={{ backgroundColor: 'var(--landing-bg)', borderTop: '1px solid var(--landing-border)' }}>
+        {/* Ambient gradient orbs */}
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-[0.06] blur-3xl pointer-events-none" style={{ background: 'radial-gradient(circle, var(--landing-primary) 0%, transparent 70%)' }} aria-hidden />
+        <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-[0.05] blur-3xl pointer-events-none" style={{ background: 'radial-gradient(circle, var(--landing-primary) 0%, transparent 70%)' }} aria-hidden />
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, var(--landing-text) 1px, transparent 0)', backgroundSize: '40px 40px' }} aria-hidden />
+
+        <div className="max-w-5xl mx-auto relative z-10">
+          <div className="text-center mb-16">
+            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-5 animate-slide-up" style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)', animationDelay: '0.1s' }}>
+              <Zap className="h-3.5 w-3.5" />
+              Why we built this
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-5 animate-slide-up tracking-tight" style={{ color: 'var(--landing-text)', animationDelay: '0.15s' }}>
+              Problems we solve
+            </h2>
+            <p className="text-lg max-w-2xl mx-auto opacity-90 leading-relaxed animate-slide-up" style={{ color: 'var(--landing-text)', animationDelay: '0.2s' }}>
+              You've tried apps and hacks. What's missing isn't motivation—it's a system that actually fits how you want to grow.
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 bg-white group">
-                <CardContent className="p-6">
-                  <div className={`w-12 h-12 ${feature.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <feature.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="font-semibold text-gray-800 mb-2">{feature.title}</h3>
-                  <p className="text-sm text-gray-600">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
-
-
-
-      {/* Pricing Section */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-green-100 text-green-800 border-green-300">
-              7 Day FREE Trial
-            </Badge>
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Simple, Transparent Pricing</h2>
-            <p className="text-lg text-gray-600">
-              Start with a 7 day free trial, then choose the plan that works for you
-            </p>
-
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            {/* Monthly */}
-            <Card className="border-2 border-gray-200 hover:border-green-300 transition-all">
-              <CardHeader className="text-center pb-2">
-                <CardTitle className="text-xl">Monthly</CardTitle>
-                <CardDescription>Pay as you go</CardDescription>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold text-gray-800">$4.99</span>
-                  <span className="text-gray-600">/month</span>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <ul className="space-y-3 mb-6">
-                  {['All goal timelines (30 days - 5 years)', '0-10 progress tracking', 'Vision board photos', 'To-do list with rewards', 'Gratitude journal', 'Life journal with photos'].map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm text-gray-600">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <AuthModal 
-                  trigger={
-                    <Button className="w-full" variant="outline">
-                      Start 7 Day Free Trial
-                    </Button>
-
-                  }
-                  defaultMode="signup"
-                />
-              </CardContent>
-            </Card>
-
-            {/* Annual - Most Popular */}
-            <Card className="border-2 border-orange-500 shadow-xl relative">
-              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-orange-500 to-amber-400 text-white border-0">
-                <Flame className="h-3 w-3 mr-1 inline" />
-                Best Value
-              </Badge>
-              <CardHeader className="text-center pb-2">
-                <CardTitle className="text-xl">Annual</CardTitle>
-                <CardDescription>Save $20 per year</CardDescription>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">$39.99</span>
-                  <span className="text-gray-600">/year</span>
-                </div>
-                <p className="text-sm text-orange-600 font-medium mt-1">Just $3.33/month!</p>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <ul className="space-y-3 mb-6">
-                  {['Everything in Monthly', 'Priority support', 'Advanced analytics', 'Goal templates library', 'Data export', 'Early access features'].map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm text-gray-600">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <AuthModal 
-                  trigger={
-                    <Button className="w-full bg-gradient-to-r from-orange-500 to-amber-400 hover:from-orange-600 hover:to-amber-500 text-white">
-                      <Flame className="h-4 w-4 mr-2" />
-                      Start 7 Day Free Trial
-                    </Button>
-
-                  }
-                  defaultMode="signup"
-                />
-              </CardContent>
-            </Card>
-          </div>
-
-
-          <p className="text-center text-sm text-gray-500 mt-8">
-            All plans include a 7 day free trial. Cancel anytime. No credit card required to start.
-          </p>
-
-        </div>
-      </section>
-
-
-
-
-
-
-      {/* Testimonials */}
-      <section className="py-16 px-4 bg-gradient-to-br from-green-50 via-lime-50 to-emerald-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">What Our Users Say</h2>
-            <p className="text-lg text-gray-600">Join thousands who are achieving their goals</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="border-0 shadow-lg bg-white hover:shadow-xl transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-400 rounded-full flex items-center justify-center text-white font-semibold">
-                      {testimonial.avatar}
+          {/* Problem → Solution transformation cards */}
+          <div className="space-y-6">
+            {[
+              { icon: Smartphone, problem: 'Social media comparison', problemDesc: 'Your feed becomes a highlight reel of everyone else. You compare your behind-the-scenes to their best moments—and it drains you.', solution: 'Private space, no feed. Your journey stays yours—no highlight reels, no comparison. A personal development space that focuses only on you.' },
+              { icon: AppWindow, problem: "Apps that don't change your life", problemDesc: "Another to-do app, another habit tracker. They organize tasks but don't help you become someone new. You need a development system, not another inbox.", solution: 'Full development system: goals + written plan + calendar + AI feedback. Not tasks—transformation. One place to become who you want to be.' },
+              { icon: Target, problem: 'Goals you set and forget', problemDesc: 'New Year resolutions. Big ideas in a notes app. Without a written plan and a place to revisit them, goals fade by February.', solution: 'Written plan + calendar + revisit. Write your development plan, attach goals to time with reminders, and revisit them in one place so they don\'t fade.' },
+              { icon: UserX, problem: 'No real accountability', problemDesc: 'Going it alone is hard. You need someone in your corner—without broadcasting to the world.', solution: 'Family connection. Private accountability partners. Invite trusted people—no broadcasting, no social feed. Real support without the noise.' },
+              { icon: TrendingUp, problem: "No way to measure growth", problemDesc: "You feel like you're improving, but where's the proof? Without tracking progress over time, it's hard to see how far you've come.", solution: 'Progress tracking + AI insights. Track your progress over time. Get AI feedback on patterns, when you slip, and how to improve. See how far you\'ve actually come.' },
+            ].map(({ icon: Icon, problem, problemDesc, solution }, i) => (
+              <article
+                key={i}
+                className="group relative flex flex-col lg:flex-row gap-0 overflow-hidden rounded-2xl border transition-all duration-500 hover:shadow-xl animate-slide-up"
+                style={{
+                  borderColor: 'var(--landing-border)',
+                  backgroundColor: 'white',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                  animationDelay: `${0.25 + i * 0.07}s`,
+                }}
+              >
+                {/* Problem side */}
+                <div className="flex-1 p-6 sm:p-8 lg:border-r" style={{ borderColor: 'var(--landing-border)' }}>
+                  <div className="flex items-start gap-4">
+                    <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center opacity-90" style={{ backgroundColor: 'rgba(120,120,120,0.12)' }}>
+                      <Icon className="h-6 w-6" style={{ color: 'var(--landing-text)' }} strokeWidth={2} />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-800">{testimonial.name}</p>
-                      <p className="text-sm text-gray-500">{testimonial.role}</p>
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1 block" style={{ color: 'var(--landing-text)' }}>Problem</span>
+                      <h3 className="font-bold text-base sm:text-lg mb-2" style={{ color: 'var(--landing-text)' }}>{problem}</h3>
+                      <p className="text-sm leading-relaxed opacity-85" style={{ color: 'var(--landing-text)' }}>{problemDesc}</p>
                     </div>
                   </div>
-                  <p className="text-gray-600 italic">"{testimonial.quote}"</p>
-                  <div className="flex gap-1 mt-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                    ))}
+                </div>
+
+                {/* Connector — arrow */}
+                <div className="hidden lg:flex items-center justify-center shrink-0 w-16" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                  <ArrowRight className="h-6 w-6 shrink-0 transition-transform duration-300 group-hover:translate-x-1" style={{ color: 'var(--landing-primary)' }} strokeWidth={2.5} />
+                </div>
+                <div className="lg:hidden flex items-center justify-center py-2 px-4" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                  <ArrowRight className="h-5 w-5 rotate-90" style={{ color: 'var(--landing-primary)' }} strokeWidth={2.5} />
+                </div>
+
+                {/* Solution side */}
+                <div className="flex-1 p-6 sm:p-8 relative overflow-hidden" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20 blur-2xl" style={{ background: 'radial-gradient(circle, var(--landing-primary) 0%, transparent 70%)' }} aria-hidden />
+                  <div className="relative flex items-start gap-4">
+                    <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: 'var(--landing-primary)' }}>
+                      <Check className="h-6 w-6" strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-1 block" style={{ color: 'var(--landing-primary)' }}>Our solution</span>
+                      <p className="text-sm sm:text-base font-medium leading-relaxed" style={{ color: 'var(--landing-text)' }}>{solution}</p>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </article>
             ))}
           </div>
+
+          <p className="text-center mt-12 text-sm font-medium opacity-85 max-w-xl mx-auto animate-slide-up" style={{ color: 'var(--landing-text)', animationDelay: '0.75s' }}>
+            A private space for your goals, your plan, your progress—and real accountability—without the noise.
+          </p>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-amber-500/20 rounded-full blur-3xl"></div>
-        
-        <div className="max-w-4xl mx-auto text-center text-white relative z-10">
-          <h2 className="text-4xl font-bold mb-6">Ready to Start Your Growth Journey?</h2>
-          <p className="text-xl mb-8 text-white/90">
-            Start your 7 day free trial today. No credit card required. Your future self will thank you.
+      {/* 3. The Vision */}
+      <section
+        id="vision"
+        className="relative py-24 px-4 overflow-hidden"
+        style={{ backgroundColor: 'var(--landing-accent)' }}
+      >
+        {/* Subtle gradient orb */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full opacity-30 blur-3xl pointer-events-none"
+          style={{ background: 'radial-gradient(circle, var(--landing-primary) 0%, transparent 70%)' }}
+          aria-hidden
+        />
+        {/* Subtle grid overlay */}
+        <div
+          className="absolute inset-0 z-0 pointer-events-none opacity-[0.03]"
+          style={{ backgroundImage: 'linear-gradient(var(--landing-text) 1px, transparent 1px), linear-gradient(90deg, var(--landing-text) 1px, transparent 1px)', backgroundSize: '48px 48px' }}
+          aria-hidden
+        />
+        <div className="relative z-10 max-w-3xl mx-auto text-center">
+          {/* Accent badge */}
+          <div
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-6 animate-vision-scale`}
+            style={{
+              backgroundColor: 'var(--landing-primary)',
+              color: 'white',
+              animationDelay: '0.1s',
+              animationFillMode: 'forwards',
+            }}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            The Vision
+          </div>
+          {/* Headline */}
+          <h2
+            className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-8 leading-tight animate-vision-reveal`}
+            style={{
+              color: 'var(--landing-text)',
+              animationDelay: '0.2s',
+              animationFillMode: 'forwards',
+            }}
+          >
+            This is not a goal tracker.
+          </h2>
+          <p
+            className={`text-xl sm:text-2xl font-semibold mb-6 animate-vision-reveal`}
+            style={{
+              color: 'var(--landing-primary)',
+              animationDelay: '0.35s',
+              animationFillMode: 'forwards',
+            }}
+          >
+            This is your private development space.
           </p>
-
-
-
-          <AuthModal 
-            trigger={
-              <Button size="lg" className="bg-gradient-to-r from-orange-500 to-amber-400 text-white hover:from-orange-600 hover:to-amber-500 shadow-lg text-lg font-semibold px-10 py-6">
-                <Flame className="h-5 w-5 mr-2" />
-                Begin Your Journey Now
-              </Button>
-            }
-            defaultMode="signup"
+          <p
+            className={`text-base sm:text-lg max-w-2xl mx-auto leading-relaxed animate-vision-reveal`}
+            style={{
+              color: 'var(--landing-text)',
+              animationDelay: '0.5s',
+              animationFillMode: 'forwards',
+            }}
+          >
+            A place where you choose who you want to become, write your plan, measure your progress, and stay accountable—without comparison or noise.
+          </p>
+          {/* Decorative accent line */}
+          <div
+            className={`mt-10 mx-auto h-1 w-16 rounded-full animate-vision-scale' : 'opacity-0`}
+            style={{
+              backgroundColor: 'var(--landing-primary)',
+              animationDelay: '0.7s',
+              animationFillMode: 'forwards',
+            }}
           />
         </div>
       </section>
 
-      {/* Newsletter */}
-      <NewsletterSignup />
-
-      {/* Footer */}
-      <footer className="bg-green-950 text-white py-12 px-4">
+      {/* 4. How The System Works (4 steps) */}
+      <section id="how-it-works" className="py-20 px-4 bg-white overflow-hidden" style={{ borderTop: '1px solid var(--landing-border)' }}>
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-lime-400 rounded-lg flex items-center justify-center">
-                  <Leaf className="h-5 w-5 text-white" />
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center" style={{ color: 'var(--landing-text)' }}>How The System Works</h2>
+          <p className="text-center text-sm sm:text-base opacity-80 mb-12 max-w-2xl mx-auto" style={{ color: 'var(--landing-text)' }}>
+            Four simple steps to define your path, plan it, schedule it, and improve with AI.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            {[
+              { step: 1, title: 'Choose who you want to become', icon: Target, img: stepImg1 },
+              { step: 2, title: 'Write your goals and development plan', icon: BookOpen, img: stepImg2 },
+              { step: 3, title: 'Attach goals to time (calendar + reminders)', icon: Calendar, img: stepImg3 },
+              { step: 4, title: 'Get AI feedback on your progress', icon: Sparkles, img: stepImg4 },
+            ].map(({ step, title, icon: Icon, img }) => (
+              <article
+                key={step}
+                className="group rounded-2xl overflow-hidden border bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                style={{ borderColor: 'var(--landing-border)' }}
+              >
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <img
+                    src={img}
+                    alt={title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div
+                    className="absolute top-3 left-3 w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md"
+                    style={{ backgroundColor: 'var(--landing-primary)' }}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div
+                    className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent"
+                    aria-hidden
+                  />
+                  <span
+                    className="absolute bottom-3 left-3 text-white text-xs font-semibold tracking-wide uppercase"
+                    style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                  >
+                    Step {step}
+                  </span>
                 </div>
-                <span className="font-bold text-lg">Goals and Development</span>
-              </div>
-              <p className="text-green-300 text-sm">
-                Your personal sanctuary for growth, achievement, and becoming your best self.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4 text-orange-400">Features</h4>
-              <ul className="space-y-2 text-green-300 text-sm">
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Goal Tracking</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Vision Board</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Gratitude Journal</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Life Journal</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4 text-orange-400">Company</h4>
-              <ul className="space-y-2 text-green-300 text-sm">
-                <li><a href="/about" className="hover:text-orange-400 transition-colors">About Us</a></li>
-                <li><a href="/contact" className="hover:text-orange-400 transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Terms of Service</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4 text-orange-400">Support</h4>
-              <ul className="space-y-2 text-green-300 text-sm">
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">FAQs</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Community</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">Feedback</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-green-800 pt-8 text-center text-green-400 text-sm">
-            <p>&copy; {new Date().getFullYear()} Goals and Development. All rights reserved. Made with <span className="text-orange-400">passion</span> for achievers everywhere.</p>
+                <div className="p-4 sm:p-5 text-center">
+                  <p className="font-semibold text-sm sm:text-base leading-snug" style={{ color: 'var(--landing-text)' }}>
+                    {title}
+                  </p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
-      </footer>
+      </section>
       
-      {/* Product Tour */}
+      {/* 10. Final CTA */}
+      <section id="cta" className="py-20 px-4 text-white" style={{ backgroundColor: 'var(--landing-primary)' }}>
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-4">Start becoming who you want to be.</h2>
+          <AuthModal trigger={<Button size="lg" variant="secondary" className="bg-white hover:bg-white/90" style={{ color: 'var(--landing-primary)' }}>Start 7-day free trial</Button>} defaultMode="signup" />
+        </div>
+      </section>
+
+      <LandingFooter navigate={navigate} scrollToLandingSection={scrollToSection} />
+
       <ProductTour isActive={isTourActive} onComplete={() => setIsTourActive(false)} />
-      
-      {/* Offline Indicator */}
       <OfflineIndicator />
+
     </div>
   );
 };

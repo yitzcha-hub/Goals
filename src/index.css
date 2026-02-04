@@ -60,12 +60,31 @@
 }
 
 
+/* Landing page palette: calm premium feel */
+.landing {
+  --landing-bg: #FFFFFF;
+  --landing-primary: #2c9d73;
+  --landing-primary-soft: #248f66;
+  --landing-accent: #E8F5E9;
+  --landing-text: #1A1A1A;
+  --landing-border: #E0E0E0;
+}
+
+/* Feature showcase cards — website color palette */
+.feature-card-shadow {
+  box-shadow: 0 4px 20px rgba(44, 157, 115, 0.08);
+  transition: box-shadow 0.4s ease;
+}
+.feature-card-shadow:hover {
+  box-shadow: 0 8px 30px rgba(44, 157, 115, 0.18);
+}
+
 @layer base {
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
 }
 
@@ -84,4 +103,42 @@
   50% {
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 30px rgba(249, 115, 22, 0.8);
   }
+}
+
+/* Hero section CTAs: hover = gradient, scale up, bg/text swap (white ↔ green) */
+.hero-cta-primary {
+  background: var(--landing-primary) !important;
+  color: white !important;
+  border: 2px solid var(--landing-primary) !important;
+  transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.hero-cta-primary:hover {
+  transform: scale(1.06);
+  background: linear-gradient(135deg, #ffffff 0%, #e8f5e9 50%, #c8e6c9 100%) !important;
+  color: var(--landing-primary) !important;
+  border-color: var(--landing-primary) !important;
+  box-shadow: 0 4px 14px rgba(44, 157, 115, 0.35);
+}
+
+.hero-cta-outline {
+  background: white !important;
+  color: var(--landing-primary) !important;
+  border: 2px solid var(--landing-primary) !important;
+  transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+/* Hide scrollbar for category nav */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.hero-cta-outline:hover {
+  transform: scale(1.06);
+  background: linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1e7a5a 100%) !important;
+  color: white !important;
+  border-color: var(--landing-primary) !important;
+  box-shadow: 0 4px 14px rgba(44, 157, 115, 0.35);
 }

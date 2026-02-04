@@ -1,12 +1,31 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { LandingHeader } from '@/components/LandingHeader';
+import { LandingFooter } from '@/components/LandingFooter';
 
 export default function Contact() {
+  const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const scrollToLandingSection = useCallback((id: string) => {
+    setMobileMenuOpen(false);
+    navigate('/');
+    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 100);
+  }, [navigate]);
+
+  const navItems = [
+    { label: 'Features', path: '/features', onClick: () => { setMobileMenuOpen(false); navigate('/features'); } },
+    { label: 'Use Cases', path: '/use-case', onClick: () => { setMobileMenuOpen(false); navigate('/use-case'); } },
+    { label: 'Pricing', path: '/pricing', onClick: () => { setMobileMenuOpen(false); navigate('/pricing'); } },
+    { label: 'About Us', path: '/about', onClick: () => { setMobileMenuOpen(false); navigate('/about'); } },
+    { label: 'FAQ', path: '/faq', onClick: () => { setMobileMenuOpen(false); navigate('/faq'); } },
+  ];
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
@@ -59,12 +78,18 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold mb-4">Contact Us</h1>
-          <p className="text-xl">We'd love to hear from you. Get in touch with our team!</p>
+    <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+      <LandingHeader
+        navItems={navItems}
+        activeSection={null}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+      />
+
+      <div className="py-16 px-4" style={{ backgroundColor: 'var(--landing-accent)' }}>
+        <div className="max-w-4xl mx-auto text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4" style={{ color: 'var(--landing-text)' }}>Contact Us</h1>
+          <p className="text-lg opacity-90" style={{ color: 'var(--landing-text)' }}>We'd love to hear from you. Get in touch with our team.</p>
         </div>
       </div>
 
@@ -120,7 +145,7 @@ export default function Contact() {
                   {errors.message && <p className="text-red-500 text-sm mt-1">{errors.message}</p>}
                 </div>
                 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" className="w-full text-white" style={{ backgroundColor: 'var(--landing-primary)' }} disabled={isSubmitting}>
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </Button>
               </form>
@@ -135,27 +160,27 @@ export default function Contact() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 text-blue-600 mt-1" />
+                  <Mail className="w-5 h-5 mt-1" style={{ color: 'var(--landing-primary)' }} />
                   <div>
                     <p className="font-semibold">Email</p>
-                    <a href="mailto:support@depogoals.com" className="text-blue-600 hover:underline">
+                    <a href="mailto:support@depogoals.com" className="hover:underline" style={{ color: 'var(--landing-primary)' }}>
                       support@depogoals.com
                     </a>
                   </div>
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <Phone className="w-5 h-5 text-blue-600 mt-1" />
+                  <Phone className="w-5 h-5 mt-1" style={{ color: 'var(--landing-primary)' }} />
                   <div>
                     <p className="font-semibold">Phone</p>
-                    <a href="tel:+1234567890" className="text-blue-600 hover:underline">
+                    <a href="tel:+1234567890" className="hover:underline" style={{ color: '#2c9d73' }}>
                       +1 (234) 567-890
                     </a>
                   </div>
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-blue-600 mt-1" />
+                  <MapPin className="w-5 h-5 mt-1" style={{ color: 'var(--landing-primary)' }} />
                   <div>
                     <p className="font-semibold">Address</p>
                     <p className="text-sm text-gray-600">123 Success Street<br />Goal City, GC 12345</p>
@@ -170,21 +195,21 @@ export default function Contact() {
               </CardHeader>
               <CardContent>
                 <div className="flex gap-4">
-                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" 
-                     className="p-2 bg-blue-100 rounded-full hover:bg-blue-200 transition">
-                    <Facebook className="w-5 h-5 text-blue-600" />
+                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer"
+                     className="p-2 rounded-full transition" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                    <Facebook className="w-5 h-5" style={{ color: 'var(--landing-primary)' }} />
                   </a>
                   <a href="https://twitter.com" target="_blank" rel="noopener noreferrer"
-                     className="p-2 bg-blue-100 rounded-full hover:bg-blue-200 transition">
-                    <Twitter className="w-5 h-5 text-blue-600" />
+                     className="p-2 rounded-full transition" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                    <Twitter className="w-5 h-5" style={{ color: 'var(--landing-primary)' }} />
                   </a>
                   <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer"
-                     className="p-2 bg-blue-100 rounded-full hover:bg-blue-200 transition">
-                    <Linkedin className="w-5 h-5 text-blue-600" />
+                     className="p-2 rounded-full transition" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                    <Linkedin className="w-5 h-5" style={{ color: 'var(--landing-primary)' }} />
                   </a>
                   <a href="https://instagram.com" target="_blank" rel="noopener noreferrer"
-                     className="p-2 bg-blue-100 rounded-full hover:bg-blue-200 transition">
-                    <Instagram className="w-5 h-5 text-blue-600" />
+                     className="p-2 rounded-full transition" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                    <Instagram className="w-5 h-5" style={{ color: 'var(--landing-primary)' }} />
                   </a>
                 </div>
               </CardContent>
@@ -196,12 +221,12 @@ export default function Contact() {
         <Card>
           <CardHeader>
             <CardTitle className="text-3xl">Frequently Asked Questions</CardTitle>
-            <CardDescription>Find answers to common questions about DEPO Goals</CardDescription>
+            <CardDescription>Find answers to common questions about Goals and Development</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <h3 className="font-semibold text-lg mb-2">What is DEPO Goals?</h3>
-              <p className="text-gray-600">DEPO Goals is a comprehensive goal-setting and achievement platform that helps individuals and families track their progress, collaborate on shared goals, and celebrate successes together.</p>
+              <h3 className="font-semibold text-lg mb-2">What is Goals and Development?</h3>
+              <p className="text-gray-600">Goals and Development is a private personal growth system that helps you set goals, create a written plan, stay accountable, and measure your progress over time.</p>
             </div>
             
             <div>
@@ -221,7 +246,7 @@ export default function Contact() {
             
             <div>
               <h3 className="font-semibold text-lg mb-2">What subscription plans are available?</h3>
-              <p className="text-gray-600">We offer Free, Pro, and Family plans with different features and limits. Visit our pricing page to see which plan is right for you.</p>
+              <p className="text-gray-600">We offer a 7-day free trial, then Monthly and Annual plans. Visit our pricing section on the home page to see which plan is right for you.</p>
             </div>
             
             <div>
@@ -231,6 +256,8 @@ export default function Contact() {
           </CardContent>
         </Card>
       </div>
+
+      <LandingFooter navigate={navigate} scrollToLandingSection={scrollToLandingSection} />
     </div>
   );
 }
