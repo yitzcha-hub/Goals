@@ -43,7 +43,6 @@ import Journal from './Journal';
 import ToDoList from './ToDoList';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
-import { ThemeToggle } from './ThemeToggle';
 import { DataExport } from './DataExport';
 import { NotificationManager } from './NotificationManager';
 import { NotificationBadge } from './NotificationBadge';
@@ -179,7 +178,6 @@ const PersonalizedDashboard: React.FC = () => {
 
             <div className="flex items-center gap-4">
 
-              <ThemeToggle />
               <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="" />

@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import {
+  analyzeGoalWithAI,
+  getCheckInQuestionsWithAI,
+  getPersonalizedAdviceWithAI,
+} from '@/lib/openaiProgressAnalysis';
 
 export interface AIAnalysis {
   successProbability: number;
@@ -26,17 +31,43 @@ export const useAICoach = () => {
   const analyzeGoal = async (goalData: any): Promise<AIAnalysis | null> => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('ai-coach', {
-        body: { action: 'analyze', goalData }
-      });
+      // Try Supabase edge function first (if deployed)
+      try {
+        const { data, error } = await supabase.functions.invoke('ai-coach', {
+          body: { action: 'analyze', goalData },
+        });
+        if (!error && data?.data) return data.data;
+      } catch {
+        /* fallback to direct OpenAI */
+      }
 
-      if (error) throw error;
-      return data.data;
-    } catch (error) {
+      // Direct OpenAI (uses VITE_OPENAI_API_KEY)
+      const result = await analyzeGoalWithAI({
+        title: goalData.title,
+        description: goalData.description,
+        timeline: goalData.timeline || '90',
+        progress: goalData.progress ?? 0,
+      });
+      if (result) {
+        return {
+          successProbability: result.successProbability,
+          obstacles: result.obstacles,
+          strategies: result.strategies,
+          motivation: result.motivation,
+          suggestedDeadline: result.suggestedDeadline,
+        };
+      }
+      toast({
+        title: 'AI Analysis Failed',
+        description: 'Could not analyze goal. Check your OpenAI API key or try again.',
+        variant: 'destructive',
+      });
+      return null;
+    } catch {
       toast({
         title: 'AI Analysis Failed',
         description: 'Could not analyze goal. Please try again.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return null;
     } finally {
@@ -47,19 +78,31 @@ export const useAICoach = () => {
   const getCheckInQuestions = async (goalData: any): Promise<string[]> => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('ai-coach', {
-        body: { action: 'checkin', goalData }
-      });
+      try {
+        const { data, error } = await supabase.functions.invoke('ai-coach', {
+          body: { action: 'checkin', goalData },
+        });
+        if (!error && data?.data?.questions?.length) return data.data.questions;
+      } catch {
+        /* fallback */
+      }
 
-      if (error) throw error;
-      return data.data.questions || [];
-    } catch (error) {
+      const questions = await getCheckInQuestionsWithAI(
+        goalData.title,
+        goalData.progress ?? 0
+      );
+      return questions;
+    } catch {
       toast({
         title: 'Check-in Failed',
         description: 'Could not generate questions.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
-      return [];
+      return [
+        `What progress have you made on "${goalData.title}" recently?`,
+        `What's one small step you could take today?`,
+        `How do you feel about your current progress?`,
+      ];
     } finally {
       setLoading(false);
     }
@@ -68,17 +111,29 @@ export const useAICoach = () => {
   const getPersonalizedAdvice = async (goalData: any, userProgress: any): Promise<AIAdvice | null> => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('ai-coach', {
-        body: { action: 'advice', goalData, userProgress }
-      });
+      try {
+        const { data, error } = await supabase.functions.invoke('ai-coach', {
+          body: { action: 'advice', goalData, userProgress },
+        });
+        if (!error && data?.data) return data.data;
+      } catch {
+        /* fallback */
+      }
 
-      if (error) throw error;
-      return data.data;
-    } catch (error) {
+      const result = await getPersonalizedAdviceWithAI(
+        { title: goalData.title, progress: goalData.progress ?? 0 },
+        {
+          eventsCompleted: userProgress.eventsCompleted ?? 0,
+          todosCompleted: userProgress.todosCompleted ?? 0,
+          streak: userProgress.streak ?? 0,
+        }
+      );
+      return result;
+    } catch {
       toast({
         title: 'Advice Failed',
         description: 'Could not get advice.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return null;
     } finally {

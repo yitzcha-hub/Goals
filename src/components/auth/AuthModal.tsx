@@ -27,6 +27,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ trigger, defaultMode = 'lo
     setMode('login');
   };
 
+  const handleAuthSuccess = () => {
+    setOpen(false);
+  };
+
   const renderForm = () => {
     switch (mode) {
       case 'login':
@@ -34,10 +38,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ trigger, defaultMode = 'lo
           <LoginForm
             onToggleMode={handleToggleMode}
             onForgotPassword={handleForgotPassword}
+            onSuccess={handleAuthSuccess}
           />
         );
       case 'signup':
-        return <SignUpForm onToggleMode={handleToggleMode} />;
+        return <SignUpForm onToggleMode={handleToggleMode} onSuccess={handleAuthSuccess} />;
       case 'reset':
         return <PasswordResetForm onBack={handleBackToLogin} />;
       default:
@@ -48,7 +53,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ trigger, defaultMode = 'lo
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-md p-0 border-0 bg-transparent max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md p-0 border-0 bg-transparent max-h-[90vh] overflow-y-auto landing">
         <DialogTitle className="sr-only">Authentication</DialogTitle>
         {renderForm()}
       </DialogContent>

@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useReminders, ReminderPreferences as ReminderPrefs } from '@/hooks/useReminders';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Bell, Mail, Smartphone, Clock, Calendar, Users, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const ReminderPreferences = () => {
   const { preferences, loading, savePreferences } = useReminders();
+  const { permission, requestPermission } = useNotifications();
   const [localPrefs, setLocalPrefs] = useState<ReminderPrefs | null>(null);
 
   useEffect(() => {
@@ -20,10 +22,13 @@ export const ReminderPreferences = () => {
   }, [preferences]);
 
   const handleSave = async () => {
-    if (localPrefs) {
-      await savePreferences(localPrefs);
-      toast.success('Reminder preferences saved!');
+    if (!localPrefs) return;
+    if (localPrefs.push_enabled && permission === 'default') {
+      const token = await requestPermission();
+      if (!token) return; // requestPermission already shows "Permission denied" toast
     }
+    await savePreferences(localPrefs);
+    toast.success('Reminder preferences saved!');
   };
 
   if (loading || !localPrefs) {
@@ -49,7 +54,12 @@ export const ReminderPreferences = () => {
             <Switch
               id="push"
               checked={localPrefs.push_enabled}
-              onCheckedChange={(checked) => setLocalPrefs({ ...localPrefs, push_enabled: checked })}
+              onCheckedChange={(checked) => {
+                setLocalPrefs({ ...localPrefs, push_enabled: checked });
+                if (checked && permission === 'default') {
+                  toast.info('Click "Save Preferences" to enable push notifications and grant permission.');
+                }
+              }}
             />
           </div>
           <div className="flex items-center justify-between">

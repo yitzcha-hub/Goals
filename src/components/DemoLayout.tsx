@@ -11,6 +11,7 @@ import DemoGoalDialog from '@/components/DemoGoalDialog';
 import DemoGoalDetailView from '@/components/DemoGoalDetailView';
 import PricingSection from '@/components/PricingSection';
 import { useNavigate } from 'react-router-dom';
+import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 
 const DEMO_STORAGE_GOALS = 'goals_app_demo_layout_goals';
 const DEMO_STORAGE_TASKS = 'goals_app_demo_layout_tasks';
@@ -254,6 +255,8 @@ const DemoLayout: React.FC = () => {
       <section className="relative py-10 px-4 text-white text-center overflow-hidden">
         {/* Chalkboard Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-green-950 via-emerald-900 to-green-950"></div>
+
+        <HeroFloatingCircles variant="dark" />
 
         <div className="absolute inset-0 opacity-30" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,

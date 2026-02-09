@@ -72,6 +72,33 @@ export const useSubscription = () => {
         const isPremium = data.status === 'active' || isTrial;
         const now = Date.now() / 1000;
 
+        // Correct trial dates if trial was started after account creation (legacy bug)
+        const TRIAL_DAYS = 7;
+        const accountCreatedAt = user.created_at
+          ? Math.floor(new Date(user.created_at).getTime() / 1000)
+          : null;
+        if (
+          isTrial &&
+          accountCreatedAt != null &&
+          data.trial_start != null &&
+          data.trial_end != null &&
+          data.trial_start > accountCreatedAt + 3600
+        ) {
+          const correctTrialStart = accountCreatedAt;
+          const correctTrialEnd = correctTrialStart + TRIAL_DAYS * 86400;
+          await supabase
+            .from('subscriptions')
+            .update({
+              trial_start: correctTrialStart,
+              trial_end: correctTrialEnd,
+              current_period_end: correctTrialEnd,
+            })
+            .eq('user_id', user.id);
+          data.trial_start = correctTrialStart;
+          data.trial_end = correctTrialEnd;
+          data.current_period_end = correctTrialEnd;
+        }
+
         let trialDaysRemaining: number | null = null;
         let trialDaysUsed: number | null = null;
         if (data.trial_start != null && data.trial_end != null) {
@@ -125,11 +152,13 @@ export const useSubscription = () => {
           .maybeSingle();
 
         if (!anyRow) {
-          // New user — start 7-day trial (no credit card)
-          const trialEndDate = new Date();
-          trialEndDate.setDate(trialEndDate.getDate() + 7);
-          const trialEnd = Math.floor(trialEndDate.getTime() / 1000);
-          const trialStart = Math.floor(Date.now() / 1000);
+          // New user — start 7-day trial from account creation (no credit card)
+          const TRIAL_DAYS = 7;
+          const accountCreatedAt = user.created_at
+            ? Math.floor(new Date(user.created_at).getTime() / 1000)
+            : Math.floor(Date.now() / 1000);
+          const trialStart = accountCreatedAt;
+          const trialEnd = trialStart + TRIAL_DAYS * 86400;
           await supabase.from('subscriptions').insert({
             user_id: user.id,
             status: 'trialing',

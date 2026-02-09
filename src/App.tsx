@@ -6,7 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { StorageModeProvider } from "@/contexts/StorageModeContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import GetStarted from "./pages/GetStarted";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
@@ -17,21 +19,16 @@ import Help from "./pages/Help";
 import Forums from "./pages/Forums";
 
 import Calendar from "./pages/Calendar";
-import Journal from "./pages/Journal";
 import PaymentSuccessPage from "./pages/PaymentSuccess";
 import Pricing from "./pages/Pricing";
 import Features from "./pages/Features";
 import UseCase from "./pages/UseCase";
 import FAQ from "./pages/FAQ";
 import Settings from "./pages/Settings";
+import Progress from "./pages/Progress";
+import Goals from "./pages/Goals";
+import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
-
-
-
-
-
-
-
 
 
 const queryClient = new QueryClient();
@@ -47,30 +44,27 @@ const App = () => (
             <StorageModeProvider>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/demo" element={<Demo />} />
-
-              <Route path="/help" element={<Help />} />
+              <Route path="/getstarted" element={<ProtectedRoute><GetStarted /></ProtectedRoute>} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/verify-email" element={<EmailVerification />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/forums" element={<Forums />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/journal" element={<Journal />} />
-              <Route path="/payment-success" element={<PaymentSuccessPage />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/features" element={<Features />} />
               <Route path="/use-case" element={<UseCase />} />
               <Route path="/faq" element={<FAQ />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/admin" element={<Admin />} />
 
-
-
-
-
-
-
+              {/* Protected routes - require login, redirect to / if not authenticated */}
+              <Route path="/demo" element={<ProtectedRoute><Demo /></ProtectedRoute>} />
+              <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
+              <Route path="/forums" element={<ProtectedRoute><Forums /></ProtectedRoute>} />
+              <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+              <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccessPage /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
+              <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
 
 
               <Route path="*" element={<NotFound />} />

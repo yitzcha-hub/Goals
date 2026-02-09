@@ -19,9 +19,9 @@ export interface ReminderPreferences {
 export interface Reminder {
   id?: string;
   user_id?: string;
-  type: 'goal_deadline' | 'habit_checkin' | 'family_activity' | 'smart_reminder';
+  type: 'goal_deadline' | 'habit_checkin' | 'family_activity' | 'smart_reminder' | 'event_reminder';
   entity_id: string;
-  entity_type: 'goal' | 'habit' | 'family_goal' | 'family_activity';
+  entity_type: 'goal' | 'habit' | 'family_goal' | 'family_activity' | 'calendar_event';
   reminder_time: string;
   channels: string[];
   frequency?: string;
@@ -89,7 +89,7 @@ export const useReminders = () => {
 
     const { error } = await supabase
       .from('reminder_preferences')
-      .upsert({ ...prefs, user_id: user.id });
+      .upsert({ ...prefs, user_id: user.id }, { onConflict: 'user_id' });
 
     if (!error) {
       setPreferences(prefs);
@@ -108,29 +108,7 @@ export const useReminders = () => {
 
     if (data) {
       setReminders([...reminders, data]);
-      
-      // Get FCM token from preferences
-      const { data: prefs } = await supabase
-        .from('reminder_preferences')
-        .select('fcm_token')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      // Schedule push notification if enabled
-      if (prefs?.fcm_token && preferences?.push_enabled) {
-        await supabase.functions.invoke('send-reminders', {
-          body: {
-            type: reminder.type,
-            userId: user.id,
-            message: reminder.message,
-            channels: reminder.channels,
-            email: preferences?.email_address,
-            fcmToken: prefs.fcm_token,
-            goalId: reminder.entity_type === 'goal' ? reminder.entity_id : null,
-            habitId: reminder.entity_type === 'habit' ? reminder.entity_id : null
-          }
-        });
-      }
+      // Push notifications are sent by the cron job (/api/cron-reminders) when reminder_time is reached
     }
   };
 

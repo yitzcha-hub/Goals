@@ -13,6 +13,7 @@ import { useCollaboration } from '@/hooks/useCollaboration';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Target } from 'lucide-react';
 import Journal from './Journal';
+import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 
 const PersonalLayout: React.FC = () => {
   const { user } = useAuth();
@@ -41,13 +42,14 @@ const PersonalLayout: React.FC = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center text-center px-4"
+      <section className="relative h-screen flex items-center justify-center text-center px-4 overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://d64gsuwffb70l.cloudfront.net/68c468b90879cba7ca0dcccd_1757703304946_044ba5ce.webp')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}>
-        <div className="max-w-4xl mx-auto text-white">
+        <HeroFloatingCircles variant="dark" />
+        <div className="relative z-10 max-w-4xl mx-auto text-white">
           <h1 className="text-5xl md:text-7xl font-bold mb-6">
             Your <span className="text-pink-400">Personal</span> Journey
           </h1>

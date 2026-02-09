@@ -20,8 +20,12 @@ const generateUID = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}@goaltracker.app`;
 };
 
-// Export events to .ics format
-export const exportToICS = (events: CalendarEvent[], startDate?: string, endDate?: string): string => {
+// Export events to .ics format (accepts events with at least title, startTime, endTime)
+export const exportToICS = (
+  events: Array<Pick<CalendarEvent, 'title' | 'startTime' | 'endTime'> & Partial<CalendarEvent>>,
+  startDate?: string,
+  endDate?: string
+): string => {
   let filteredEvents = events;
   
   // Filter by date range if provided

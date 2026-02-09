@@ -62,7 +62,7 @@ export const OAuthButtons: React.FC<OAuthButtonsProps> = ({ actionLabel = 'Sign 
           key={id}
           type="button"
           variant="outline"
-          className="w-full"
+          className="w-full hero-cta-outline font-medium"
           disabled={!!loadingProvider}
           onClick={() => handleOAuth(id)}
         >

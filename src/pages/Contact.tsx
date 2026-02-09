@@ -3,42 +3,36 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Send,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Instagram,
+  HelpCircle,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { LandingHeader } from '@/components/LandingHeader';
-import { LandingFooter } from '@/components/LandingFooter';
+import { LandingPageLayout } from '@/components/LandingPageLayout';
 
 export default function Contact() {
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const scrollToLandingSection = useCallback((id: string) => {
-    setMobileMenuOpen(false);
-    navigate('/');
-    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 100);
-  }, [navigate]);
-
-  const navItems = [
-    { label: 'Features', path: '/features', onClick: () => { setMobileMenuOpen(false); navigate('/features'); } },
-    { label: 'Use Cases', path: '/use-case', onClick: () => { setMobileMenuOpen(false); navigate('/use-case'); } },
-    { label: 'Pricing', path: '/pricing', onClick: () => { setMobileMenuOpen(false); navigate('/pricing'); } },
-    { label: 'About Us', path: '/about', onClick: () => { setMobileMenuOpen(false); navigate('/about'); } },
-    { label: 'FAQ', path: '/faq', onClick: () => { setMobileMenuOpen(false); navigate('/faq'); } },
-  ];
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
-    message: ''
+    message: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
@@ -47,23 +41,18 @@ export default function Contact() {
     }
     if (!formData.subject.trim()) newErrors.subject = 'Subject is required';
     if (!formData.message.trim()) newErrors.message = 'Message is required';
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
-    
     setIsSubmitting(true);
-    
-    // Simulate API call
     setTimeout(() => {
       toast({
-        title: 'Message Sent!',
-        description: 'We\'ll get back to you within 24 hours.',
+        title: 'Message sent!',
+        description: "We'll get back to you within 24 hours.",
       });
       setFormData({ name: '', email: '', subject: '', message: '' });
       setIsSubmitting(false);
@@ -71,193 +60,218 @@ export default function Contact() {
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
+  const contactCards = [
+    {
+      icon: Mail,
+      title: 'Email',
+      value: 'support@depogoals.com',
+      href: 'mailto:support@depogoals.com',
+      description: 'Best for detailed questions',
+    },
+    {
+      icon: Phone,
+      title: 'Phone',
+      value: '+1 (234) 567-890',
+      href: 'tel:+1234567890',
+      description: 'Mon–Fri, 9am–6pm EST',
+    },
+    {
+      icon: MapPin,
+      title: 'Office',
+      value: '123 Success Street',
+      href: null as string | null,
+      description: 'Goal City, GC 12345',
+    },
+  ];
+
+  const socialLinks = [
+    { icon: Facebook, href: 'https://facebook.com', label: 'Facebook' },
+    { icon: Twitter, href: 'https://twitter.com', label: 'Twitter' },
+    { icon: Linkedin, href: 'https://linkedin.com', label: 'LinkedIn' },
+    { icon: Instagram, href: 'https://instagram.com', label: 'Instagram' },
+  ];
+
   return (
-    <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
-      <LandingHeader
-        navItems={navItems}
-        activeSection={null}
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-      />
+    <LandingPageLayout>
+      {/* Main content */}
+      <section className="relative py-16 sm:py-24 px-4 overflow-hidden" style={{ backgroundColor: 'var(--landing-bg)' }}>
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, var(--landing-primary) 1px, transparent 0)', backgroundSize: '28px 28px' }} aria-hidden />
+        <div className="max-w-6xl mx-auto relative">
+          <div className="grid lg:grid-cols-5 gap-10 lg:gap-12">
+            {/* Form */}
+            <div className="lg:col-span-3 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+              <Card
+                className="border-2 shadow-xl overflow-hidden feature-card-shadow"
+                style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}
+              >
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold" style={{ color: 'var(--landing-text)' }}>
+                    Send us a message
+                  </CardTitle>
+                  <CardDescription style={{ color: 'var(--landing-text)', opacity: 0.8 }}>
+                    Fill out the form below and we'll get back to you soon.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid sm:grid-cols-2 gap-5">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="font-medium" style={{ color: 'var(--landing-text)' }}>Name</Label>
+                        <Input
+                          id="name"
+                          placeholder="Your name"
+                          value={formData.name}
+                          onChange={(e) => handleChange('name', e.target.value)}
+                          className={`border-2 focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-[var(--landing-primary)] ${errors.name ? 'border-red-500' : 'border-[var(--landing-border)]'}`}
+                        />
+                        {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="font-medium" style={{ color: 'var(--landing-text)' }}>Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={formData.email}
+                          onChange={(e) => handleChange('email', e.target.value)}
+                          className={`border-2 focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-[var(--landing-primary)] ${errors.email ? 'border-red-500' : 'border-[var(--landing-border)]'}`}
+                        />
+                        {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subject" className="font-medium" style={{ color: 'var(--landing-text)' }}>Subject</Label>
+                      <Input
+                        id="subject"
+                        placeholder="What's this about?"
+                        value={formData.subject}
+                        onChange={(e) => handleChange('subject', e.target.value)}
+                        className={`border-2 focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-[var(--landing-primary)] ${errors.subject ? 'border-red-500' : 'border-[var(--landing-border)]'}`}
+                      />
+                      {errors.subject && <p className="text-sm text-red-500">{errors.subject}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="message" className="font-medium" style={{ color: 'var(--landing-text)' }}>Message</Label>
+                      <Textarea
+                        id="message"
+                        placeholder="Tell us what's on your mind..."
+                        value={formData.message}
+                        onChange={(e) => handleChange('message', e.target.value)}
+                        rows={5}
+                        className={`border-2 focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-[var(--landing-primary)] resize-none ${errors.message ? 'border-red-500' : 'border-[var(--landing-border)]'}`}
+                      />
+                      {errors.message && <p className="text-sm text-red-500">{errors.message}</p>}
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full font-bold text-white hero-cta-primary py-6 text-base gap-2"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        'Sending...'
+                      ) : (
+                        <>
+                          <Send className="h-5 w-5" />
+                          Send message
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
 
-      <div className="py-16 px-4" style={{ backgroundColor: 'var(--landing-accent)' }}>
-        <div className="max-w-4xl mx-auto text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4" style={{ color: 'var(--landing-text)' }}>Contact Us</h1>
-          <p className="text-lg opacity-90" style={{ color: 'var(--landing-text)' }}>We'd love to hear from you. Get in touch with our team.</p>
-        </div>
-      </div>
+            {/* Contact info + social */}
+            <div className="lg:col-span-2 space-y-6">
+              {contactCards.map((item, i) => (
+                <Card
+                  key={item.title}
+                  className="group border-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 feature-card-shadow animate-slide-up"
+                  style={{
+                    backgroundColor: 'var(--landing-bg)',
+                    borderColor: 'var(--landing-border)',
+                    animationDelay: `${0.15 + i * 0.05}s`,
+                  }}
+                >
+                  <CardContent className="p-5 flex items-start gap-4">
+                    <div
+                      className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                      style={{ backgroundColor: 'var(--landing-accent)' }}
+                    >
+                      <item.icon className="h-6 w-6" style={{ color: 'var(--landing-primary)' }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--landing-primary)' }}>
+                        {item.title}
+                      </p>
+                      {item.href ? (
+                        <a
+                          href={item.href}
+                          className="font-semibold text-base break-all hover:underline"
+                          style={{ color: 'var(--landing-text)' }}
+                        >
+                          {item.value}
+                        </a>
+                      ) : (
+                        <p className="font-semibold text-base" style={{ color: 'var(--landing-text)' }}>{item.value}</p>
+                      )}
+                      <p className="text-sm mt-1 opacity-80" style={{ color: 'var(--landing-text)' }}>{item.description}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
 
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
-          {/* Contact Form */}
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Send us a Message</CardTitle>
-              <CardDescription>Fill out the form below and we'll respond within 24 hours</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Input
-                    placeholder="Your Name"
-                    value={formData.name}
-                    onChange={(e) => handleChange('name', e.target.value)}
-                    className={errors.name ? 'border-red-500' : ''}
-                  />
-                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                </div>
-                
-                <div>
-                  <Input
-                    type="email"
-                    placeholder="Your Email"
-                    value={formData.email}
-                    onChange={(e) => handleChange('email', e.target.value)}
-                    className={errors.email ? 'border-red-500' : ''}
-                  />
-                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                </div>
-                
-                <div>
-                  <Input
-                    placeholder="Subject"
-                    value={formData.subject}
-                    onChange={(e) => handleChange('subject', e.target.value)}
-                    className={errors.subject ? 'border-red-500' : ''}
-                  />
-                  {errors.subject && <p className="text-red-500 text-sm mt-1">{errors.subject}</p>}
-                </div>
-                
-                <div>
-                  <Textarea
-                    placeholder="Your Message"
-                    value={formData.message}
-                    onChange={(e) => handleChange('message', e.target.value)}
-                    className={errors.message ? 'border-red-500' : ''}
-                    rows={6}
-                  />
-                  {errors.message && <p className="text-red-500 text-sm mt-1">{errors.message}</p>}
-                </div>
-                
-                <Button type="submit" className="w-full text-white" style={{ backgroundColor: 'var(--landing-primary)' }} disabled={isSubmitting}>
-                  {isSubmitting ? 'Sending...' : 'Send Message'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Contact Info */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 mt-1" style={{ color: 'var(--landing-primary)' }} />
-                  <div>
-                    <p className="font-semibold">Email</p>
-                    <a href="mailto:support@depogoals.com" className="hover:underline" style={{ color: 'var(--landing-primary)' }}>
-                      support@depogoals.com
-                    </a>
+              <Card
+                className="border-2 animate-slide-up feature-card-shadow"
+                style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)', animationDelay: '0.35s' }}
+              >
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-bold" style={{ color: 'var(--landing-text)' }}>Follow us</CardTitle>
+                  <CardDescription style={{ color: 'var(--landing-text)', opacity: 0.8 }}>Stay in the loop</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-3">
+                    {socialLinks.map(({ icon: Icon, href, label }) => (
+                      <a
+                        key={label}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-md"
+                        style={{ backgroundColor: 'var(--landing-accent)' }}
+                        aria-label={label}
+                      >
+                        <Icon className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />
+                      </a>
+                    ))}
                   </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <Phone className="w-5 h-5 mt-1" style={{ color: 'var(--landing-primary)' }} />
-                  <div>
-                    <p className="font-semibold">Phone</p>
-                    <a href="tel:+1234567890" className="hover:underline" style={{ color: '#2c9d73' }}>
-                      +1 (234) 567-890
-                    </a>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 mt-1" style={{ color: 'var(--landing-primary)' }} />
-                  <div>
-                    <p className="font-semibold">Address</p>
-                    <p className="text-sm text-gray-600">123 Success Street<br />Goal City, GC 12345</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Follow Us</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-4">
-                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer"
-                     className="p-2 rounded-full transition" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                    <Facebook className="w-5 h-5" style={{ color: 'var(--landing-primary)' }} />
-                  </a>
-                  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer"
-                     className="p-2 rounded-full transition" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                    <Twitter className="w-5 h-5" style={{ color: 'var(--landing-primary)' }} />
-                  </a>
-                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer"
-                     className="p-2 rounded-full transition" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                    <Linkedin className="w-5 h-5" style={{ color: 'var(--landing-primary)' }} />
-                  </a>
-                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer"
-                     className="p-2 rounded-full transition" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                    <Instagram className="w-5 h-5" style={{ color: 'var(--landing-primary)' }} />
-                  </a>
-                </div>
-              </CardContent>
-            </Card>
+          {/* FAQ CTA */}
+          <div className="mt-16 text-center animate-slide-up" style={{ animationDelay: '0.4s' }}>
+            <p className="text-base font-medium mb-4" style={{ color: 'var(--landing-text)', opacity: 0.9 }}>
+              Looking for quick answers?
+            </p>
+            <Button
+              variant="outline"
+              size="lg"
+              className="hero-cta-outline gap-2 font-bold"
+              onClick={() => navigate('/faq')}
+            >
+              <HelpCircle className="h-5 w-5" />
+              Visit FAQ
+            </Button>
           </div>
         </div>
+      </section>
 
-        {/* FAQ Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-3xl">Frequently Asked Questions</CardTitle>
-            <CardDescription>Find answers to common questions about Goals and Development</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h3 className="font-semibold text-lg mb-2">What is Goals and Development?</h3>
-              <p className="text-gray-600">Goals and Development is a private personal growth system that helps you set goals, create a written plan, stay accountable, and measure your progress over time.</p>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-lg mb-2">How do I get started?</h3>
-              <p className="text-gray-600">Simply sign up for a free account, complete the onboarding process, and start creating your first goals. You can choose from templates or create custom goals tailored to your needs.</p>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Is there a mobile app?</h3>
-              <p className="text-gray-600">Yes! DEPO Goals is a Progressive Web App (PWA) that works seamlessly on mobile devices. You can install it directly from your browser for a native app-like experience.</p>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Can I collaborate with family members?</h3>
-              <p className="text-gray-600">Absolutely! Create family groups, share goals, track progress together, and celebrate achievements as a team. Our collaboration features make it easy to stay connected.</p>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-lg mb-2">What subscription plans are available?</h3>
-              <p className="text-gray-600">We offer a 7-day free trial, then Monthly and Annual plans. Visit our pricing section on the home page to see which plan is right for you.</p>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-lg mb-2">How do I cancel my subscription?</h3>
-              <p className="text-gray-600">You can cancel your subscription anytime from your account settings. Your access will continue until the end of your billing period.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <LandingFooter navigate={navigate} scrollToLandingSection={scrollToLandingSection} />
-    </div>
+    </LandingPageLayout>
   );
 }

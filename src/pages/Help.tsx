@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 
 interface FAQItem {
   question: string;
@@ -264,8 +265,9 @@ const Help = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600 text-white py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="relative overflow-hidden bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600 text-white py-16 px-4">
+        <HeroFloatingCircles variant="dark" />
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
             <HelpCircle className="w-8 h-8" />
           </div>

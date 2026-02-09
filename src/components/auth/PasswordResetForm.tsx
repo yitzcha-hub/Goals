@@ -42,19 +42,19 @@ export const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBack }) 
 
   if (sent) {
     return (
-      <Card className="w-full max-w-md mx-auto">
+      <Card className="w-full max-w-md mx-auto border shadow-lg" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-primary)' }}>
         <CardHeader>
-          <CardTitle>Check Your Email</CardTitle>
-          <CardDescription>
+          <CardTitle className="font-bold" style={{ color: 'var(--landing-text)' }}>Check Your Email</CardTitle>
+          <CardDescription style={{ color: 'var(--landing-text)', opacity: 0.8 }}>
             We've sent a password reset link to {email}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm" style={{ color: 'var(--landing-text)', opacity: 0.85 }}>
               Click the link in the email to reset your password. If you don't see it, check your spam folder.
             </p>
-            <Button onClick={onBack} variant="outline" className="w-full">
+            <Button onClick={onBack} variant="outline" className="w-full font-bold hero-cta-outline">
               Back to Sign In
             </Button>
           </div>
@@ -64,15 +64,15 @@ export const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBack }) 
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto border shadow-lg" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-primary)' }}>
       <CardHeader>
-        <CardTitle>Reset Password</CardTitle>
-        <CardDescription>Enter your email to receive a password reset link</CardDescription>
+        <CardTitle className="font-bold" style={{ color: 'var(--landing-text)' }}>Reset Password</CardTitle>
+        <CardDescription style={{ color: 'var(--landing-text)', opacity: 0.8 }}>Enter your email to receive a password reset link</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="font-medium" style={{ color: 'var(--landing-text)' }}>Email</Label>
             <Input
               id="email"
               type="email"
@@ -80,9 +80,10 @@ export const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBack }) 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="border-[var(--landing-border)] focus-visible:ring-[var(--landing-primary)]"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full font-bold text-white hero-cta-primary" disabled={loading}>
             {loading ? 'Sending...' : 'Send Reset Link'}
           </Button>
         </form>
@@ -90,7 +91,8 @@ export const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBack }) 
           <button
             type="button"
             onClick={onBack}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm font-medium hover:underline"
+            style={{ color: 'var(--landing-primary)' }}
           >
             Back to Sign In
           </button>

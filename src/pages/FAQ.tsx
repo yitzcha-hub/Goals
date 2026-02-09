@@ -7,8 +7,8 @@ import {
 } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { AuthModal } from '@/components/auth/AuthModal';
-import { LandingHeader } from '@/components/LandingHeader';
-import { LandingFooter } from '@/components/LandingFooter';
+import { LandingPageLayout } from '@/components/LandingPageLayout';
+import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 import {
   ChevronDown,
   Rocket,
@@ -106,33 +106,10 @@ const faqCategories: FAQCategory[] = [
 ];
 
 const FAQ: React.FC = () => {
-  const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const scrollToLandingSection = useCallback((id: string) => {
-    setMobileMenuOpen(false);
-    navigate('/');
-    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 100);
-  }, [navigate]);
-
-  const navItems = [
-    { label: 'Features', path: '/features', onClick: () => { setMobileMenuOpen(false); navigate('/features'); } },
-    { label: 'Use Cases', path: '/use-case', onClick: () => { setMobileMenuOpen(false); navigate('/use-case'); } },
-    { label: 'Pricing', path: '/pricing', onClick: () => { setMobileMenuOpen(false); navigate('/pricing'); } },
-    { label: 'About Us', path: '/about', onClick: () => { setMobileMenuOpen(false); navigate('/about'); } },
-    { label: 'FAQ', path: '/faq', onClick: () => { setMobileMenuOpen(false); navigate('/faq'); } },
-  ];
-
   return (
-    <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
-      <LandingHeader
-        navItems={navItems}
-        activeSection={null}
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-      />
-
+    <LandingPageLayout>
       {/* Hero */}
       <section
         id="hero"
@@ -151,6 +128,7 @@ const FAQ: React.FC = () => {
           }}
           aria-hidden
         />
+        <HeroFloatingCircles />
         <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} aria-hidden />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <div
@@ -340,8 +318,7 @@ const FAQ: React.FC = () => {
         </div>
       </section>
 
-      <LandingFooter navigate={navigate} scrollToLandingSection={scrollToLandingSection} />
-    </div>
+    </LandingPageLayout>
   );
 };
 

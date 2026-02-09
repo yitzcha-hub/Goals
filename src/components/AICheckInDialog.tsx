@@ -57,26 +57,26 @@ export const AICheckInDialog = ({ open, onOpenChange, goal, onComplete }: AIChec
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="landing max-w-2xl max-h-[80vh] overflow-y-auto border-2 shadow-lg rounded-2xl" style={{ borderColor: 'var(--landing-primary)', backgroundColor: 'var(--landing-accent)' }}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 font-bold" style={{ color: 'var(--landing-text)' }}>
+            <MessageCircle className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />
             Goal Check-In: {goal?.title}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription style={{ color: 'var(--landing-text)', opacity: 0.8 }}>
             Answer these AI-generated questions to reflect on your progress
           </DialogDescription>
         </DialogHeader>
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin" style={{ color: 'var(--landing-primary)' }} />
           </div>
         ) : (
           <div className="space-y-6">
             {questions.map((question, idx) => (
               <div key={idx} className="space-y-2">
-                <Label htmlFor={`q${idx}`} className="text-base font-medium">
+                <Label htmlFor={`q${idx}`} className="text-base font-medium" style={{ color: 'var(--landing-text)' }}>
                   {idx + 1}. {question}
                 </Label>
                 <Textarea
@@ -89,15 +89,16 @@ export const AICheckInDialog = ({ open, onOpenChange, goal, onComplete }: AIChec
                   }}
                   placeholder="Your answer..."
                   rows={3}
+                  className="border-[var(--landing-border)] focus-visible:ring-[var(--landing-primary)]"
                 />
               </div>
             ))}
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button variant="outline" onClick={() => onOpenChange(false)} className="font-bold hero-cta-outline">
                 Cancel
               </Button>
-              <Button onClick={handleSubmit}>
+              <Button onClick={handleSubmit} className="font-bold text-white hero-cta-primary">
                 Complete Check-In
               </Button>
             </div>

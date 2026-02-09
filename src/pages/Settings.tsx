@@ -1,44 +1,37 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, CreditCard, Bell } from 'lucide-react';
+import { User, CreditCard, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { AuthenticatedLayout } from '@/components/AuthenticatedLayout';
 import SubscriptionManager from '@/components/SubscriptionManager';
+import { ReminderPreferences } from '@/components/ReminderPreferences';
+import { NotificationManager } from '@/components/NotificationManager';
 import { TrialBanner } from '@/components/TrialBanner';
 
 const Settings: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card>
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>Please log in to view settings</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
+      <AuthenticatedLayout>
+        <div className="min-h-screen landing flex items-center justify-center" style={{ backgroundColor: 'var(--landing-bg)' }}>
+          <Card className="max-w-md mx-4" style={{ borderColor: 'var(--landing-border)' }}>
+            <CardHeader>
+              <CardTitle style={{ color: 'var(--landing-text)' }}>Access Denied</CardTitle>
+              <CardDescription>Please log in to view settings</CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </AuthenticatedLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/')}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
-
-        <h1 className="text-3xl font-bold mb-6">Settings</h1>
+    <AuthenticatedLayout>
+      <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <h1 className="text-3xl font-bold mb-6" style={{ color: 'var(--landing-primary)' }}>Settings</h1>
 
         <div className="mb-6">
           <TrialBanner />
@@ -83,19 +76,15 @@ const Settings: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="notifications">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>Manage how you receive updates</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">Notification settings coming soon...</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <NotificationManager />
+              <ReminderPreferences />
+            </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
-    </div>
+    </AuthenticatedLayout>
   );
 };
 

@@ -10,6 +10,7 @@ import DemoTestimonials from './DemoTestimonials';
 import { GoalInputDialog } from './GoalInputDialog';
 import { TaskInputDialog } from './TaskInputDialog';
 import { Target, CheckCircle, Trophy, TrendingUp, ArrowLeft, Sparkles, Users, BarChart3 } from 'lucide-react';
+import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 
 
 interface DemoAppLayoutProps {
@@ -109,13 +110,14 @@ const DemoAppLayout: React.FC<DemoAppLayoutProps> = ({ onBack }) => {
 
 
       {/* Hero Section */}
-      <section className="relative h-80 flex items-center justify-center text-center px-4"
+      <section className="relative h-80 flex items-center justify-center text-center px-4 overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1759372026555_f1de9f1c.webp')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}>
-        <div className="max-w-4xl mx-auto text-white">
+        <HeroFloatingCircles variant="dark" />
+        <div className="relative z-10 max-w-4xl mx-auto text-white">
           <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
             Experience Goal Achievement
           </h1>

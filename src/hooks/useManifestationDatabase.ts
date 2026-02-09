@@ -23,12 +23,17 @@ export interface ManifestationTodo {
   completed: boolean;
   points: number;
   createdAt: string;
+  /** ISO date YYYY-MM-DD; null/undefined = draft */
+  scheduledDate?: string | null;
+  /** When the task was marked completed (ISO string); null if not completed */
+  completedAt?: string | null;
 }
 
 export interface ManifestationGratitude {
   id: string;
   content: string;
   date: string;
+  createdAt?: string;
 }
 
 export interface ManifestationJournalEntry {
@@ -38,6 +43,7 @@ export interface ManifestationJournalEntry {
   imageUrl?: string;
   mood: 'great' | 'good' | 'okay' | 'tough';
   date: string;
+  createdAt?: string;
 }
 
 function persistDemo(state: { goals: ManifestationGoal[]; todos: ManifestationTodo[]; gratitudeEntries: ManifestationGratitude[]; journalEntries: ManifestationJournalEntry[]; totalPoints: number; streak: number }) {
@@ -71,9 +77,9 @@ export function useManifestationDatabase() {
         supabase.from('manifestation_stats').select('*').eq('user_id', user.id).maybeSingle()
       ]);
       if (goalsRes.data) setGoals(goalsRes.data.map((r: any) => ({ id: r.id, title: r.title, description: r.description ?? '', timeline: r.timeline, progress: r.progress, imageUrl: r.image_url, priority: r.priority, createdAt: r.created_at, recommendations: (r.recommendations ?? []) as string[] })));
-      if (todosRes.data) setTodos(todosRes.data.map((r: any) => ({ id: r.id, title: r.title, completed: r.completed, points: r.points, createdAt: r.created_at })));
-      if (gratitudeRes.data) setGratitudeEntries(gratitudeRes.data.map((r: any) => ({ id: r.id, content: r.content, date: r.date })));
-      if (journalRes.data) setJournalEntries(journalRes.data.map((r: any) => ({ id: r.id, title: r.title ?? '', content: r.content, imageUrl: r.image_url, mood: r.mood, date: r.date })));
+      if (todosRes.data) setTodos(todosRes.data.map((r: any) => ({ id: r.id, title: r.title, completed: r.completed, points: r.points, createdAt: r.created_at, scheduledDate: r.scheduled_date ?? null, completedAt: r.completed_at ?? null })));
+      if (gratitudeRes.data) setGratitudeEntries(gratitudeRes.data.map((r: any) => ({ id: r.id, content: r.content, date: r.date, createdAt: r.created_at })));
+      if (journalRes.data) setJournalEntries(journalRes.data.map((r: any) => ({ id: r.id, title: r.title ?? '', content: r.content, imageUrl: r.image_url, mood: r.mood, date: r.date, createdAt: r.created_at })));
       if (statsRes.data) {
         setTotalPoints(statsRes.data.total_points ?? 0);
         setStreak(statsRes.data.streak ?? 0);
@@ -201,10 +207,10 @@ export function useManifestationDatabase() {
     setGoals(prev => prev.filter(g => g.id !== goalId));
   };
 
-  const addTodo = async (todo: Omit<ManifestationTodo, 'id' | 'createdAt'>) => {
+  const addTodo = async (todo: Omit<ManifestationTodo, 'id' | 'createdAt' | 'completedAt'>) => {
     if (useLocalStorageOnly) {
       const now = new Date().toISOString();
-      const data: ManifestationTodo = { ...todo, id: crypto.randomUUID(), createdAt: now };
+      const data: ManifestationTodo = { ...todo, id: crypto.randomUUID(), createdAt: now, completedAt: null };
       setTodos(prev => {
         const next = [data, ...prev];
         persistDemo({ goals, todos: next, gratitudeEntries, journalEntries, totalPoints, streak });
@@ -213,23 +219,26 @@ export function useManifestationDatabase() {
       return;
     }
     if (!user) return;
-    const { data, error } = await supabase.from('manifestation_todos').insert({
+    const payload: Record<string, unknown> = {
       user_id: user.id,
       title: todo.title,
       completed: todo.completed,
-      points: todo.points
-    }).select('id,created_at').single();
+      points: todo.points,
+    };
+    if (todo.scheduledDate) payload.scheduled_date = todo.scheduledDate;
+    const { data, error } = await supabase.from('manifestation_todos').insert(payload).select('id,created_at,scheduled_date,completed_at').single();
     if (error) throw error;
-    setTodos(prev => [{ ...todo, id: data.id, createdAt: data.created_at }, ...prev]);
+    setTodos(prev => [{ ...todo, id: data.id, createdAt: data.created_at, scheduledDate: data.scheduled_date ?? null, completedAt: data.completed_at ?? null }, ...prev]);
   };
 
   const toggleTodo = async (todoId: string) => {
     const todo = todos.find(t => t.id === todoId);
     if (!todo) return;
     const newCompleted = !todo.completed;
+    const completedAt = newCompleted ? new Date().toISOString() : null;
     if (useLocalStorageOnly) {
       setTodos(prev => {
-        const next = prev.map(t => t.id === todoId ? { ...t, completed: newCompleted } : t);
+        const next = prev.map(t => t.id === todoId ? { ...t, completed: newCompleted, completedAt } : t);
         const newPoints = totalPoints + (newCompleted ? todo.points : 0);
         persistDemo({ goals, todos: next, gratitudeEntries, journalEntries, totalPoints: newPoints, streak });
         return next;
@@ -237,8 +246,8 @@ export function useManifestationDatabase() {
       if (newCompleted) setTotalPoints(p => p + todo.points);
       return;
     }
-    await supabase.from('manifestation_todos').update({ completed: newCompleted }).eq('id', todoId);
-    setTodos(prev => prev.map(t => t.id === todoId ? { ...t, completed: newCompleted } : t));
+    await supabase.from('manifestation_todos').update({ completed: newCompleted, completed_at: completedAt }).eq('id', todoId);
+    setTodos(prev => prev.map(t => t.id === todoId ? { ...t, completed: newCompleted, completedAt } : t));
     if (newCompleted) await updateStats(todo.points, 0);
   };
 
@@ -257,6 +266,12 @@ export function useManifestationDatabase() {
 
   const addGratitude = async (content: string) => {
     const date = new Date().toISOString().split('T')[0];
+    return addGratitudeForDate(date, content);
+  };
+
+  const addGratitudeForDate = async (date: string, content: string) => {
+    const existing = gratitudeEntries.find((e) => e.date === date);
+    if (existing) return updateGratitude(existing.id, content);
     if (useLocalStorageOnly) {
       const data: ManifestationGratitude = { id: crypto.randomUUID(), content, date };
       setGratitudeEntries(prev => {
@@ -279,8 +294,38 @@ export function useManifestationDatabase() {
     await updateStats(5, 1);
   };
 
+  const updateGratitude = async (id: string, content: string) => {
+    if (useLocalStorageOnly) {
+      setGratitudeEntries(prev => {
+        const next = prev.map((e) => (e.id === id ? { ...e, content } : e));
+        persistDemo({ goals, todos, gratitudeEntries: next, journalEntries, totalPoints, streak });
+        return next;
+      });
+      return;
+    }
+    if (!user) return;
+    await supabase.from('manifestation_gratitude_entries').update({ content }).eq('id', id);
+    setGratitudeEntries(prev => prev.map((e) => (e.id === id ? { ...e, content } : e)));
+  };
+
+  const deleteGratitude = async (id: string) => {
+    if (useLocalStorageOnly) {
+      setGratitudeEntries(prev => {
+        const next = prev.filter((e) => e.id !== id);
+        persistDemo({ goals, todos, gratitudeEntries: next, journalEntries, totalPoints, streak });
+        return next;
+      });
+      return;
+    }
+    if (!user) return;
+    await supabase.from('manifestation_gratitude_entries').delete().eq('id', id);
+    setGratitudeEntries(prev => prev.filter((e) => e.id !== id));
+  };
+
   const addJournalEntry = async (entry: Omit<ManifestationJournalEntry, 'id'>) => {
     const date = entry.date.split('T')[0];
+    const existing = journalEntries.find((e) => e.date === date);
+    if (existing) return updateJournalEntry(existing.id, { title: entry.title, content: entry.content, imageUrl: entry.imageUrl, mood: entry.mood });
     if (useLocalStorageOnly) {
       const data: ManifestationJournalEntry = { ...entry, id: crypto.randomUUID(), date };
       setJournalEntries(prev => {
@@ -305,6 +350,40 @@ export function useManifestationDatabase() {
     await updateStats(15, 0);
   };
 
+  const updateJournalEntry = async (id: string, updates: Partial<Pick<ManifestationJournalEntry, 'title' | 'content' | 'imageUrl' | 'mood'>>) => {
+    if (useLocalStorageOnly) {
+      setJournalEntries(prev => {
+        const next = prev.map((e) => (e.id === id ? { ...e, ...updates } : e));
+        persistDemo({ goals, todos, gratitudeEntries, journalEntries: next, totalPoints, streak });
+        return next;
+      });
+      return;
+    }
+    if (!user) return;
+    const db: Record<string, unknown> = {};
+    if (updates.title !== undefined) db.title = updates.title;
+    if (updates.content !== undefined) db.content = updates.content;
+    if (updates.imageUrl !== undefined) db.image_url = updates.imageUrl;
+    if (updates.mood !== undefined) db.mood = updates.mood;
+    if (Object.keys(db).length === 0) return;
+    await supabase.from('manifestation_journal_entries').update(db).eq('id', id);
+    setJournalEntries(prev => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
+  };
+
+  const deleteJournalEntry = async (id: string) => {
+    if (useLocalStorageOnly) {
+      setJournalEntries(prev => {
+        const next = prev.filter((e) => e.id !== id);
+        persistDemo({ goals, todos, gratitudeEntries, journalEntries: next, totalPoints, streak });
+        return next;
+      });
+      return;
+    }
+    if (!user) return;
+    await supabase.from('manifestation_journal_entries').delete().eq('id', id);
+    setJournalEntries(prev => prev.filter((e) => e.id !== id));
+  };
+
   return {
     goals,
     todos,
@@ -320,7 +399,12 @@ export function useManifestationDatabase() {
     toggleTodo,
     deleteTodo,
     addGratitude,
+    addGratitudeForDate,
+    updateGratitude,
+    deleteGratitude,
     addJournalEntry,
+    updateJournalEntry,
+    deleteJournalEntry,
     refresh: loadAll
   };
 }

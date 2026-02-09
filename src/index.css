@@ -66,8 +66,16 @@
   --landing-primary: #2c9d73;
   --landing-primary-soft: #248f66;
   --landing-accent: #E8F5E9;
+  --landing-hover-bg: rgba(44, 157, 115, 0.14);
   --landing-text: #1A1A1A;
   --landing-border: #E0E0E0;
+}
+
+/* Dropdown item hover — green gradient like landing page (overrides yellow accent) */
+.dropdown-landing [role="menuitem"]:focus:not(.signout-item),
+.dropdown-landing [role="menuitem"][data-highlighted]:not(.signout-item) {
+  background: linear-gradient(135deg, rgba(44, 157, 115, 0.14) 0%, rgba(44, 157, 115, 0.06) 100%) !important;
+  color: var(--landing-primary) !important;
 }
 
 /* Feature showcase cards — website color palette */
@@ -141,4 +149,46 @@
   color: white !important;
   border-color: var(--landing-primary) !important;
   box-shadow: 0 4px 14px rgba(44, 157, 115, 0.35);
+}
+
+/* Dashboard — Time-based goals, premium feel */
+.dashboard-hero {
+  position: relative;
+  overflow: hidden;
+}
+.dashboard-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  height: 120%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.dashboard-card-organic {
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 24px rgba(44, 157, 115, 0.08);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+.dashboard-card-organic:hover {
+  box-shadow: 0 12px 40px rgba(44, 157, 115, 0.12);
+}
+.dashboard-calendar-cell {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.dashboard-calendar-cell:hover {
+  transform: scale(1.03);
+  box-shadow: 0 2px 12px rgba(44, 157, 115, 0.2);
+}
+.dashboard-commitment-pill {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.dashboard-commitment-pill:hover {
+  transform: translateX(4px);
+  opacity: 0.95;
+}
+.dashboard-timeline-badge {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }

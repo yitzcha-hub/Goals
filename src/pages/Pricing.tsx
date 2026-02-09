@@ -1,37 +1,12 @@
-import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import PricingSection from '@/components/PricingSection';
-import { LandingHeader } from '@/components/LandingHeader';
-import { LandingFooter } from '@/components/LandingFooter';
+import { LandingPageLayout } from '@/components/LandingPageLayout';
+import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 import pricingBg from '@/assets/images/pricing-bg.jpg';
 
 const Pricing: React.FC = () => {
-  const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const scrollToLandingSection = useCallback((id: string) => {
-    setMobileMenuOpen(false);
-    navigate('/');
-    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 100);
-  }, [navigate]);
-
-  const navItems = [
-    { label: 'Features', path: '/features', onClick: () => { setMobileMenuOpen(false); navigate('/features'); } },
-    { label: 'Use Cases', path: '/use-case', onClick: () => { setMobileMenuOpen(false); navigate('/use-case'); } },
-    { label: 'Pricing', path: '/pricing', onClick: () => { setMobileMenuOpen(false); navigate('/pricing'); } },
-    { label: 'About Us', path: '/about', onClick: () => { setMobileMenuOpen(false); navigate('/about'); } },
-    { label: 'FAQ', path: '/faq', onClick: () => { setMobileMenuOpen(false); navigate('/faq'); } },
-  ];
-
   return (
-    <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
-      <LandingHeader
-        navItems={navItems}
-        activeSection={null}
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-      />
-
+    <LandingPageLayout>
       {/* Hero */}
       <section
         id="hero"
@@ -44,6 +19,7 @@ const Pricing: React.FC = () => {
           />
         </div>
         <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.85 }} aria-hidden />
+        <HeroFloatingCircles />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <h1
             className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up"
@@ -71,8 +47,7 @@ const Pricing: React.FC = () => {
       </section>
 
       <PricingSection />
-      <LandingFooter navigate={navigate} scrollToLandingSection={scrollToLandingSection} />
-    </div>
+    </LandingPageLayout>
   );
 };
 

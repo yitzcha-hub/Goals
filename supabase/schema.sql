@@ -1,6 +1,9 @@
 -- =============================================================================
--- Goals App - Supabase (PostgreSQL) Schema
+-- Goals App - Supabase (PostgreSQL) Schema (combined)
 -- =============================================================================
+-- This file is the single source of truth: full schema plus all migrations
+-- (calendar_events, manifestation_todos.scheduled_date, manifestation_todos.completed_at).
+--
 -- How to run:
 --   1. Open your Supabase project → SQL Editor.
 --   2. Paste this entire file and click "Run".
@@ -153,9 +156,9 @@ CREATE TABLE IF NOT EXISTS public.reminder_preferences (
 CREATE TABLE IF NOT EXISTS public.reminders (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  type text NOT NULL CHECK (type IN ('goal_deadline', 'habit_checkin', 'family_activity', 'smart_reminder')),
+  type text NOT NULL CHECK (type IN ('goal_deadline', 'habit_checkin', 'family_activity', 'smart_reminder', 'event_reminder')),
   entity_id uuid NOT NULL,
-  entity_type text NOT NULL CHECK (entity_type IN ('goal', 'habit', 'family_goal', 'family_activity')),
+  entity_type text NOT NULL CHECK (entity_type IN ('goal', 'habit', 'family_goal', 'family_activity', 'calendar_event')),
   reminder_time timestamptz NOT NULL,
   channels text[] DEFAULT '{}',
   frequency text,
@@ -440,7 +443,9 @@ CREATE TABLE IF NOT EXISTS public.manifestation_todos (
   title text NOT NULL,
   completed boolean NOT NULL DEFAULT false,
   points integer NOT NULL DEFAULT 0,
-  created_at timestamptz NOT NULL DEFAULT now()
+  scheduled_date date DEFAULT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  completed_at timestamptz DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS public.manifestation_gratitude_entries (
@@ -468,6 +473,29 @@ CREATE TABLE IF NOT EXISTS public.manifestation_stats (
   streak integer NOT NULL DEFAULT 0,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- =============================================================================
+-- CALENDAR EVENTS (Step 1: Time-Based Goals)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS public.calendar_events (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  goal_id uuid REFERENCES public.manifestation_goals(id) ON DELETE SET NULL,
+  title text NOT NULL,
+  description text,
+  start_time timestamptz NOT NULL,
+  end_time timestamptz,
+  status text NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'completed', 'missed')),
+  color text NOT NULL DEFAULT '#2c9d73',
+  location text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_calendar_events_user_id ON public.calendar_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_calendar_events_goal_id ON public.calendar_events(goal_id);
+CREATE INDEX IF NOT EXISTS idx_calendar_events_start_time ON public.calendar_events(start_time);
 
 -- =============================================================================
 -- INDEXES (for common filters and joins)
@@ -520,8 +548,11 @@ CREATE INDEX IF NOT EXISTS idx_construction_expenses_user_id ON public.construct
 CREATE INDEX IF NOT EXISTS idx_progress_photos_user_goal ON public.progress_photos(user_id, goal_id);
 CREATE INDEX IF NOT EXISTS idx_manifestation_goals_user_id ON public.manifestation_goals(user_id);
 CREATE INDEX IF NOT EXISTS idx_manifestation_todos_user_id ON public.manifestation_todos(user_id);
+CREATE INDEX IF NOT EXISTS idx_manifestation_todos_completed_at ON public.manifestation_todos(completed_at) WHERE completed_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_manifestation_gratitude_user_id ON public.manifestation_gratitude_entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_manifestation_journal_user_id ON public.manifestation_journal_entries(user_id);
+CREATE INDEX IF NOT EXISTS idx_calendar_events_user_id ON public.calendar_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_calendar_events_start_time ON public.calendar_events(start_time);
 
 -- =============================================================================
 -- RPC: decrement (used by Forums for upvote toggle)
@@ -590,6 +621,7 @@ ALTER TABLE public.manifestation_todos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.manifestation_gratitude_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.manifestation_journal_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.manifestation_stats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.calendar_events ENABLE ROW LEVEL SECURITY;
 
 -- Forum categories: read-only for all authenticated
 ALTER TABLE public.forum_categories ENABLE ROW LEVEL SECURITY;
@@ -843,6 +875,10 @@ CREATE POLICY "Users can CRUD own manifestation_stats"
   ON public.manifestation_stats FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can CRUD own calendar_events"
+  ON public.calendar_events FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- =============================================================================
 -- TRIGGER: updated_at for goals, habits, journal_entries
@@ -870,6 +906,8 @@ BEGIN
   CREATE TRIGGER set_forum_threads_updated_at BEFORE UPDATE ON public.forum_threads FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
   DROP TRIGGER IF EXISTS set_subscriptions_updated_at ON public.subscriptions;
   CREATE TRIGGER set_subscriptions_updated_at BEFORE UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+  DROP TRIGGER IF EXISTS set_calendar_events_updated_at ON public.calendar_events;
+  CREATE TRIGGER set_calendar_events_updated_at BEFORE UPDATE ON public.calendar_events FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 END
 $$;
 
@@ -904,3 +942,15 @@ ALTER TABLE public.subscriptions ADD CONSTRAINT subscriptions_status_check CHECK
   'active', 'trialing', 'canceled', 'past_due', 'unpaid',
   'incomplete', 'incomplete_expired', 'paused'
 ));
+
+-- =============================================================================
+-- EVENT REMINDERS MIGRATION
+-- Extend reminders table to support calendar_event reminders
+-- =============================================================================
+ALTER TABLE public.reminders DROP CONSTRAINT IF EXISTS reminders_type_check;
+ALTER TABLE public.reminders ADD CONSTRAINT reminders_type_check
+  CHECK (type IN ('goal_deadline', 'habit_checkin', 'family_activity', 'smart_reminder', 'event_reminder'));
+
+ALTER TABLE public.reminders DROP CONSTRAINT IF EXISTS reminders_entity_type_check;
+ALTER TABLE public.reminders ADD CONSTRAINT reminders_entity_type_check
+  CHECK (entity_type IN ('goal', 'habit', 'family_goal', 'family_activity', 'calendar_event'));
