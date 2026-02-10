@@ -64,7 +64,7 @@ type ProblemItem = {
 
 const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, index: i }) => {
   const ref = useRef<HTMLElement>(null);
-  const isInView = useInView(ref, { once: false, amount: 0.12 });
+  const isInView = useInView(ref, { once: true, amount: 0.12 });
   const { image, title, stats, problemDesc, solution, basicClosing } = item;
   const firstLetter = title.charAt(0);
   const restTitle = title.slice(1);
@@ -175,7 +175,7 @@ type StepItem = { step: number; title: string; icon: React.ComponentType<{ class
 
 const HowItWorksStepCard: React.FC<{ item: StepItem; index: number }> = ({ item, index }) => {
   const ref = useRef<HTMLElement>(null);
-  const isInView = useInView(ref, { once: false, amount: 0.15 });
+  const isInView = useInView(ref, { once: true, amount: 0.15 });
   const { step, title, icon: Icon, img } = item;
   return (
     <motion.article
@@ -265,11 +265,11 @@ export const LandingContent: React.FC = () => {
   const howItWorksSectionRef = useRef<HTMLElement>(null);
   const guaranteeStripRef = useRef<HTMLDivElement>(null);
   const ctaSectionRef = useRef<HTMLElement>(null);
-  const isProblemInView = useInView(problemSectionRef, { once: false, amount: 0.08 });
-  const isVisionInView = useInView(visionSectionRef, { once: false, amount: 0.15 });
-  const isHowItWorksInView = useInView(howItWorksSectionRef, { once: false, amount: 0.1 });
-  const isGuaranteeStripInView = useInView(guaranteeStripRef, { once: false, amount: 0.2 });
-  const isCtaInView = useInView(ctaSectionRef, { once: false, amount: 0.2 });
+  const isProblemInView = useInView(problemSectionRef, { once: true, amount: 0.08 });
+  const isVisionInView = useInView(visionSectionRef, { once: true, amount: 0.15 });
+  const isHowItWorksInView = useInView(howItWorksSectionRef, { once: true, amount: 0.1 });
+  const isGuaranteeStripInView = useInView(guaranteeStripRef, { once: true, amount: 0.2 });
+  const isCtaInView = useInView(ctaSectionRef, { once: true, amount: 0.2 });
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
   const [slideTick, setSlideTick] = useState(0);
 
