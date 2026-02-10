@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,31 +8,39 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { StorageModeProvider } from "@/contexts/StorageModeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
-import GetStarted from "./pages/GetStarted";
-import Contact from "./pages/Contact";
-import About from "./pages/About";
-import NotFound from "./pages/NotFound";
-import { EmailVerification } from "./pages/EmailVerification";
-import { AuthCallback } from "./pages/AuthCallback";
-import Demo from "./pages/Demo";
-import Help from "./pages/Help";
-import Forums from "./pages/Forums";
+import { Loader2 } from "lucide-react";
 
-import Calendar from "./pages/Calendar";
-import PaymentSuccessPage from "./pages/PaymentSuccess";
-import Pricing from "./pages/Pricing";
-import Features from "./pages/Features";
-import UseCase from "./pages/UseCase";
-import FAQ from "./pages/FAQ";
-import Settings from "./pages/Settings";
-import Progress from "./pages/Progress";
-import Goals from "./pages/Goals";
-import Dashboard from "./pages/Dashboard";
-import Admin from "./pages/Admin";
+// Route-level code splitting: load pages only when their route is visited
+const Index = lazy(() => import("./pages/Index"));
+const GetStarted = lazy(() => import("./pages/GetStarted"));
+const Contact = lazy(() => import("./pages/Contact"));
+const About = lazy(() => import("./pages/About"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const EmailVerification = lazy(() => import("./pages/EmailVerification").then((m) => ({ default: m.EmailVerification })));
+const AuthCallback = lazy(() => import("./pages/AuthCallback").then((m) => ({ default: m.AuthCallback })));
+const Demo = lazy(() => import("./pages/Demo"));
+const Help = lazy(() => import("./pages/Help"));
+const Forums = lazy(() => import("./pages/Forums"));
+const Calendar = lazy(() => import("./pages/Calendar"));
+const PaymentSuccessPage = lazy(() => import("./pages/PaymentSuccess"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Features = lazy(() => import("./pages/Features"));
+const UseCase = lazy(() => import("./pages/UseCase"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Progress = lazy(() => import("./pages/Progress"));
+const Goals = lazy(() => import("./pages/Goals"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Admin = lazy(() => import("./pages/Admin"));
 
 
 const queryClient = new QueryClient();
+
+const PageLoader = () => (
+  <div className="flex min-h-screen items-center justify-center" aria-label="Loading page">
+    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+  </div>
+);
 
 const App = () => (
   <ThemeProvider defaultTheme="light">
@@ -42,6 +51,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <StorageModeProvider>
+            <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/getstarted" element={<ProtectedRoute><GetStarted /></ProtectedRoute>} />
@@ -69,6 +79,7 @@ const App = () => (
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
             </StorageModeProvider>
           </BrowserRouter>
         </AuthProvider>

@@ -103,6 +103,21 @@ export default {
           from: { opacity: '0', transform: 'scale(0.96)' },
           to: { opacity: '1', transform: 'scale(1)' },
         },
+        /* Hero slide — cinematic background enter */
+        'hero-bg-enter': {
+          from: { opacity: '0', transform: 'scale(1.08)' },
+          to: { opacity: '1', transform: 'scale(1)' },
+        },
+        /* Hero headline — reveal on slide change */
+        'hero-headline-in': {
+          from: { opacity: '0', transform: 'translateY(20px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        /* Indicator progress fill (6s to match slide interval) */
+        'hero-indicator-progress': {
+          from: { width: '0%' },
+          to: { width: '100%' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -112,6 +127,9 @@ export default {
         'slide-up': 'slide-up 0.5s ease-out forwards',
         'vision-reveal': 'vision-reveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards',
         'vision-scale': 'vision-scale 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'hero-bg-enter': 'hero-bg-enter 1s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'hero-headline-in': 'hero-headline-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'hero-indicator-progress': 'hero-indicator-progress 6s linear forwards',
       },
       typography: {
         DEFAULT: {

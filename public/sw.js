@@ -1,7 +1,5 @@
 const CACHE_NAME = 'goal-tracker-v2';
 const urlsToCache = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/placeholder.svg'
 ];
@@ -31,6 +29,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Document/navigation requests: always try network first so updates are visible on refresh.
+  // Fall back to cache only when offline (keeps offline support).
+  const isDocument = event.request.mode === 'navigate' || event.request.destination === 'document';
+  if (isDocument) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {});
+          }
+          return response;
+        })
+        .catch(() => caches.match('/index.html').then((r) => r || caches.match('/')))
+    );
+    return;
+  }
+
+  // Static assets: cache-first for performance, then network
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -41,7 +58,6 @@ self.addEventListener('fetch', (event) => {
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
-          // Only cache http/https requests (Cache API rejects chrome-extension:, etc.)
           const requestUrl = event.request.url;
           if (requestUrl.startsWith('http://') || requestUrl.startsWith('https://')) {
             const responseToCache = response.clone();

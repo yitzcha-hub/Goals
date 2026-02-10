@@ -158,7 +158,7 @@ const FAQ: React.FC = () => {
               animationDelay: '0.2s',
             }}
           >
-            Clear, honest answers about our personal growth system—what it is, how it works, and how we help you become who you want to be.
+            Clear, honest answers about our personal growth system—what it is, how it works, and how we help you be the person you want to become.
           </p>
         </div>
       </section>

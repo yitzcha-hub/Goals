@@ -11,8 +11,8 @@ window.addEventListener('pageshow', (event) => {
   }
 })
 
-// Register service worker for offline functionality
-if ('serviceWorker' in navigator) {
+// Register service worker only in production (skip on localhost so dev refresh shows latest UI)
+if ('serviceWorker' in navigator && !window.location.hostname.includes('localhost')) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then(
       (registration) => {

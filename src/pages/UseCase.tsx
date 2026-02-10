@@ -28,7 +28,7 @@ const useCaseCards: UseCaseCard[] = [
     id: 'self-development',
     title: 'People serious about self-development',
     image: peopleSelfDevImg,
-    quote: 'I tried journals and random goal apps for years. Here I finally have one place for my vision, my plan, and real feedback. I\'m actually becoming who I want to be.',
+    quote: 'I tried journals and random goal apps for years. Here I finally have one place for my vision, my plan, and real feedback. I\'m actually becoming the person I want to become.',
     name: 'Alex M.',
     role: 'Personal growth coach',
     otherApps: ['Scattered notes and journals with no structure', 'No link between goals and daily actions', 'Zero insight into why I slipped'],

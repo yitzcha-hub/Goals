@@ -5,6 +5,9 @@
  *   1. OpenAI  — if VITE_OPENAI_API_KEY is set (paid)
  *   2. Gemini  — if VITE_GEMINI_API_KEY is set (free tier: 15 RPM)
  *   3. null    — no AI features available
+ *
+ * Includes: response caching, request deduplication, client-side rate
+ * limiting, and exponential-backoff retry on 429 responses.
  */
 
 /* ------------------------------------------------------------------ */
@@ -32,6 +35,115 @@ export function getActiveProvider(): string | null {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Response cache (in-memory + sessionStorage)                        */
+/* ------------------------------------------------------------------ */
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_STORAGE_KEY = 'ai_response_cache';
+
+interface CacheEntry {
+  value: string;
+  expiry: number; // epoch ms
+}
+
+/** Simple hash for cache keys — fast, not cryptographic. */
+function hashPrompt(prompt: string): string {
+  let h = 0;
+  for (let i = 0; i < prompt.length; i++) {
+    h = ((h << 5) - h + prompt.charCodeAt(i)) | 0;
+  }
+  return `ai_${h >>> 0}`;
+}
+
+/** In-memory cache (survives component re-mounts within session). */
+const memoryCache = new Map<string, CacheEntry>();
+
+function loadSessionCache(): Record<string, CacheEntry> {
+  try {
+    const raw = sessionStorage.getItem(CACHE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveSessionCache(cache: Record<string, CacheEntry>): void {
+  try {
+    sessionStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify(cache));
+  } catch {
+    /* quota exceeded — ignore */
+  }
+}
+
+function getCached(key: string): string | null {
+  const now = Date.now();
+
+  // 1. Memory cache
+  const mem = memoryCache.get(key);
+  if (mem && mem.expiry > now) return mem.value;
+  if (mem) memoryCache.delete(key);
+
+  // 2. Session storage
+  const session = loadSessionCache();
+  const entry = session[key];
+  if (entry && entry.expiry > now) {
+    memoryCache.set(key, entry); // promote to memory
+    return entry.value;
+  }
+
+  return null;
+}
+
+function setCache(key: string, value: string): void {
+  const entry: CacheEntry = { value, expiry: Date.now() + CACHE_TTL_MS };
+  memoryCache.set(key, entry);
+
+  const session = loadSessionCache();
+  session[key] = entry;
+  // Evict expired entries to avoid unbounded growth
+  const now = Date.now();
+  for (const k of Object.keys(session)) {
+    if (session[k].expiry <= now) delete session[k];
+  }
+  saveSessionCache(session);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Request deduplication (in-flight map)                              */
+/* ------------------------------------------------------------------ */
+
+const inflightRequests = new Map<string, Promise<string | null>>();
+
+/* ------------------------------------------------------------------ */
+/*  Client-side rate limiter                                           */
+/* ------------------------------------------------------------------ */
+
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 8; // max requests per window
+const requestTimestamps: number[] = [];
+
+function canMakeRequest(): boolean {
+  const now = Date.now();
+  // Remove timestamps outside the window
+  while (requestTimestamps.length > 0 && requestTimestamps[0] <= now - RATE_LIMIT_WINDOW_MS) {
+    requestTimestamps.shift();
+  }
+  return requestTimestamps.length < RATE_LIMIT_MAX;
+}
+
+function recordRequest(): void {
+  requestTimestamps.push(Date.now());
+}
+
+/* ------------------------------------------------------------------ */
+/*  Exponential backoff retry                                          */
+/* ------------------------------------------------------------------ */
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/* ------------------------------------------------------------------ */
 /*  Unified chat completion                                            */
 /* ------------------------------------------------------------------ */
 
@@ -42,9 +154,18 @@ function geminiUrl(key: string): string {
   return `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
 }
 
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 2_000; // 2 s → 4 s → 8 s
+
 /**
  * Send a prompt and get back a text response from whichever provider is
  * available. Returns `null` when no provider is configured or on error.
+ *
+ * Features:
+ *  - Checks in-memory + sessionStorage cache first
+ *  - Deduplicates identical in-flight requests
+ *  - Enforces a client-side rate limit (8 req/min)
+ *  - Retries with exponential backoff on HTTP 429
  */
 async function chatCompletion(
   prompt: string,
@@ -53,69 +174,147 @@ async function chatCompletion(
   const provider = getProvider();
   if (!provider) return null;
 
-  try {
-    if (provider.type === 'openai') {
-      const res = await fetch(OPENAI_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${provider.key}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          temperature,
-          max_tokens: maxTokens,
-        }),
-      });
-
-      if (!res.ok) {
-        if (res.status === 429)
-          throw new Error('OpenAI quota exceeded. Please check your plan and billing at platform.openai.com.');
-        if (res.status === 401)
-          throw new Error('Invalid OpenAI API key. Please check your key in Settings.');
-        const err = await res.text();
-        console.error('OpenAI API error:', res.status, err);
-        return null;
-      }
-
-      const data = await res.json();
-      return data.choices?.[0]?.message?.content ?? null;
-    }
-
-    /* ---------- Gemini ---------- */
-    const res = await fetch(geminiUrl(provider.key), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature,
-          maxOutputTokens: maxTokens,
-        },
-      }),
-    });
-
-    if (!res.ok) {
-      if (res.status === 429)
-        throw new Error('Gemini rate limit reached. Free tier allows 15 requests/min — please wait a moment.');
-      if (res.status === 400 || res.status === 403)
-        throw new Error('Invalid Gemini API key. Get a free key at aistudio.google.com/apikey');
-      const err = await res.text();
-      console.error('Gemini API error:', res.status, err);
-      return null;
-    }
-
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-  } catch (e) {
-    // Re-throw user-facing errors so hooks can display them
-    if (e instanceof Error && (e.message.includes('quota') || e.message.includes('rate limit') || e.message.includes('Invalid'))) {
-      throw e;
-    }
-    console.error('AI chat completion error:', e);
-    return null;
+  // --- Cache check ---
+  const cacheKey = hashPrompt(prompt + maxTokens + temperature);
+  const cached = getCached(cacheKey);
+  if (cached) {
+    console.debug('[AI] cache hit');
+    return cached;
   }
+
+  // --- Deduplication ---
+  const inflight = inflightRequests.get(cacheKey);
+  if (inflight) {
+    console.debug('[AI] dedup — reusing in-flight request');
+    return inflight;
+  }
+
+  // --- Rate limit ---
+  if (!canMakeRequest()) {
+    console.warn('[AI] client-side rate limit reached — try again in a moment');
+    throw new Error(
+      provider.type === 'openai'
+        ? 'Too many AI requests. Please wait a moment before trying again.'
+        : 'Too many AI requests. Please wait a moment before trying again.',
+    );
+  }
+
+  // --- Build the actual request (with retry) ---
+  const execute = async (): Promise<string | null> => {
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        recordRequest();
+
+        if (provider.type === 'openai') {
+          const res = await fetch(OPENAI_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${provider.key}`,
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [{ role: 'user', content: prompt }],
+              temperature,
+              max_tokens: maxTokens,
+            }),
+          });
+
+          if (res.status === 429) {
+            // Parse Retry-After header if present, otherwise exponential backoff
+            const retryAfter = res.headers.get('Retry-After');
+            const delayMs = retryAfter
+              ? parseInt(retryAfter, 10) * 1000
+              : BASE_DELAY_MS * Math.pow(2, attempt);
+
+            if (attempt < MAX_RETRIES) {
+              console.warn(`[AI] 429 from OpenAI — retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+              await sleep(delayMs);
+              continue;
+            }
+            throw new Error('OpenAI rate limit exceeded. Please wait a minute and try again, or check your plan at platform.openai.com.');
+          }
+
+          if (!res.ok) {
+            if (res.status === 401)
+              throw new Error('Invalid OpenAI API key. Please check your key in Settings.');
+            const err = await res.text();
+            console.error('OpenAI API error:', res.status, err);
+            return null;
+          }
+
+          const data = await res.json();
+          const text = data.choices?.[0]?.message?.content ?? null;
+          if (text) setCache(cacheKey, text);
+          return text;
+        }
+
+        /* ---------- Gemini ---------- */
+        const res = await fetch(geminiUrl(provider.key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature,
+              maxOutputTokens: maxTokens,
+            },
+          }),
+        });
+
+        if (res.status === 429) {
+          const delayMs = BASE_DELAY_MS * Math.pow(2, attempt);
+          if (attempt < MAX_RETRIES) {
+            console.warn(`[AI] 429 from Gemini — retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+            await sleep(delayMs);
+            continue;
+          }
+          throw new Error('Gemini rate limit reached. Free tier allows 15 requests/min — please wait a moment.');
+        }
+
+        if (!res.ok) {
+          if (res.status === 400 || res.status === 403)
+            throw new Error('Invalid Gemini API key. Get a free key at aistudio.google.com/apikey');
+          const err = await res.text();
+          console.error('Gemini API error:', res.status, err);
+          return null;
+        }
+
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+        if (text) setCache(cacheKey, text);
+        return text;
+      } catch (e) {
+        // Re-throw user-facing errors so hooks can display them
+        if (
+          e instanceof Error &&
+          (e.message.includes('rate limit') ||
+            e.message.includes('quota') ||
+            e.message.includes('Too many AI') ||
+            e.message.includes('Invalid'))
+        ) {
+          throw e;
+        }
+        // On final attempt, give up
+        if (attempt === MAX_RETRIES) {
+          console.error('AI chat completion error (all retries exhausted):', e);
+          return null;
+        }
+        // Transient error — retry
+        const delayMs = BASE_DELAY_MS * Math.pow(2, attempt);
+        console.warn(`[AI] transient error — retrying in ${delayMs}ms`, e);
+        await sleep(delayMs);
+      }
+    }
+    return null;
+  };
+
+  const promise = execute().finally(() => {
+    inflightRequests.delete(cacheKey);
+  });
+
+  inflightRequests.set(cacheKey, promise);
+  return promise;
 }
 
 /** Parse a JSON string from an AI response (strips markdown fences). */

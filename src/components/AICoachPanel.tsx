@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,18 +13,50 @@ interface AICoachPanelProps {
   onDeadlineUpdate?: (date: string) => void;
 }
 
+/** Session-scoped cache for goal analyses (avoids re-fetching on re-mount). */
+const GOAL_ANALYSIS_CACHE_KEY = 'ai_goal_analysis_cache';
+const GOAL_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function getCachedGoalAnalysis(goalId: string): AIAnalysis | null {
+  try {
+    const raw = sessionStorage.getItem(`${GOAL_ANALYSIS_CACHE_KEY}_${goalId}`);
+    if (!raw) return null;
+    const { data, expiry } = JSON.parse(raw);
+    if (Date.now() > expiry) {
+      sessionStorage.removeItem(`${GOAL_ANALYSIS_CACHE_KEY}_${goalId}`);
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedGoalAnalysis(goalId: string, data: AIAnalysis): void {
+  try {
+    sessionStorage.setItem(
+      `${GOAL_ANALYSIS_CACHE_KEY}_${goalId}`,
+      JSON.stringify({ data, expiry: Date.now() + GOAL_CACHE_TTL_MS }),
+    );
+  } catch {
+    /* storage full — ignore */
+  }
+}
+
 export const AICoachPanel = ({ goal, onDeadlineUpdate }: AICoachPanelProps) => {
   const { hasFeatureAccess } = useSubscription();
-  const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<AIAnalysis | null>(() =>
+    getCachedGoalAnalysis(goal?.id),
+  );
   const { analyzeGoal, loading } = useAICoach();
+  const hasFiredRef = useRef(false);
 
   // Check if user has access to AI Coach
   if (!hasFeatureAccess('ai-coach')) {
     return <UpgradePrompt feature="ai-coach" />;
   }
 
-
-  const handleAnalyze = async () => {
+  const handleAnalyze = useCallback(async () => {
     const result = await analyzeGoal({
       title: goal.title,
       description: goal.description,
@@ -34,14 +66,19 @@ export const AICoachPanel = ({ goal, onDeadlineUpdate }: AICoachPanelProps) => {
       daysSinceStart: Math.floor((Date.now() - new Date(goal.createdAt || Date.now()).getTime()) / (1000 * 60 * 60 * 24))
     });
     
-    if (result) setAnalysis(result);
-  };
+    if (result) {
+      setAnalysis(result);
+      setCachedGoalAnalysis(goal.id, result);
+    }
+  }, [goal, analyzeGoal]);
 
   useEffect(() => {
-    if (goal && !analysis) {
+    // Only auto-analyze once per mount cycle and only if not already cached
+    if (goal && !analysis && !hasFiredRef.current) {
+      hasFiredRef.current = true;
       handleAnalyze();
     }
-  }, [goal.id]);
+  }, [goal?.id]);
 
   if (loading && !analysis) {
     return (
