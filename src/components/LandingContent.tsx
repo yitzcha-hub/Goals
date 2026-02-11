@@ -27,7 +27,7 @@ const heroSlides = [
 
 const heroSubline = 'Your private space to plan, track, and grow—without comparison.';
 
-const SLIDE_INTERVAL_MS = 6000;
+const SLIDE_INTERVAL_MS = 10000;
 
 const problemCardVariants = {
   hidden: { opacity: 0, y: 48, rotateX: -12 },
@@ -152,8 +152,8 @@ const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, ind
               animate={isInView ? { opacity: 1, x: 0 } : {}}
               transition={{ delay: 0.38 + i * 0.08, duration: 0.4 }}
             >
-              <span className="text-[10px] font-bold uppercase tracking-widest block mb-1.5" style={{ color: 'var(--landing-primary)' }}>Solution</span>
-              <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--landing-text)' }}>{solution}</p>
+              <span className="text-xs font-bold uppercase tracking-widest block mb-1.5" style={{ color: 'var(--landing-primary)' }}>Our solution</span>
+              <p className="text-xs sm:text-sm font-bold leading-relaxed" style={{ color: 'var(--landing-text)' }}>{solution}</p>
             </motion.div>
           </div>
           <motion.p
@@ -421,23 +421,23 @@ export const LandingContent: React.FC = () => {
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
             <motion.span
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-5 block"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium uppercase tracking-widest mb-5 block"
               style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}
               initial={{ opacity: 0, y: 16 }}
               animate={isProblemInView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: 0.1, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             >
-              <Zap className="h-3.5 w-3.5" />
+              <Zap className="h-3 w-3" />
               Why we built this
             </motion.span>
             <motion.h2
-              className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-5 tracking-tight"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-5 tracking-tight"
               style={{ color: 'var(--landing-primary)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={isProblemInView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: 0.18, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
-              Problems we solve
+              What we do
             </motion.h2>
             <motion.p
               className="text-lg max-w-2xl mx-auto opacity-90 leading-relaxed"

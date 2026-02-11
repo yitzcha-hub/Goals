@@ -63,9 +63,9 @@ const App = () => (
               <Route path="/features" element={<Features />} />
               <Route path="/use-case" element={<UseCase />} />
               <Route path="/faq" element={<FAQ />} />
+              <Route path="/demo" element={<Demo />} />
 
               {/* Protected routes - require login, redirect to / if not authenticated */}
-              <Route path="/demo" element={<ProtectedRoute><Demo /></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
               <Route path="/forums" element={<ProtectedRoute><Forums /></ProtectedRoute>} />
               <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
