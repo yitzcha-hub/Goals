@@ -116,13 +116,13 @@ const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, ind
         </div>
         <div className="flex-1 p-6 sm:p-8 flex flex-col justify-center">
           <motion.h3
-            className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 leading-tight"
+            className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 leading-tight"
             style={{ color: 'var(--landing-text)' }}
             initial={{ opacity: 0, y: 12 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.25 + i * 0.08, duration: 0.45 }}
           >
-            <span className="text-3xl sm:text-4xl lg:text-5xl" style={{ color: 'var(--landing-primary)' }}>{firstLetter}</span>
+            <span className="text-2xl sm:text-3xl lg:text-4xl" style={{ color: 'var(--landing-primary)' }}>{firstLetter}</span>
             <span style={{ color: 'var(--landing-primary)' }}>{restTitle}</span>
           </motion.h3>
           <motion.p
@@ -157,7 +157,7 @@ const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, ind
             </motion.div>
           </div>
           <motion.p
-            className="text-sm sm:text-base font-bold leading-snug"
+            className="text-base sm:text-lg font-bold leading-snug"
             style={{ color: 'var(--landing-primary)' }}
             initial={{ opacity: 0, y: 6 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
