@@ -73,6 +73,7 @@ const PricingSection: React.FC = () => {
       name: 'Monthly',
       price: '$4.99',
       period: '/month',
+      dailyEquivalent: '16¢ a day',
       priceId: monthlyPriceId || 'price_monthly',
       description: 'Pay as you go',
       features: [
@@ -92,6 +93,7 @@ const PricingSection: React.FC = () => {
       name: 'Annual',
       price: '$39.99',
       period: '/year',
+      dailyEquivalent: '11¢ a day',
       priceId: annualPriceId || 'price_yearly',
       description: 'Save $20 per year',
       monthlyEquivalent: '$3.33/month',
@@ -157,6 +159,11 @@ const PricingSection: React.FC = () => {
                   </span>
                   <span className="text-gray-600 text-sm">{plan.period}</span>
                 </div>
+                {plan.dailyEquivalent && (
+                  <p className="text-sm text-gray-600 font-medium mt-1">
+                    {plan.dailyEquivalent}
+                  </p>
+                )}
                 {plan.monthlyEquivalent && (
                   <p className="text-sm text-green-600 font-medium mt-1">
                     Just {plan.monthlyEquivalent}!

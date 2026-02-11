@@ -22,7 +22,7 @@ import problemImg5 from '@/assets/images/Get-AI-feedback-on-your-progress.jpg';
 const heroSlides = [
   { bg: landingBg1, headline: 'Ready to chart your own course!' },
   { bg: landingBg2, headline: 'Choose your own path.' },
-  { bg: landingBg3, headline: 'Dreams don\'t happen-they start.' },
+  { bg: landingBg3, headline: 'Dreams are goals with deadlines.' },
 ];
 
 const heroSubline = 'Your private space to plan, track, and grow—without comparison.';
@@ -331,26 +331,19 @@ export const LandingContent: React.FC = () => {
             />
           ))}
         </div>
-        <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.78 }} aria-hidden />
+        <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0 }} aria-hidden />
         <HeroFloatingCircles />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <h1
             key={heroSlideIndex}
-            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent opacity-0 animate-hero-headline-in"
-            style={{
-              backgroundImage: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-            }}
+            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-white opacity-0 animate-hero-headline-in"
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
           >
             {heroSlides[heroSlideIndex].headline}
           </h1>
           <p
-            className="text-lg sm:text-xl mb-10 font-semibold max-w-2xl mx-auto"
-            style={{
-              color: '#1f2937',
-              textShadow: '0 1px 2px rgba(255,255,255,0.8)',
-            }}
+            className="text-lg sm:text-xl mb-10 font-semibold max-w-2xl mx-auto text-white"
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
           >
             {heroSubline}
           </p>
