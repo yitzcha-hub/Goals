@@ -22,7 +22,7 @@ import problemImg5 from '@/assets/images/Get-AI-feedback-on-your-progress.jpg';
 const heroSlides = [
   { bg: landingBg1, headline: 'Ready to chart your own course!' },
   { bg: landingBg2, headline: 'Choose your own path.' },
-  { bg: landingBg3, headline: 'Dreams are goals with deadlines.' },
+  { bg: landingBg3, headline: 'Build deeper connections!' },
 ];
 
 const heroSubline = 'Your private space to plan, track, and grow—without comparison.';
