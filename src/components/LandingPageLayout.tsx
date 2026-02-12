@@ -10,6 +10,7 @@ export type NavItem =
   | { label: string; sectionId: string; onClick: () => void };
 
 const DEFAULT_NAV_CONFIG = [
+  { label: 'Home', path: '/' },
   { label: 'Features', path: '/features' },
   { label: 'Use Cases', path: '/use-case' },
   { label: 'Pricing', path: '/pricing' },

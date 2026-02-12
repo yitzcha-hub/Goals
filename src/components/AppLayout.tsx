@@ -57,11 +57,12 @@ const AppLayout: React.FC = () => {
   }, [location.pathname, navigate]);
 
   const navItems = [
-    { label: 'Features', path: '/features', onClick: () => { setMobileMenuOpen(false); navigate('/features'); } },
-    { label: 'Use Cases', path: '/use-case', onClick: () => { setMobileMenuOpen(false); navigate('/use-case'); } },
-    { label: 'Pricing', path: '/pricing', onClick: () => { setMobileMenuOpen(false); navigate('/pricing'); } },
-    { label: 'About Us', path: '/about', onClick: () => { setMobileMenuOpen(false); navigate('/about'); } },
-    { label: 'FAQ', path: '/faq', onClick: () => { setMobileMenuOpen(false); navigate('/faq'); } },
+    { label: 'Home', path: '/', onClick: () => { setMobileMenuOpen(false); navigate('/'); }, sectionId: 'home' },
+    { label: 'Features', path: '/features', onClick: () => { setMobileMenuOpen(false); navigate('/features'); }, sectionId: 'features' },
+    { label: 'Use Cases', path: '/use-case', onClick: () => { setMobileMenuOpen(false); navigate('/use-case'); }, sectionId: 'use-cases' },
+    { label: 'Pricing', path: '/pricing', onClick: () => { setMobileMenuOpen(false); navigate('/pricing'); }, sectionId: 'pricing' },
+    { label: 'About Us', path: '/about', onClick: () => { setMobileMenuOpen(false); navigate('/about'); }, sectionId: 'about' },
+    { label: 'FAQ', path: '/faq', onClick: () => { setMobileMenuOpen(false); navigate('/faq'); }, sectionId: 'faq' },
   ];
 
   if (loading) {
