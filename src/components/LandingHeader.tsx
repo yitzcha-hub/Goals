@@ -100,7 +100,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 
         {/* Right: CTA or logged-in user */}
         <div className="flex items-center gap-2">
-          {/* Home — visible on mobile so users can return to home without opening the menu */}
+          {/* Home + See demo — visible on mobile only */}
           <button
             onClick={() => {
               setMobileMenuOpen(false);
@@ -110,6 +110,17 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
           >
             <span className={`relative z-10 bg-clip-text text-transparent transition-colors duration-150 ${location.pathname === '/' ? 'bg-gradient-to-r from-[var(--landing-primary)] via-[var(--landing-primary)] to-[var(--landing-primary)]' : 'bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280]'}`}>
               Home
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              navigate('/demo');
+            }}
+            className="md:hidden text-sm font-bold text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--landing-primary)]"
+          >
+            <span className={`relative z-10 bg-clip-text text-transparent transition-colors duration-150 ${location.pathname === '/demo' ? 'bg-gradient-to-r from-[var(--landing-primary)] via-[var(--landing-primary)] to-[var(--landing-primary)]' : 'bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280]'}`}>
+              Demo
             </span>
           </button>
           <button

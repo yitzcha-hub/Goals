@@ -1,16 +1,32 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Leaf, Send, Compass, X, Bot } from 'lucide-react';
+import { Leaf, Send, Compass, X, Bot, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { marked } from 'marked';
 
 /** Message shape for API and local state */
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
-const SYSTEM_PROMPT = `You are the friendly AI assistant for "Goals and Development" — a website that helps people plan, track, and grow through goals, timelines, and personal development without social comparison. You answer questions about:
-- The product: goals, timelines, AI feedback, journals, reminders, family plans, pricing, features.
-- How to get started, use cases, and motivation.
-Keep replies concise (2–4 sentences unless the user asks for detail). Be warm and encouraging. If you don't know something, say so and suggest they check the FAQ or contact the team.`;
+const CHAT_STORAGE_KEY = 'goals-ai-chat-messages';
+const MAX_STORED_MESSAGES = 50;
+
+const SUGGESTED_QUESTIONS = [
+  "What's included in the free trial?",
+  'How do I set and track goals?',
+  'Tell me about AI feedback on my progress',
+  'Where can I see pricing?',
+  'How does family connection work?',
+];
+
+const SYSTEM_PROMPT = `You are the friendly AI assistant for "Goals and Development" — a website that helps people plan, track, and grow through goals, timelines, and personal development without social comparison.
+
+Product context:
+- Free trial: 7-day free trial, no credit card required. After that, paid plans (see Pricing page).
+- Core features: set goals, write a development plan, attach goals to calendar and reminders, get AI insights on progress, and optional family/accountability connection (private, no social feed).
+- Use cases: personal growth, habits, career, wellness, relationships. No comparison or social media; everything is private.
+
+You answer questions about: the product (goals, plan, calendar, AI feedback, journals, reminders, family plans, pricing), how to get started, use cases, and motivation. Keep replies concise (2–4 sentences unless the user asks for detail). Be warm and encouraging. If you don't know something, say so and suggest the FAQ or Contact Us. Do not output raw HTML or code blocks unless the user explicitly asks for code.`;
 
 function buildMessages(history: ChatMessage[], userInput: string): ChatMessage[] {
   const withSystem = [
@@ -19,6 +35,34 @@ function buildMessages(history: ChatMessage[], userInput: string): ChatMessage[]
     { role: 'user' as const, content: userInput },
   ];
   return withSystem;
+}
+
+/** Sanitize HTML from markdown for safe display (strip script, iframe, event handlers). */
+function sanitizeHtml(html: string): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const walk = (node: Node) => {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const el = node as Element;
+      if (el.tagName === 'SCRIPT' || el.tagName === 'IFRAME' || el.tagName === 'OBJECT') {
+        el.remove();
+        return;
+      }
+      Array.from(el.attributes).forEach((attr) => {
+        if (attr.name.startsWith('on') || (attr.name === 'href' && attr.value.startsWith('javascript:'))) {
+          el.removeAttribute(attr.name);
+        }
+      });
+    }
+    Array.from(node.childNodes).forEach(walk);
+  };
+  walk(doc.body);
+  return doc.body.innerHTML;
+}
+
+function renderAssistantContent(text: string): string {
+  marked.setOptions({ gfm: true, breaks: true });
+  const raw = marked.parse(text, { async: false }) as string;
+  return sanitizeHtml(raw ?? '');
 }
 
 /** Call server-side chat API (uses OPENAI_API_KEY on server — no CORS, same as AI insights). */
@@ -36,9 +80,25 @@ async function chatViaApi(messages: ChatMessage[]): Promise<string | null> {
   return data.reply ?? null;
 }
 
+function loadStoredMessages(): ChatMessage[] {
+  try {
+    const raw = sessionStorage.getItem(CHAT_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    const valid = parsed.filter(
+      (m): m is ChatMessage =>
+        m && typeof m === 'object' && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string'
+    );
+    return valid.slice(-MAX_STORED_MESSAGES);
+  } catch {
+    return [];
+  }
+}
+
 export const AIChatbot: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(loadStoredMessages);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,8 +111,27 @@ export const AIChatbot: React.FC = () => {
     }
   }, [open, messages, loading]);
 
-  const send = async () => {
-    const text = input.trim();
+  useEffect(() => {
+    if (messages.length === 0) return;
+    try {
+      sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-MAX_STORED_MESSAGES)));
+    } catch {
+      // ignore quota or disabled storage
+    }
+  }, [messages]);
+
+  const clearConversation = useCallback(() => {
+    setMessages([]);
+    setError(null);
+    try {
+      sessionStorage.removeItem(CHAT_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const send = async (textOverride?: string) => {
+    const text = (textOverride ?? input.trim()).trim();
     if (!text || loading) return;
 
     setInput('');
@@ -84,6 +163,9 @@ export const AIChatbot: React.FC = () => {
       send();
     }
   };
+
+  const showSuggestedQuestions =
+    messages.length === 0 || (messages.length > 0 && messages[messages.length - 1].role === 'assistant');
 
   return (
     <div className="ai-chatbot-widget">
@@ -159,16 +241,31 @@ export const AIChatbot: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full h-9 w-9"
-                  style={{ color: 'var(--chatbot-title-text)' }}
-                  onClick={() => setOpen(false)}
-                  aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  {messages.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full h-9 w-9"
+                      style={{ color: 'var(--chatbot-title-text)' }}
+                      onClick={clearConversation}
+                      aria-label="Clear conversation"
+                      title="Clear conversation"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full h-9 w-9"
+                    style={{ color: 'var(--chatbot-title-text)' }}
+                    onClick={() => setOpen(false)}
+                    aria-label="Close"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
 
               {/* Messages */}
@@ -196,6 +293,29 @@ export const AIChatbot: React.FC = () => {
                       <p className="text-xs opacity-70" style={{ color: 'var(--chatbot-bot-text)' }}>
                         Ask about features, pricing, or how to get started.
                       </p>
+                      {showSuggestedQuestions && (
+                        <div className="flex flex-wrap justify-center gap-2 mt-5">
+                          {SUGGESTED_QUESTIONS.map((q) => (
+                            <button
+                              key={q}
+                              type="button"
+                              onClick={() => send(q)}
+                              disabled={loading}
+                              className={cn(
+                                'text-xs font-medium px-3 py-2 rounded-full border transition-colors',
+                                'hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
+                              )}
+                              style={{
+                                borderColor: 'var(--chatbot-bot-border)',
+                                backgroundColor: 'var(--chatbot-bot-bubble)',
+                                color: 'var(--chatbot-bot-text)',
+                              }}
+                            >
+                              {q}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </motion.div>
                   )}
                   {messages.map((m, i) => (
@@ -230,10 +350,41 @@ export const AIChatbot: React.FC = () => {
                               }
                         }
                       >
-                        <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                        {m.role === 'user' ? (
+                          <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                        ) : (
+                          <div
+                            className="chatbot-markdown prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5"
+                            style={{ color: 'var(--chatbot-bot-text)' }}
+                            dangerouslySetInnerHTML={{ __html: renderAssistantContent(m.content) }}
+                          />
+                        )}
                       </div>
                     </motion.div>
                   ))}
+                  {showSuggestedQuestions && messages.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {SUGGESTED_QUESTIONS.slice(0, 3).map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          onClick={() => send(q)}
+                          disabled={loading}
+                          className={cn(
+                            'text-xs font-medium px-3 py-2 rounded-full border transition-colors',
+                            'hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
+                          )}
+                          style={{
+                            borderColor: 'var(--chatbot-bot-border)',
+                            backgroundColor: 'var(--chatbot-bot-bubble)',
+                            color: 'var(--chatbot-bot-text)',
+                          }}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {loading && (
                     <motion.div
                       initial={{ opacity: 0 }}
