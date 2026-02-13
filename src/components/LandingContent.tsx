@@ -35,7 +35,7 @@ const problemCardVariants = {
     opacity: 1,
     y: 0,
     rotateX: 0,
-    transition: { delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    transition: { delay: i * 0.1, duration: 0.75, ease: [0.22, 1, 0.36, 1] },
   }),
   hover: {
     rotateY: 4,
@@ -90,7 +90,7 @@ const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, ind
             className="relative aspect-[4/3] overflow-hidden rounded-t-2xl lg:rounded-l-2xl lg:rounded-tr-none"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ delay: 0.2 + i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ delay: 0.25 + i * 0.1, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
           >
             <img
               src={image}
@@ -106,7 +106,7 @@ const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, ind
                 style={{ borderColor: 'var(--landing-border)' }}
                 initial={{ opacity: 0, y: 8 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: 0.3 + i * 0.08 + j * 0.05, duration: 0.4 }}
+                transition={{ delay: 0.35 + i * 0.1 + j * 0.06, duration: 0.6 }}
               >
                 <div className="text-lg sm:text-xl font-bold" style={{ color: 'var(--landing-primary)' }}>{value}</div>
                 <div className="text-[10px] font-semibold uppercase tracking-widest mt-0.5 opacity-70" style={{ color: 'var(--landing-text)' }}>{label}</div>
@@ -120,7 +120,7 @@ const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, ind
             style={{ color: 'var(--landing-text)' }}
             initial={{ opacity: 0, y: 12 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.25 + i * 0.08, duration: 0.45 }}
+            transition={{ delay: 0.3 + i * 0.1, duration: 0.65 }}
           >
             <span className="text-2xl sm:text-3xl lg:text-4xl" style={{ color: 'var(--landing-primary)' }}>{firstLetter}</span>
             <span style={{ color: 'var(--landing-primary)' }}>{restTitle}</span>
@@ -130,7 +130,7 @@ const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, ind
             style={{ color: 'var(--landing-text)' }}
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : {}}
-            transition={{ delay: 0.3 + i * 0.08, duration: 0.4 }}
+            transition={{ delay: 0.35 + i * 0.1, duration: 0.6 }}
           >
             {problemDesc}
           </motion.p>
@@ -140,7 +140,7 @@ const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, ind
               style={{ borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.06)' }}
               initial={{ opacity: 0, x: -8 }}
               animate={isInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ delay: 0.35 + i * 0.08, duration: 0.4 }}
+              transition={{ delay: 0.4 + i * 0.1, duration: 0.6 }}
             >
               <span className="text-[10px] font-bold uppercase tracking-widest block mb-1.5" style={{ color: '#dc2626' }}>Problem</span>
               <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--landing-text)' }}>{problemDesc}</p>
@@ -150,7 +150,7 @@ const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, ind
               style={{ borderColor: 'var(--landing-primary)', backgroundColor: 'var(--landing-accent)' }}
               initial={{ opacity: 0, x: 8 }}
               animate={isInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ delay: 0.38 + i * 0.08, duration: 0.4 }}
+              transition={{ delay: 0.45 + i * 0.1, duration: 0.6 }}
             >
               <span className="text-xs font-bold uppercase tracking-widest block mb-1.5" style={{ color: 'var(--landing-primary)' }}>Our solution</span>
               <p className="text-xs sm:text-sm font-bold leading-relaxed" style={{ color: 'var(--landing-text)' }}>{solution}</p>
@@ -161,7 +161,7 @@ const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, ind
             style={{ color: 'var(--landing-primary)' }}
             initial={{ opacity: 0, y: 6 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.45 + i * 0.08, duration: 0.4 }}
+            transition={{ delay: 0.55 + i * 0.1, duration: 0.6 }}
           >
             {basicClosing}
           </motion.p>
@@ -189,8 +189,8 @@ const HowItWorksStepCard: React.FC<{ item: StepItem; index: number }> = ({ item,
       initial={{ opacity: 0, y: 48, rotateX: 14 }}
       animate={isInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 48, rotateX: 14 }}
       transition={{
-        delay: 0.15 + index * 0.12,
-        duration: 0.7,
+        delay: 0.2 + index * 0.15,
+        duration: 1,
         ease: [0.22, 1, 0.36, 1],
       }}
       whileHover={{
@@ -219,8 +219,8 @@ const HowItWorksStepCard: React.FC<{ item: StepItem; index: number }> = ({ item,
           initial={{ scale: 0, rotate: -180 }}
           animate={isInView ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -180 }}
           transition={{
-            delay: 0.35 + index * 0.12,
-            duration: 0.5,
+            delay: 0.45 + index * 0.15,
+            duration: 0.75,
             type: 'spring',
             stiffness: 200,
             damping: 20,
@@ -238,7 +238,7 @@ const HowItWorksStepCard: React.FC<{ item: StepItem; index: number }> = ({ item,
           style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
           initial={{ opacity: 0, x: -12 }}
           animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -12 }}
-          transition={{ delay: 0.5 + index * 0.12, duration: 0.4 }}
+          transition={{ delay: 0.6 + index * 0.15, duration: 0.6 }}
         >
           Step {step}
         </motion.span>
@@ -247,7 +247,7 @@ const HowItWorksStepCard: React.FC<{ item: StepItem; index: number }> = ({ item,
         className="p-4 sm:p-5 text-center"
         initial={{ opacity: 0 }}
         animate={isInView ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ delay: 0.45 + index * 0.12, duration: 0.4 }}
+        transition={{ delay: 0.55 + index * 0.15, duration: 0.6 }}
       >
         <p className="font-semibold text-sm sm:text-base leading-snug" style={{ color: 'var(--landing-text)' }}>
           {title}
@@ -261,15 +261,34 @@ export const LandingContent: React.FC = () => {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLElement>(null);
   const problemSectionRef = useRef<HTMLElement>(null);
+  const problemIntroRef = useRef<HTMLDivElement>(null);
+  const problemClosingRef = useRef<HTMLDivElement>(null);
   const visionSectionRef = useRef<HTMLElement>(null);
+  const visionBadgeRef = useRef<HTMLDivElement>(null);
+  const visionBodyRef = useRef<HTMLDivElement>(null);
   const howItWorksSectionRef = useRef<HTMLElement>(null);
+  const howItWorksIntroRef = useRef<HTMLDivElement>(null);
   const guaranteeStripRef = useRef<HTMLDivElement>(null);
+  const guaranteeImageRef = useRef<HTMLDivElement>(null);
+  const guaranteeContentRef = useRef<HTMLDivElement>(null);
   const ctaSectionRef = useRef<HTMLElement>(null);
+  const ctaHeadlineRef = useRef<HTMLDivElement>(null);
+  const ctaButtonRef = useRef<HTMLDivElement>(null);
+
   const isProblemInView = useInView(problemSectionRef, { once: true, amount: 0.08 });
+  const isProblemIntroInView = useInView(problemIntroRef, { once: true, amount: 0.2 });
+  const isProblemClosingInView = useInView(problemClosingRef, { once: true, amount: 0.3 });
   const isVisionInView = useInView(visionSectionRef, { once: true, amount: 0.15 });
+  const isVisionBadgeInView = useInView(visionBadgeRef, { once: true, amount: 0.25 });
+  const isVisionBodyInView = useInView(visionBodyRef, { once: true, amount: 0.2 });
   const isHowItWorksInView = useInView(howItWorksSectionRef, { once: true, amount: 0.1 });
-  const isGuaranteeStripInView = useInView(guaranteeStripRef, { once: true, amount: 0.2 });
+  const isHowItWorksIntroInView = useInView(howItWorksIntroRef, { once: true, amount: 0.3 });
+  const isGuaranteeStripInView = useInView(guaranteeStripRef, { once: true, amount: 0.15 });
+  const isGuaranteeImageInView = useInView(guaranteeImageRef, { once: true, amount: 0.2 });
+  const isGuaranteeContentInView = useInView(guaranteeContentRef, { once: true, amount: 0.2 });
   const isCtaInView = useInView(ctaSectionRef, { once: true, amount: 0.2 });
+  const isCtaHeadlineInView = useInView(ctaHeadlineRef, { once: true, amount: 0.4 });
+  const isCtaButtonInView = useInView(ctaButtonRef, { once: true, amount: 0.3 });
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
   const [slideTick, setSlideTick] = useState(0);
 
@@ -401,62 +420,66 @@ export const LandingContent: React.FC = () => {
       </section>
 
       {/* 2. The Problem → Solution */}
-      <section ref={problemSectionRef} id="problem" className="py-24 px-4 relative overflow-hidden" style={{ backgroundColor: 'var(--landing-bg)', borderTop: '1px solid var(--landing-border)' }}>
+      <section ref={problemSectionRef} id="problem" className="py-12 px-4 relative overflow-hidden" style={{ backgroundColor: 'var(--landing-bg)', borderTop: '1px solid var(--landing-border)' }}>
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-[0.06] blur-3xl pointer-events-none" style={{ background: 'radial-gradient(circle, var(--landing-primary) 0%, transparent 70%)' }} aria-hidden />
         <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-[0.05] blur-3xl pointer-events-none" style={{ background: 'radial-gradient(circle, var(--landing-primary) 0%, transparent 70%)' }} aria-hidden />
         <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, var(--landing-text) 1px, transparent 0)', backgroundSize: '40px 40px' }} aria-hidden />
 
         <div className="max-w-5xl mx-auto relative z-10" style={{ perspective: '1200px' }}>
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 24 }}
-            animate={isProblemInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <motion.span
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium uppercase tracking-widest mb-5 block"
-              style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}
-              initial={{ opacity: 0, y: 16 }}
-              animate={isProblemInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.1, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          <div ref={problemIntroRef} className="text-center mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={isProblemIntroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
             >
-              <Zap className="h-3 w-3" />
-              Why we built this
-            </motion.span>
-            <motion.h2
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-5 tracking-tight"
-              style={{ color: 'var(--landing-primary)' }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={isProblemInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.18, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            >
-              What we do
-            </motion.h2>
-            <motion.p
-              className="text-lg max-w-2xl mx-auto opacity-90 leading-relaxed"
-              style={{ color: 'var(--landing-text)' }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={isProblemInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.26, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            >
-              You&apos;ve tried apps and hacks. What&apos;s missing isn&apos;t motivation—it&apos;s a system that actually fits how you want to grow.
-            </motion.p>
-          </motion.div>
+              <motion.span
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium uppercase tracking-widest mb-5 block"
+                style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}
+                initial={{ opacity: 0, y: 16 }}
+                animate={isProblemIntroInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: 0.15, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <Zap className="h-3 w-3" />
+                Why we built this
+              </motion.span>
+              <motion.h2
+                className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-5 tracking-tight"
+                style={{ color: 'var(--landing-primary)' }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={isProblemIntroInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: 0.25, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+              >
+                What we do
+              </motion.h2>
+              <motion.p
+                className="text-lg max-w-2xl mx-auto opacity-90 leading-relaxed"
+                style={{ color: 'var(--landing-text)' }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={isProblemIntroInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: 0.35, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+              >
+                You&apos;ve tried apps and hacks. What&apos;s missing isn&apos;t motivation—it&apos;s a system that actually fits how you want to grow.
+              </motion.p>
+            </motion.div>
+          </div>
 
           <div className="grid gap-10 sm:gap-12">
             {problemItems.map((item, i) => (
               <ProblemCard key={i} item={item} index={i} />
             ))}
           </div>
-          <motion.p
-            className="text-center mt-12 text-sm font-medium opacity-85 max-w-xl mx-auto"
-            style={{ color: 'var(--landing-text)' }}
-            initial={{ opacity: 0, y: 16 }}
-            animate={isProblemInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.7, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          >
-            A private space for your goals, your plan, your progress—and real accountability—without the noise.
-          </motion.p>
+
+          <div ref={problemClosingRef} className="mt-12">
+            <motion.p
+              className="text-center text-sm font-medium opacity-85 max-w-xl mx-auto"
+              style={{ color: 'var(--landing-text)' }}
+              initial={{ opacity: 0, y: 16 }}
+              animate={isProblemClosingInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            >
+              A private space for your goals, your plan, your progress—and real accountability—without the noise.
+            </motion.p>
+          </div>
         </div>
       </section>
 
@@ -506,8 +529,8 @@ export const LandingContent: React.FC = () => {
           className="relative z-10 w-full max-w-3xl mx-auto"
           style={{ perspective: '1000px', transformStyle: 'preserve-3d' }}
           initial={false}
-          animate={isVisionInView ? { opacity: 1 } : { opacity: 0.6 }}
-          transition={{ duration: 0.5 }}
+          animate={isVisionBadgeInView ? { opacity: 1 } : { opacity: 0.6 }}
+          transition={{ duration: 0.75 }}
         >
           <motion.div
             className="relative mx-auto rounded-3xl p-8 sm:p-12 text-center"
@@ -519,72 +542,75 @@ export const LandingContent: React.FC = () => {
               transformStyle: 'preserve-3d',
             }}
             initial={{ opacity: 0, rotateX: 12, y: 40 }}
-            animate={isVisionInView ? { opacity: 1, rotateX: 0, y: 0 } : { opacity: 0, rotateX: 12, y: 40 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            animate={isVisionBadgeInView ? { opacity: 1, rotateX: 0, y: 0 } : { opacity: 0, rotateX: 12, y: 40 }}
+            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
             whileHover={{
               rotateX: -2,
               rotateY: 2,
               scale: 1.01,
               boxShadow: '0 32px 64px -16px rgba(44, 157, 115, 0.22), 0 0 0 1px rgba(255,255,255,0.6)',
-              transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+              transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
             }}
           >
-            {/* Badge — 3D pop */}
-            <motion.div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest mb-8"
-              style={{
-                backgroundColor: 'var(--landing-primary)',
-                color: 'white',
-                boxShadow: '0 4px 14px rgba(44, 157, 115, 0.35)',
-              }}
-              initial={{ opacity: 0, scale: 0.8, rotateY: -15 }}
-              animate={isVisionInView ? { opacity: 1, scale: 1, rotateY: 0 } : { opacity: 0, scale: 0.8, rotateY: -15 }}
-              transition={{ delay: 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <motion.span
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3 }}
+            {/* Badge + headlines — animate when this block enters view */}
+            <div ref={visionBadgeRef}>
+              <motion.div
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest mb-8"
+                style={{
+                  backgroundColor: 'var(--landing-primary)',
+                  color: 'white',
+                  boxShadow: '0 4px 14px rgba(44, 157, 115, 0.35)',
+                }}
+                initial={{ opacity: 0, scale: 0.8, rotateY: -15 }}
+                animate={isVisionBadgeInView ? { opacity: 1, scale: 1, rotateY: 0 } : { opacity: 0, scale: 0.8, rotateY: -15 }}
+                transition={{ delay: 0.2, duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
               >
-                <Sparkles className="h-4 w-4 inline-block" />
-              </motion.span>
-              The Vision
-            </motion.div>
-            {/* Headline — reveal with depth */}
-            <motion.h2
-              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 leading-tight"
-              style={{ color: 'var(--landing-text)' }}
-              initial={{ opacity: 0, y: 24, rotateX: 8 }}
-              animate={isVisionInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 24, rotateX: 8 }}
-              transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            >
-              This is not a goal tracker.
-            </motion.h2>
-            <motion.p
-              className="text-xl sm:text-2xl font-semibold mb-6"
-              style={{ color: 'var(--landing-primary)' }}
-              initial={{ opacity: 0, y: 20, rotateX: 6 }}
-              animate={isVisionInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 20, rotateX: 6 }}
-              transition={{ delay: 0.4, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            >
-              This is your private development space.
-            </motion.p>
-            <motion.p
-              className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
-              style={{ color: 'var(--landing-text)' }}
-              initial={{ opacity: 0, y: 20, rotateX: 4 }}
-              animate={isVisionInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 20, rotateX: 4 }}
-              transition={{ delay: 0.55, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            >
-              A place where you choose who you want to become, write your plan, measure your progress, and stay accountable—without comparison or noise.
-            </motion.p>
-            {/* Decorative line — scale in */}
-            <motion.div
-              className="mt-10 mx-auto h-1 w-16 rounded-full"
-              style={{ backgroundColor: 'var(--landing-primary)' }}
-              initial={{ opacity: 0, scaleX: 0 }}
-              animate={isVisionInView ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
-              transition={{ delay: 0.75, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            />
+                <motion.span
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3 }}
+                >
+                  <Sparkles className="h-4 w-4 inline-block" />
+                </motion.span>
+                The Vision
+              </motion.div>
+              <motion.h2
+                className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 leading-tight"
+                style={{ color: 'var(--landing-text)' }}
+                initial={{ opacity: 0, y: 24, rotateX: 8 }}
+                animate={isVisionBadgeInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 24, rotateX: 8 }}
+                transition={{ delay: 0.35, duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
+              >
+                This is not a goal tracker.
+              </motion.h2>
+              <motion.p
+                className="text-xl sm:text-2xl font-semibold mb-6"
+                style={{ color: 'var(--landing-primary)' }}
+                initial={{ opacity: 0, y: 20, rotateX: 6 }}
+                animate={isVisionBadgeInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 20, rotateX: 6 }}
+                transition={{ delay: 0.5, duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
+              >
+                This is your private development space.
+              </motion.p>
+            </div>
+            {/* Body + line — animate when this block scrolls into view (separate zone) */}
+            <div ref={visionBodyRef}>
+              <motion.p
+                className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
+                style={{ color: 'var(--landing-text)' }}
+                initial={{ opacity: 0, y: 20, rotateX: 4 }}
+                animate={isVisionBodyInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 20, rotateX: 4 }}
+                transition={{ delay: 0.15, duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
+              >
+                A place where you choose who you want to become, write your plan, measure your progress, and stay accountable—without comparison or noise.
+              </motion.p>
+              <motion.div
+                className="mt-10 mx-auto h-1 w-16 rounded-full"
+                style={{ backgroundColor: 'var(--landing-primary)' }}
+                initial={{ opacity: 0, scaleX: 0 }}
+                animate={isVisionBodyInView ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
+                transition={{ delay: 0.45, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+              />
+            </div>
           </motion.div>
         </motion.div>
       </section>
@@ -600,24 +626,26 @@ export const LandingContent: React.FC = () => {
         }}
       >
         <div className="max-w-6xl mx-auto">
-          <motion.h2
-            className="text-2xl sm:text-3xl font-bold mb-4 text-center"
-            style={{ color: 'var(--landing-text)' }}
-            initial={{ opacity: 0, y: 24, rotateX: 10 }}
-            animate={isHowItWorksInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 24, rotateX: 10 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          >
-            How The System Works
-          </motion.h2>
-          <motion.p
-            className="text-center text-sm sm:text-base opacity-80 mb-14 max-w-2xl mx-auto"
-            style={{ color: 'var(--landing-text)' }}
-            initial={{ opacity: 0, y: 16 }}
-            animate={isHowItWorksInView ? { opacity: 0.85, y: 0 } : { opacity: 0, y: 16 }}
-            transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          >
-            Four simple steps to define your path, plan it, schedule it, and improve with AI.
-          </motion.p>
+          <div ref={howItWorksIntroRef} className="text-center mb-14">
+            <motion.h2
+              className="text-2xl sm:text-3xl font-bold mb-4"
+              style={{ color: 'var(--landing-text)' }}
+              initial={{ opacity: 0, y: 24, rotateX: 10 }}
+              animate={isHowItWorksIntroInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 24, rotateX: 10 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            >
+              How The System Works
+            </motion.h2>
+            <motion.p
+              className="text-center text-sm sm:text-base opacity-80 max-w-2xl mx-auto"
+              style={{ color: 'var(--landing-text)' }}
+              initial={{ opacity: 0, y: 16 }}
+              animate={isHowItWorksIntroInView ? { opacity: 0.85, y: 0 } : { opacity: 0, y: 16 }}
+              transition={{ delay: 0.15, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            >
+              Four simple steps to define your path, plan it, schedule it, and improve with AI.
+            </motion.p>
+          </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8" style={{ transformStyle: 'preserve-3d' }}>
             {stepItems.map((item, index) => (
               <HowItWorksStepCard key={item.step} item={item} index={index} />
@@ -640,22 +668,23 @@ export const LandingContent: React.FC = () => {
               }}
               initial={{ opacity: 0, y: 40, rotateX: 10 }}
               animate={isGuaranteeStripInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 40, rotateX: 10 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{
                 rotateY: 2,
                 rotateX: -1,
                 boxShadow: '0 28px 56px -16px rgba(44, 157, 115, 0.15), 0 0 0 1px rgba(0,0,0,0.04)',
-                transition: { duration: 0.3 },
+                transition: { duration: 0.35 },
               }}
             >
               <div className="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-0 min-h-0">
-                {/* Image column — 3D tilt + scale-in */}
+                {/* Image column — animates when this block enters view */}
                 <motion.div
+                  ref={guaranteeImageRef}
                   className="relative aspect-[4/3] md:aspect-auto md:min-h-[280px] overflow-hidden"
                   style={{ transformStyle: 'preserve-3d' }}
                   initial={{ opacity: 0, x: -32, rotateY: -8 }}
-                  animate={isGuaranteeStripInView ? { opacity: 1, x: 0, rotateY: 0 } : { opacity: 0, x: -32, rotateY: -8 }}
-                  transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  animate={isGuaranteeImageInView ? { opacity: 1, x: 0, rotateY: 0 } : { opacity: 0, x: -32, rotateY: -8 }}
+                  transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <motion.img
                     src={successPhoneImg}
@@ -670,14 +699,13 @@ export const LandingContent: React.FC = () => {
                   />
                 </motion.div>
 
-                {/* Content column */}
-                <div className="p-6 sm:p-8 md:p-10 flex flex-col justify-center space-y-6 md:space-y-8">
-                  {/* Part 1: #1 Life changing app! */}
+                {/* Content column — animates when this block enters view (separate zone) */}
+                <div ref={guaranteeContentRef} className="p-6 sm:p-8 md:p-10 flex flex-col justify-center space-y-6 md:space-y-8">
                   <motion.div
                     className="flex flex-wrap items-center justify-center md:justify-start gap-3"
                     initial={{ opacity: 0, y: 20, rotateX: 6 }}
-                    animate={isGuaranteeStripInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 20, rotateX: 6 }}
-                    transition={{ delay: 0.35, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    animate={isGuaranteeContentInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 20, rotateX: 6 }}
+                    transition={{ delay: 0.15, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <motion.div
                       className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-base sm:text-lg tracking-tight"
@@ -694,7 +722,6 @@ export const LandingContent: React.FC = () => {
                     </motion.div>
                   </motion.div>
 
-                  {/* Part 2: Our 100% happiness guarantee */}
                   <motion.div
                     className="flex items-start gap-4 p-5 sm:p-6 rounded-xl border"
                     style={{
@@ -703,18 +730,18 @@ export const LandingContent: React.FC = () => {
                       transformStyle: 'preserve-3d',
                     }}
                     initial={{ opacity: 0, y: 24, rotateX: 5 }}
-                    animate={isGuaranteeStripInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 24, rotateX: 5 }}
-                    transition={{ delay: 0.5, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    animate={isGuaranteeContentInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 24, rotateX: 5 }}
+                    transition={{ delay: 0.35, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
                     whileHover={{
                       rotateY: 2,
                       boxShadow: '0 12px 28px -8px rgba(44, 157, 115, 0.12), 0 0 0 1px var(--landing-border)',
-                      transition: { duration: 0.25 },
+                      transition: { duration: 0.3 },
                     }}
                   >
                     <motion.span
                       initial={{ scale: 0, rotate: -20 }}
-                      animate={isGuaranteeStripInView ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -20 }}
-                      transition={{ delay: 0.6, type: 'spring', stiffness: 260, damping: 22 }}
+                      animate={isGuaranteeContentInView ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -20 }}
+                      transition={{ delay: 0.5, type: 'spring', stiffness: 260, damping: 22 }}
                     >
                       <ShieldCheck className="h-7 w-7 shrink-0 mt-0.5" style={{ color: 'var(--landing-primary)' }} strokeWidth={2} />
                     </motion.span>
@@ -728,12 +755,11 @@ export const LandingContent: React.FC = () => {
                     </div>
                   </motion.div>
 
-                  {/* Part 3: You're not everybody, you are you */}
                   <motion.div
                     className="text-center md:text-left"
                     initial={{ opacity: 0, x: 16, rotateY: 4 }}
-                    animate={isGuaranteeStripInView ? { opacity: 1, x: 0, rotateY: 0 } : { opacity: 0, x: 16, rotateY: 4 }}
-                    transition={{ delay: 0.65, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    animate={isGuaranteeContentInView ? { opacity: 1, x: 0, rotateY: 0 } : { opacity: 0, x: 16, rotateY: 4 }}
+                    transition={{ delay: 0.55, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <p
                       className="text-lg sm:text-xl md:text-2xl font-bold leading-snug tracking-tight"
@@ -752,39 +778,41 @@ export const LandingContent: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. Final CTA — animation + 3D */}
+      {/* 5. Final CTA — headline and button animate in separate zones */}
       <section
         ref={ctaSectionRef}
         id="cta"
         className="py-24 px-4 text-white overflow-hidden"
         style={{ backgroundColor: 'var(--landing-primary)', perspective: '1200px' }}
       >
-        <motion.div
-          className="max-w-2xl mx-auto text-center"
-          style={{ transformStyle: 'preserve-3d' }}
-          initial={{ opacity: 0, y: 40, rotateX: 12 }}
-          animate={isCtaInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 40, rotateX: 12 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          whileHover={{
-            rotateY: 2,
-            rotateX: -1,
-            scale: 1.02,
-            transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
-          }}
-        >
-          <motion.h2
-            className="text-3xl sm:text-4xl font-bold mb-6"
-            initial={{ opacity: 0, y: 24 }}
-            animate={isCtaInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
-            transition={{ delay: 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          >
-            Start becoming the person you were meant to be.
-          </motion.h2>
+        <div className="max-w-2xl mx-auto text-center" style={{ transformStyle: 'preserve-3d' }}>
           <motion.div
+            ref={ctaHeadlineRef}
+            initial={{ opacity: 0, y: 40, rotateX: 12 }}
+            animate={isCtaHeadlineInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 40, rotateX: 12 }}
+            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+            whileHover={{
+              rotateY: 2,
+              rotateX: -1,
+              scale: 1.01,
+              transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+            }}
+          >
+            <motion.h2
+              className="text-3xl sm:text-4xl font-bold mb-6"
+              initial={{ opacity: 0, y: 24 }}
+              animate={isCtaHeadlineInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+              transition={{ delay: 0.15, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            >
+              Start becoming the person you were meant to be.
+            </motion.h2>
+          </motion.div>
+          <motion.div
+            ref={ctaButtonRef}
             initial={{ opacity: 0, y: 20, scale: 0.96 }}
-            animate={isCtaInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 20, scale: 0.96 }}
-            transition={{ delay: 0.25, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            whileHover={{ scale: 1.05, transition: { duration: 0.25 } }}
+            animate={isCtaButtonInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 20, scale: 0.96 }}
+            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            whileHover={{ scale: 1.05, transition: { duration: 0.3 } }}
             whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
           >
             <AuthModal
@@ -801,7 +829,7 @@ export const LandingContent: React.FC = () => {
               defaultMode="signup"
             />
           </motion.div>
-        </motion.div>
+        </div>
       </section>
     </>
   );
