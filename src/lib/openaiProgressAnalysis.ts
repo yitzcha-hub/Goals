@@ -317,6 +317,127 @@ async function chatCompletion(
   return promise;
 }
 
+/** Message for multi-turn chat (no caching; used by site chatbot). */
+export type ChatMessage = { role: 'user' | 'assistant'; content: string };
+
+/**
+ * Send a conversation to the AI and get the next assistant reply.
+ * Uses the same provider (OpenAI or Gemini) and rate limiting as chatCompletion.
+ */
+export async function chatCompletionWithMessages(
+  messages: ChatMessage[],
+  { maxTokens = 600, temperature = 0.7 }: { maxTokens?: number; temperature?: number } = {},
+): Promise<string | null> {
+  const provider = getProvider();
+  if (!provider) return null;
+
+  if (!canMakeRequest()) {
+    throw new Error('Too many AI requests. Please wait a moment before trying again.');
+  }
+
+  const execute = async (): Promise<string | null> => {
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        recordRequest();
+
+        if (provider.type === 'openai') {
+          const res = await fetch(OPENAI_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${provider.key}`,
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: messages.map((m) => ({ role: m.role, content: m.content })),
+              temperature,
+              max_tokens: maxTokens,
+            }),
+          });
+
+          if (res.status === 429) {
+            const retryAfter = res.headers.get('Retry-After');
+            const delayMs = retryAfter
+              ? parseInt(retryAfter, 10) * 1000
+              : BASE_DELAY_MS * Math.pow(2, attempt);
+            if (attempt < MAX_RETRIES) {
+              await sleep(delayMs);
+              continue;
+            }
+            throw new Error('OpenAI rate limit exceeded. Please wait a minute and try again.');
+          }
+
+          if (!res.ok) {
+            if (res.status === 401)
+              throw new Error('Invalid OpenAI API key. Please check your key in Settings.');
+            const err = await res.text();
+            console.error('OpenAI API error:', res.status, err);
+            return null;
+          }
+
+          const data = await res.json();
+          return data.choices?.[0]?.message?.content ?? null;
+        }
+
+        /* ---------- Gemini: map messages to contents ---------- */
+        const contents = messages.map((m) => ({
+          role: m.role === 'user' ? 'user' : 'model',
+          parts: [{ text: m.content }],
+        }));
+        const res = await fetch(geminiUrl(provider.key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents,
+            generationConfig: {
+              temperature,
+              maxOutputTokens: maxTokens,
+            },
+          }),
+        });
+
+        if (res.status === 429) {
+          const delayMs = BASE_DELAY_MS * Math.pow(2, attempt);
+          if (attempt < MAX_RETRIES) {
+            await sleep(delayMs);
+            continue;
+          }
+          throw new Error('Gemini rate limit reached. Please wait a moment.');
+        }
+
+        if (!res.ok) {
+          if (res.status === 400 || res.status === 403)
+            throw new Error('Invalid Gemini API key. Get a free key at aistudio.google.com/apikey');
+          const err = await res.text();
+          console.error('Gemini API error:', res.status, err);
+          return null;
+        }
+
+        const data = await res.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+      } catch (e) {
+        if (
+          e instanceof Error &&
+          (e.message.includes('rate limit') ||
+            e.message.includes('quota') ||
+            e.message.includes('Too many AI') ||
+            e.message.includes('Invalid'))
+        ) {
+          throw e;
+        }
+        if (attempt === MAX_RETRIES) {
+          console.error('AI chat (messages) error:', e);
+          return null;
+        }
+        await sleep(BASE_DELAY_MS * Math.pow(2, attempt));
+      }
+    }
+    return null;
+  };
+
+  return execute();
+}
+
 /** Parse a JSON string from an AI response (strips markdown fences). */
 function parseJsonResponse<T>(raw: string): T | null {
   try {
