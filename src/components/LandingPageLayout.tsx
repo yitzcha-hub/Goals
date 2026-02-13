@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { LandingHeader } from '@/components/LandingHeader';
 import { LandingFooter } from '@/components/LandingFooter';
+import { AIChatbot } from '@/components/AIChatbot';
 import { AuthenticatedLayout } from '@/components/AuthenticatedLayout';
 
 export type NavItem =
@@ -65,6 +66,7 @@ export const LandingPageLayout: React.FC<LandingPageLayoutProps> = ({ children, 
       />
       {children}
       <LandingFooter navigate={navigate} scrollToLandingSection={scrollToLandingSection} />
+      <AIChatbot />
     </div>
   );
 };

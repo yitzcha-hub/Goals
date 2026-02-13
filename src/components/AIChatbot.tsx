@@ -86,8 +86,8 @@ export const AIChatbot: React.FC = () => {
   };
 
   return (
-    <>
-      {/* Floating trigger — organic pill with glow */}
+    <div className="ai-chatbot-widget">
+      {/* Floating trigger — uses --chatbot-trigger-* */}
       <motion.button
         type="button"
         onClick={() => setOpen(true)}
@@ -96,9 +96,9 @@ export const AIChatbot: React.FC = () => {
           'shadow-lg transition-shadow hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
         )}
         style={{
-          background: `linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1e7a5a 100%)`,
-          color: 'white',
-          boxShadow: '0 8px 32px rgba(44, 157, 115, 0.4)',
+          background: 'var(--chatbot-trigger-bg)',
+          color: 'var(--chatbot-trigger-text)',
+          boxShadow: 'var(--chatbot-trigger-shadow)',
         }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.98 }}
@@ -128,9 +128,9 @@ export const AIChatbot: React.FC = () => {
               style={{
                 height: 'min(85vh, 560px)',
                 borderRadius: '1.75rem 1.75rem 0.5rem 1.75rem',
-                background: 'var(--landing-bg)',
-                border: '1px solid var(--landing-border)',
-                boxShadow: '0 24px 64px rgba(0,0,0,0.12), 0 0 0 1px rgba(44, 157, 115, 0.08)',
+                background: 'var(--chatbot-panel-bg)',
+                border: '1px solid var(--chatbot-panel-border)',
+                boxShadow: '0 24px 64px rgba(0,0,0,0.14), 0 0 0 1px var(--chatbot-panel-border)',
               }}
               initial={{ opacity: 0, y: 24, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -138,26 +138,26 @@ export const AIChatbot: React.FC = () => {
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header — curved top with leaf */}
+              {/* Header — uses --chatbot-header-* and --chatbot-title-* */}
               <div
                 className="flex items-center justify-between shrink-0 px-5 py-4 rounded-t-[1.75rem]"
                 style={{
-                  background: 'linear-gradient(180deg, var(--landing-accent) 0%, rgba(232,245,233,0.6) 100%)',
-                  borderBottom: '1px solid var(--landing-border)',
+                  background: 'var(--chatbot-header-bg)',
+                  borderBottom: '1px solid var(--chatbot-panel-border)',
                 }}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className="flex h-10 w-10 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: 'var(--landing-primary)' }}
+                    style={{ backgroundColor: 'var(--chatbot-icon-bg)', color: 'var(--chatbot-icon-text)' }}
                   >
-                    <Leaf className="h-5 w-5 text-white" />
+                    <Leaf className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-bold text-sm" style={{ color: 'var(--landing-text)' }}>
+                    <p className="font-bold text-sm" style={{ color: 'var(--chatbot-title-text)' }}>
                       Goals & Development AI
                     </p>
-                    <p className="text-xs font-medium opacity-70" style={{ color: 'var(--landing-primary)' }}>
+                    <p className="text-xs font-medium opacity-80" style={{ color: 'var(--chatbot-subtitle-text)' }}>
                       Powered by OpenAI
                     </p>
                   </div>
@@ -166,7 +166,7 @@ export const AIChatbot: React.FC = () => {
                   variant="ghost"
                   size="icon"
                   className="rounded-full h-9 w-9"
-                  style={{ color: 'var(--landing-text)' }}
+                  style={{ color: 'var(--chatbot-title-text)' }}
                   onClick={() => setOpen(false)}
                   aria-label="Close"
                 >
@@ -189,14 +189,14 @@ export const AIChatbot: React.FC = () => {
                     >
                       <div
                         className="flex h-14 w-14 items-center justify-center rounded-2xl mb-4"
-                        style={{ backgroundColor: 'var(--landing-accent)' }}
+                        style={{ backgroundColor: 'var(--chatbot-bot-bubble)', border: '1px solid var(--chatbot-bot-border)' }}
                       >
-                        <Bot className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
+                        <Bot className="h-7 w-7" style={{ color: 'var(--chatbot-subtitle-text)' }} />
                       </div>
-                      <p className="text-sm font-medium mb-1" style={{ color: 'var(--landing-text)' }}>
+                      <p className="text-sm font-medium mb-1" style={{ color: 'var(--chatbot-title-text)' }}>
                         Hi! I’m your Goals assistant.
                       </p>
-                      <p className="text-xs opacity-70" style={{ color: 'var(--landing-text)' }}>
+                      <p className="text-xs opacity-70" style={{ color: 'var(--chatbot-bot-text)' }}>
                         Ask about features, pricing, or how to get started.
                       </p>
                     </motion.div>
@@ -222,14 +222,14 @@ export const AIChatbot: React.FC = () => {
                         style={
                           m.role === 'user'
                             ? {
-                                background: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 100%)',
-                                color: 'white',
-                                boxShadow: '0 4px 14px rgba(44, 157, 115, 0.25)',
+                                background: 'var(--chatbot-user-bubble)',
+                                color: 'var(--chatbot-user-text)',
+                                boxShadow: '0 4px 14px rgba(5, 150, 105, 0.25)',
                               }
                             : {
-                                backgroundColor: 'var(--landing-accent)',
-                                borderColor: 'var(--landing-border)',
-                                color: 'var(--landing-text)',
+                                backgroundColor: 'var(--chatbot-bot-bubble)',
+                                borderColor: 'var(--chatbot-bot-border)',
+                                color: 'var(--chatbot-bot-text)',
                               }
                         }
                       >
@@ -246,9 +246,9 @@ export const AIChatbot: React.FC = () => {
                       <div
                         className="rounded-2xl rounded-bl-md border px-4 py-3 text-sm"
                         style={{
-                          backgroundColor: 'var(--landing-accent)',
-                          borderColor: 'var(--landing-border)',
-                          color: 'var(--landing-text)',
+                          backgroundColor: 'var(--chatbot-bot-bubble)',
+                          borderColor: 'var(--chatbot-bot-border)',
+                          color: 'var(--chatbot-bot-text)',
                         }}
                       >
                         <span className="inline-flex gap-1">
@@ -265,12 +265,12 @@ export const AIChatbot: React.FC = () => {
                 </div>
               </div>
 
-              {/* Input area */}
+              {/* Input area — uses --chatbot-input-* and --chatbot-send-* */}
               <div
                 className="shrink-0 p-4 rounded-b-[1.75rem]"
                 style={{
-                  borderTop: '1px solid var(--landing-border)',
-                  backgroundColor: 'rgba(255,255,255,0.6)',
+                  borderTop: '1px solid var(--chatbot-panel-border)',
+                  backgroundColor: 'var(--chatbot-input-bg)',
                 }}
               >
                 <div className="flex gap-2 items-end">
@@ -283,11 +283,12 @@ export const AIChatbot: React.FC = () => {
                     rows={1}
                     className={cn(
                       'flex-1 min-h-[44px] max-h-32 resize-none rounded-2xl px-4 py-3 text-sm',
-                      'border bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
+                      'border focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
                     )}
                     style={{
-                      borderColor: 'var(--landing-border)',
-                      color: 'var(--landing-text)',
+                      borderColor: 'var(--chatbot-input-border)',
+                      backgroundColor: 'var(--chatbot-panel-bg)',
+                      color: 'var(--chatbot-input-text)',
                     }}
                     disabled={loading}
                   />
@@ -295,7 +296,7 @@ export const AIChatbot: React.FC = () => {
                     type="button"
                     size="icon"
                     className="h-11 w-11 shrink-0 rounded-full"
-                    style={{ backgroundColor: 'var(--landing-primary)', color: 'white' }}
+                    style={{ backgroundColor: 'var(--chatbot-send-bg)', color: 'var(--chatbot-send-text)' }}
                     onClick={send}
                     disabled={loading || !input.trim()}
                     aria-label="Send"
@@ -308,6 +309,6 @@ export const AIChatbot: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 };

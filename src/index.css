@@ -71,6 +71,53 @@
   --landing-border: #E0E0E0;
 }
 
+/* AI Chatbot — consistent style on all pages (light) */
+:root {
+  --chatbot-panel-bg: #ffffff;
+  --chatbot-panel-border: #e2e8f0;
+  --chatbot-header-bg: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
+  --chatbot-trigger-bg: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%);
+  --chatbot-trigger-text: #ffffff;
+  --chatbot-trigger-shadow: 0 10px 40px rgba(5, 150, 105, 0.35);
+  --chatbot-user-bubble: linear-gradient(135deg, #059669 0%, #047857 100%);
+  --chatbot-user-text: #ffffff;
+  --chatbot-bot-bubble: #f0fdf4;
+  --chatbot-bot-border: #bbf7d0;
+  --chatbot-bot-text: #14532d;
+  --chatbot-input-bg: #f8fafc;
+  --chatbot-input-border: #e2e8f0;
+  --chatbot-input-text: #0f172a;
+  --chatbot-send-bg: #059669;
+  --chatbot-send-text: #ffffff;
+  --chatbot-title-text: #0f172a;
+  --chatbot-subtitle-text: #047857;
+  --chatbot-icon-bg: #059669;
+  --chatbot-icon-text: #ffffff;
+}
+
+.dark {
+  --chatbot-panel-bg: #0f172a;
+  --chatbot-panel-border: #334155;
+  --chatbot-header-bg: linear-gradient(180deg, #052e16 0%, #064e3b 100%);
+  --chatbot-trigger-bg: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  --chatbot-trigger-text: #ffffff;
+  --chatbot-trigger-shadow: 0 10px 40px rgba(16, 185, 129, 0.4);
+  --chatbot-user-bubble: linear-gradient(135deg, #059669 0%, #047857 100%);
+  --chatbot-user-text: #ffffff;
+  --chatbot-bot-bubble: #064e3b;
+  --chatbot-bot-border: #047857;
+  --chatbot-bot-text: #d1fae5;
+  --chatbot-input-bg: #1e293b;
+  --chatbot-input-border: #334155;
+  --chatbot-input-text: #f1f5f9;
+  --chatbot-send-bg: #10b981;
+  --chatbot-send-text: #ffffff;
+  --chatbot-title-text: #f1f5f9;
+  --chatbot-subtitle-text: #6ee7b7;
+  --chatbot-icon-bg: #059669;
+  --chatbot-icon-text: #ffffff;
+}
+
 /* Dropdown item hover — green gradient like landing page (overrides yellow accent) */
 .dropdown-landing [role="menuitem"]:focus:not(.signout-item),
 .dropdown-landing [role="menuitem"][data-highlighted]:not(.signout-item) {
