@@ -236,9 +236,6 @@ export const AIChatbot: React.FC = () => {
                     <p className="font-bold text-sm" style={{ color: 'var(--chatbot-title-text)' }}>
                       Goals & Development AI
                     </p>
-                    <p className="text-xs font-medium opacity-80" style={{ color: 'var(--chatbot-subtitle-text)' }}>
-                      Powered by OpenAI
-                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
