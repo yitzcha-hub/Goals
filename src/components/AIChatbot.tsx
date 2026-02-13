@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Leaf, Send, Sparkles, X, Bot } from 'lucide-react';
+import { Leaf, Send, Compass, X, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -92,7 +92,7 @@ export const AIChatbot: React.FC = () => {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          'fixed bottom-6 right-6 z-40 flex items-center gap-2 overflow-hidden rounded-full pl-4 pr-5 py-3',
+          'fixed bottom-6 right-6 z-40 flex items-center justify-center rounded-full h-14 w-14',
           'shadow-lg transition-shadow hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
         )}
         style={{
@@ -104,10 +104,7 @@ export const AIChatbot: React.FC = () => {
         whileTap={{ scale: 0.98 }}
         aria-label="Open AI assistant"
       >
-        <span className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5" />
-          <span className="text-sm font-bold">Ask AI</span>
-        </span>
+        <Compass className="h-6 w-6" />
       </motion.button>
 
       <AnimatePresence>
