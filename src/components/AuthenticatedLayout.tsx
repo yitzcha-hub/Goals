@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { AuthenticatedHeader } from '@/components/AuthenticatedHeader';
 import { AuthenticatedFooter } from '@/components/AuthenticatedFooter';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
-import { AIChatbot } from '@/components/AIChatbot';
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -20,7 +19,6 @@ export const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ childr
       </main>
       <AuthenticatedFooter navigate={navigate} />
       <OfflineIndicator />
-      <AIChatbot />
     </div>
   );
 };

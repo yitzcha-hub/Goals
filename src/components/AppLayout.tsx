@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProductTour } from './ProductTour';
 import { OfflineIndicator } from './OfflineIndicator';
-import { AIChatbot } from './AIChatbot';
 import Dashboard from '@/pages/Dashboard';
 import { AuthenticatedLayout } from '@/components/AuthenticatedLayout';
 import { LandingHeader } from '@/components/LandingHeader';
@@ -100,7 +99,6 @@ const AppLayout: React.FC = () => {
 
       <ProductTour isActive={isTourActive} onComplete={() => setIsTourActive(false)} />
       <OfflineIndicator />
-      <AIChatbot />
 
     </div>
   );

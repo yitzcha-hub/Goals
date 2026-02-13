@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { StorageModeProvider } from "@/contexts/StorageModeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AIChatbot } from "@/components/AIChatbot";
 import { Loader2 } from "lucide-react";
 
 // Route-level code splitting: load pages only when their route is visited
@@ -51,6 +52,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <StorageModeProvider>
+            <AIChatbot />
             <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Index />} />
