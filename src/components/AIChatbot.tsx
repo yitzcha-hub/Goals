@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Leaf, Send, Compass, X, Bot, RotateCcw } from 'lucide-react';
+import { Send, Compass, X, RotateCcw } from 'lucide-react';
+import aiChatbotLogo from '@/assets/images/AI-chatbot.jpg';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { marked } from 'marked';
@@ -227,10 +228,14 @@ export const AIChatbot: React.FC = () => {
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className="flex h-10 w-10 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: 'var(--chatbot-icon-bg)', color: 'var(--chatbot-icon-text)' }}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shrink-0"
+                    style={{ backgroundColor: 'var(--chatbot-icon-bg)' }}
                   >
-                    <Leaf className="h-5 w-5" />
+                    <img
+                      src={aiChatbotLogo}
+                      alt="AI assistant"
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                   <div>
                     <p className="font-bold text-sm" style={{ color: 'var(--chatbot-title-text)' }}>
@@ -279,10 +284,14 @@ export const AIChatbot: React.FC = () => {
                       className="flex flex-col items-center justify-center py-8 px-4 text-center"
                     >
                       <div
-                        className="flex h-14 w-14 items-center justify-center rounded-2xl mb-4"
-                        style={{ backgroundColor: 'var(--chatbot-bot-bubble)', border: '1px solid var(--chatbot-bot-border)' }}
+                        className="flex h-14 w-14 items-center justify-center rounded-2xl mb-4 overflow-hidden shrink-0"
+                        style={{ border: '1px solid var(--chatbot-bot-border)' }}
                       >
-                        <Bot className="h-7 w-7" style={{ color: 'var(--chatbot-subtitle-text)' }} />
+                        <img
+                          src={aiChatbotLogo}
+                          alt="AI assistant"
+                          className="h-full w-full object-cover"
+                        />
                       </div>
                       <p className="text-sm font-medium mb-1" style={{ color: 'var(--chatbot-title-text)' }}>
                         Hi! I’m your Goals assistant.
@@ -442,7 +451,7 @@ export const AIChatbot: React.FC = () => {
                     size="icon"
                     className="h-11 w-11 shrink-0 rounded-full"
                     style={{ backgroundColor: 'var(--chatbot-send-bg)', color: 'var(--chatbot-send-text)' }}
-                    onClick={send}
+                    onClick={() => send('')}
                     disabled={loading || !input.trim()}
                     aria-label="Send"
                   >
