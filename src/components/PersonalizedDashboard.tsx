@@ -162,7 +162,7 @@ const PersonalizedDashboard: React.FC = () => {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-3">
               <Leaf className="h-8 w-8 text-green-600" />
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-lime-500 bg-clip-text text-transparent">Goals and Development</h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-lime-500 bg-clip-text text-transparent">Authenticity & Purpose</h1>
 
 
               <Button variant="ghost" onClick={() => window.location.href = '/'} className="text-green-700 hover:bg-green-50">

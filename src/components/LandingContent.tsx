@@ -589,7 +589,7 @@ export const LandingContent: React.FC = () => {
                 animate={isVisionBadgeInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 20, rotateX: 6 }}
                 transition={{ delay: 0.5, duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
               >
-                This is your private development space.
+                Authenticity & Purpose
               </motion.p>
             </div>
             {/* Body + line — animate when this block scrolls into view (separate zone) */}
