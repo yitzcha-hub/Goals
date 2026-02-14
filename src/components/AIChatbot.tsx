@@ -1,7 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Compass, X, RotateCcw } from 'lucide-react';
-import aiChatbotLogo from '@/assets/images/AI-chatbot.jpg';
+import { Send, Compass, X, RotateCcw, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import aiChatbotMan from '@/assets/images/AI-chatbot-man.png';
+import aiChatbotWoman from '@/assets/images/AI-chatbot-woman.jpg';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { marked } from 'marked';
@@ -10,7 +17,25 @@ import { marked } from 'marked';
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
 const CHAT_STORAGE_KEY = 'goals-ai-chat-messages';
+const AVATAR_STORAGE_KEY = 'goals-ai-chat-avatar';
 const MAX_STORED_MESSAGES = 50;
+
+type AvatarGender = 'man' | 'woman';
+
+const AVATAR_IMAGES: Record<AvatarGender, string> = {
+  man: aiChatbotMan,
+  woman: aiChatbotWoman,
+};
+
+function loadAvatarPreference(): AvatarGender {
+  try {
+    const stored = localStorage.getItem(AVATAR_STORAGE_KEY);
+    if (stored === 'man' || stored === 'woman') return stored;
+  } catch {
+    // ignore
+  }
+  return 'woman';
+}
 
 const SUGGESTED_QUESTIONS = [
   "What's included in the free trial?",
@@ -100,6 +125,18 @@ function loadStoredMessages(): ChatMessage[] {
 export const AIChatbot: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(loadStoredMessages);
+  const [avatarGender, setAvatarGender] = useState<AvatarGender>(loadAvatarPreference);
+
+  const avatarSrc = AVATAR_IMAGES[avatarGender];
+
+  const setAvatar = useCallback((gender: AvatarGender) => {
+    setAvatarGender(gender);
+    try {
+      localStorage.setItem(AVATAR_STORAGE_KEY, gender);
+    } catch {
+      // ignore
+    }
+  }, []);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -227,16 +264,31 @@ export const AIChatbot: React.FC = () => {
                 }}
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shrink-0"
-                    style={{ backgroundColor: 'var(--chatbot-icon-bg)' }}
-                  >
-                    <img
-                      src={aiChatbotLogo}
-                      alt="AI assistant"
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="relative flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--chatbot-icon-bg)]"
+                        style={{ backgroundColor: 'var(--chatbot-icon-bg)' }}
+                        aria-label="Change AI avatar"
+                      >
+                        <img
+                          src={avatarSrc}
+                          alt="AI assistant"
+                          className="h-full w-full object-cover"
+                        />
+                        <ChevronDown className="absolute bottom-0 right-0 h-3 w-3 text-white/90 bg-black/40 rounded-tl" aria-hidden />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="dropdown-landing min-w-[160px]">
+                      <DropdownMenuItem onClick={() => setAvatar('man')} className="cursor-pointer">
+                        Male avatar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setAvatar('woman')} className="cursor-pointer">
+                        Female avatar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <div>
                     <p className="font-bold text-sm" style={{ color: 'var(--chatbot-title-text)' }}>
                       Goals & Development AI
@@ -288,7 +340,7 @@ export const AIChatbot: React.FC = () => {
                         style={{ border: '1px solid var(--chatbot-bot-border)' }}
                       >
                         <img
-                          src={aiChatbotLogo}
+                          src={avatarSrc}
                           alt="AI assistant"
                           className="h-full w-full object-cover"
                         />
