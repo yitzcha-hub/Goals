@@ -1,5 +1,5 @@
 import React from 'react';
-import { Leaf } from 'lucide-react';
+import logoImg from '@/assets/images/Logo.png';
 
 interface LandingFooterProps {
   navigate: (path: string) => void;
@@ -11,7 +11,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ navigate, scrollTo
     <footer className="py-12 px-4 text-white" style={{ backgroundColor: 'var(--landing-primary)' }}>
       <div className="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-6">
         <div className="flex items-center gap-2">
-          <Leaf className="h-6 w-6" />
+          <img src={logoImg} alt="" className="h-9 w-9 object-contain" aria-hidden />
           <span className="font-semibold">Goals and Development</span>
         </div>
         <div className="flex flex-wrap gap-6">

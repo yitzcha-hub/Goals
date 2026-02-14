@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Leaf } from 'lucide-react';
+import logoImg from '@/assets/images/Logo.png';
 
 interface AuthenticatedFooterProps {
   navigate: (path: string) => void;
@@ -72,7 +72,7 @@ export const AuthenticatedFooter: React.FC<AuthenticatedFooterProps> = ({ naviga
 
         <div className="mt-10 pt-8 border-t border-white/20 flex flex-wrap justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <Leaf className="h-5 w-5 text-white/90" />
+            <img src={logoImg} alt="" className="h-9 w-9 object-contain" aria-hidden />
             <span className="font-semibold text-white/95">Goals and Development</span>
           </div>
           <p className="text-sm opacity-90">&copy; {new Date().getFullYear()} Goals and Development.</p>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Leaf, HelpCircle, Bell, User, LogOut, CreditCard, LayoutDashboard, Menu } from 'lucide-react';
+import { HelpCircle, Bell, User, LogOut, CreditCard, LayoutDashboard, Menu } from 'lucide-react';
+import logoImg from '@/assets/images/Logo.png';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -71,12 +72,11 @@ export const AuthenticatedHeader: React.FC = () => {
           onClick={() => navigate('/')}
           className="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--landing-primary)] rounded-lg transition-transform active:scale-[0.98]"
         >
-          <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-105"
-            style={{ backgroundColor: 'var(--landing-primary)' }}
-          >
-            <Leaf className="h-5 w-5 text-white" />
-          </div>
+          <img
+            src={logoImg}
+            alt="Goals and Development"
+            className="h-9 w-9 object-contain transition-transform duration-200 group-hover:scale-105"
+          />
           <span className="text-lg font-bold tracking-tight hidden sm:inline bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280] bg-clip-text text-transparent">
             Goals and Development
           </span>
