@@ -47,11 +47,19 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode, onSuccess 
     const { error } = await signUp(email, password);
 
     if (error) {
+      // Supabase: "User already registered" / "A user with this email already exists" etc.
+      const isAlreadyRegistered =
+        /already registered|user already exists|email already exists|already been registered/i.test(
+          error.message ?? ''
+        );
       toast({
-        title: 'Error',
-        description: error.message,
+        title: isAlreadyRegistered ? 'Already registered' : 'Error',
+        description: isAlreadyRegistered
+          ? 'This email is already registered. Please sign in or use a different email.'
+          : error.message ?? 'Something went wrong. Please try again.',
         variant: 'destructive',
       });
+      // Stay on signup form; do not switch to login
     } else {
       onToggleMode(); // Switch to login modal
       toast({

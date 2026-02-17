@@ -52,12 +52,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ 
-      email, 
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const { error } = await supabase.auth.signUp({
+      email,
       password,
       options: {
-        emailRedirectTo: undefined // Disable email confirmation
-      }
+        emailRedirectTo: redirectTo, // Supabase email verification: confirmation link sends user here
+      },
     });
     return { error };
   };

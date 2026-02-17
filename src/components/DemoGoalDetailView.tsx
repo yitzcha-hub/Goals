@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, Target, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Target, TrendingUp, CheckCircle2, DollarSign, Users } from 'lucide-react';
 import VisualProgressTimeline, { TaggedImage } from './VisualProgressTimeline';
 import { analyzeProgressImage } from '@/lib/aiImageAnalysis';
 import { AIMilestoneSuggestions } from './AIMilestoneSuggestions';
@@ -40,6 +40,9 @@ interface Goal {
   targetDate?: string;
   steps?: Step[];
   images?: string[];
+  budget?: number;
+  budgetForPeople?: number;
+  people?: string[];
 }
 
 
@@ -139,12 +142,16 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
   
   const [taggedImages, setTaggedImages] = useState<TaggedImage[]>(getCategoryImages(goal.category));
 
-  const [progressHistory] = useState<ProgressHistory[]>([
-    { date: '2025-10-01', progress: 20 },
-    { date: '2025-10-02', progress: 35 },
-    { date: '2025-10-03', progress: 50 },
-    { date: '2025-10-04', progress: currentGoal.progress }
-  ]);
+  const [progressHistory] = useState<ProgressHistory[]>(() => {
+    const p = currentGoal.progress;
+    const base = Math.max(0, p - 3);
+    return [
+      { date: '2025-10-01', progress: base },
+      { date: '2025-10-02', progress: Math.min(10, base + 1) },
+      { date: '2025-10-03', progress: Math.min(10, base + 2) },
+      { date: '2025-10-04', progress: p }
+    ];
+  });
 
 
   const handleAddImage = (image: TaggedImage) => {
@@ -167,7 +174,7 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
     );
     const completed = updatedSteps?.filter(s => s.completed).length || 0;
     const total = updatedSteps?.length || 1;
-    const newProgress = Math.round((completed / total) * 100);
+    const newProgress = Math.round((completed / total) * 10);
     
     const updated = { ...currentGoal, steps: updatedSteps, progress: newProgress };
     setCurrentGoal(updated);
@@ -188,7 +195,7 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
   
   const aiAnalysis = analyzeAndSuggestMilestones(
     currentGoal.category,
-    currentGoal.progress,
+    currentGoal.progress * 10,
     100,
     goalStartDate,
     taggedImages
@@ -202,72 +209,92 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 p-6">
+    <div className="min-h-screen landing p-6" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
       <div className="max-w-4xl mx-auto">
-        <Button onClick={onBack} variant="ghost" className="mb-4">
+        <Button onClick={onBack} variant="ghost" className="mb-4" style={{ color: 'var(--landing-primary)' }}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Goals
         </Button>
 
-        <Card className="p-6 mb-6">
+        <Card className="p-6 mb-6" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{currentGoal.title}</h1>
-              <Badge className="mb-2">{currentGoal.category}</Badge>
-              <p className="text-gray-600">{currentGoal.description}</p>
+              <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--landing-text)' }}>{currentGoal.title}</h1>
+              <Badge className="mb-2" style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>{currentGoal.category}</Badge>
+              <p style={{ color: 'var(--landing-text)', opacity: 0.9 }}>{currentGoal.description}</p>
             </div>
             <div className="text-right">
-              <div className="text-4xl font-bold text-purple-600">{currentGoal.progress}%</div>
-              <div className="text-sm text-gray-500">Complete</div>
+              <div className="text-4xl font-bold" style={{ color: 'var(--landing-primary)' }}>{currentGoal.progress}/10</div>
+              <div className="text-sm" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>Progress</div>
             </div>
           </div>
           
           {currentGoal.targetDate && (
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-              <Calendar className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm mb-4" style={{ color: 'var(--landing-text)', opacity: 0.9 }}>
+              <Calendar className="h-4 w-4" style={{ color: 'var(--landing-primary)' }} />
               Target: {new Date(currentGoal.targetDate).toLocaleDateString()}
             </div>
           )}
+
+          {(currentGoal.budget != null && currentGoal.budget > 0) || (currentGoal.people?.length ?? 0) > 0 ? (
+            <div className="flex flex-wrap gap-4 py-3 border-t mt-4" style={{ borderColor: 'var(--landing-border)' }}>
+              {currentGoal.budget != null && currentGoal.budget > 0 && (
+                <div className="flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
+                  <DollarSign className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />
+                  <span><strong>Budget:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(currentGoal.budget)}</span>
+                  {currentGoal.budgetForPeople != null && currentGoal.budgetForPeople > 0 && (
+                    <span className="opacity-80">(People: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(currentGoal.budgetForPeople)})</span>
+                  )}
+                </div>
+              )}
+              {currentGoal.people?.length ? (
+                <div className="flex items-start gap-2" style={{ color: 'var(--landing-text)' }}>
+                  <Users className="h-5 w-5 mt-0.5 shrink-0" style={{ color: 'var(--landing-primary)' }} />
+                  <span><strong>People:</strong> {currentGoal.people.join(', ')}</span>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           
-          <Progress value={currentGoal.progress} className="h-3" />
+          <Progress value={currentGoal.progress * 10} className="h-3" style={{ backgroundColor: 'var(--landing-accent)' }} />
         </Card>
 
         <div className="grid md:grid-cols-2 gap-6 mb-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <Target className="h-5 w-5" />
+          <Card className="p-6" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
+              <Target className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />
               Steps to Complete
             </h2>
             <div className="space-y-3">
               {currentGoal.steps?.map(step => (
-                <div key={step.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
+                <div key={step.id} className="flex items-center gap-3 p-3 rounded-lg transition-colors" style={{ backgroundColor: step.completed ? 'var(--landing-accent)' : 'transparent' }}>
                   <Checkbox
                     checked={step.completed}
                     onCheckedChange={() => handleStepToggle(step.id)}
                   />
-                  <span className={step.completed ? 'line-through text-gray-500' : ''}>
+                  <span className={step.completed ? 'line-through opacity-70' : ''} style={{ color: 'var(--landing-text)' }}>
                     {step.title}
                   </span>
-                  {step.completed && <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto" />}
+                  {step.completed && <CheckCircle2 className="h-4 w-4 ml-auto" style={{ color: 'var(--landing-primary)' }} />}
                 </div>
               ))}
             </div>
           </Card>
 
-          <Card className="p-6">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
+          <Card className="p-6" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
+              <TrendingUp className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />
               Progress History
             </h2>
             <div className="space-y-3">
               {progressHistory.map((entry, idx) => (
                 <div key={idx} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm" style={{ color: 'var(--landing-text)', opacity: 0.9 }}>
                     {new Date(entry.date).toLocaleDateString()}
                   </span>
                   <div className="flex items-center gap-2">
-                    <Progress value={entry.progress} className="w-24 h-2" />
-                    <span className="text-sm font-medium">{entry.progress}%</span>
+                    <Progress value={entry.progress * 10} className="w-24 h-2" style={{ backgroundColor: 'var(--landing-accent)' }} />
+                    <span className="text-sm font-medium" style={{ color: 'var(--landing-primary)' }}>{entry.progress}/10</span>
                   </div>
                 </div>
               ))}
@@ -275,17 +302,17 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
           </Card>
         </div>
 
-        <Card className="p-6 mb-6">
-          <h2 className="text-xl font-bold mb-4">Update Progress</h2>
+        <Card className="p-6 mb-6" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+          <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--landing-text)' }}>Update Progress (0–10 scale)</h2>
           <div className="flex items-center gap-4">
             <Slider
               value={[currentGoal.progress]}
               onValueChange={handleProgressUpdate}
-              max={100}
-              step={5}
+              max={10}
+              step={1}
               className="flex-1"
             />
-            <span className="text-2xl font-bold text-purple-600 w-16">{currentGoal.progress}%</span>
+            <span className="text-2xl font-bold w-16" style={{ color: 'var(--landing-primary)' }}>{currentGoal.progress}/10</span>
           </div>
         </Card>
 
@@ -294,7 +321,7 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
             images={taggedImages}
             onAddImage={handleAddImage}
             onRemoveImage={handleRemoveImage}
-            currentProgress={currentGoal.progress}
+            currentProgress={currentGoal.progress * 10}
             goalType={currentGoal.category}
           />
         </div>
@@ -307,15 +334,15 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
         </div>
 
 
-        <Card className="p-6">
-          <h2 className="text-xl font-bold mb-4">Notes & Reflections</h2>
+        <Card className="p-6" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+          <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--landing-text)' }}>Notes & Reflections</h2>
           <div className="space-y-4 mb-4">
             {notes.map(note => (
-              <div key={note.id} className="p-4 bg-gray-50 rounded-lg">
-                <div className="text-sm text-gray-500 mb-1">
+              <div key={note.id} className="p-4 rounded-lg" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                <div className="text-sm mb-1" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>
                   {new Date(note.date).toLocaleString()}
                 </div>
-                <p>{note.content}</p>
+                <p style={{ color: 'var(--landing-text)' }}>{note.content}</p>
               </div>
             ))}
           </div>
@@ -326,7 +353,7 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
               onChange={(e) => setNewNote(e.target.value)}
               rows={3}
             />
-            <Button onClick={handleAddNote} className="w-full">Add Note</Button>
+            <Button onClick={handleAddNote} className="w-full" style={{ backgroundColor: 'var(--landing-primary)' }}>Add Note</Button>
           </div>
         </Card>
       </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, LogOut, Settings, CreditCard, Star, Flame } from 'lucide-react';
@@ -39,6 +39,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const isLoggedIn = !!user;
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
   return (
     <header
@@ -100,7 +101,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 
         {/* Right: CTA or logged-in user */}
         <div className="flex items-center gap-2">
-          {/* Home + See demo — visible on mobile only */}
+          {/* Home — visible on mobile only */}
           <button
             onClick={() => {
               setMobileMenuOpen(false);
@@ -110,17 +111,6 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
           >
             <span className={`relative z-10 bg-clip-text text-transparent transition-colors duration-150 ${location.pathname === '/' ? 'bg-gradient-to-r from-[var(--landing-primary)] via-[var(--landing-primary)] to-[var(--landing-primary)]' : 'bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280]'}`}>
               Home
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setMobileMenuOpen(false);
-              navigate('/demo');
-            }}
-            className="md:hidden text-sm font-bold text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--landing-primary)]"
-          >
-            <span className={`relative z-10 bg-clip-text text-transparent transition-colors duration-150 ${location.pathname === '/demo' ? 'bg-gradient-to-r from-[var(--landing-primary)] via-[var(--landing-primary)] to-[var(--landing-primary)]' : 'bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280]'}`}>
-              Demo
             </span>
           </button>
           <button
@@ -203,6 +193,8 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
           ) : (
             <>
               <AuthModal
+                open={authDialogOpen}
+                onOpenChange={setAuthDialogOpen}
                 trigger={
                   <Button
                     size="sm"
@@ -232,15 +224,18 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
                         {item.label}
                       </button>
                     ))}
-                    <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--landing-border)' }} onClick={() => setMobileMenuOpen(false)}>
-                      <AuthModal
-                        trigger={
-                          <Button size="sm" className="w-full rounded-full font-extrabold text-white" style={{ backgroundColor: 'var(--landing-primary)' }}>
-                            Get Started
-                          </Button>
-                        }
-                        defaultMode="signup"
-                      />
+                    <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--landing-border)' }}>
+                      <Button
+                        size="sm"
+                        className="w-full rounded-full font-extrabold text-white transition-all duration-200 hover:brightness-95 hover:scale-[1.02] active:scale-[0.98]"
+                        style={{ backgroundColor: '#2c9d73' }}
+                        onClick={() => {
+                          setAuthDialogOpen(true);
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        Get Started
+                      </Button>
                     </div>
                   </nav>
                 </SheetContent>

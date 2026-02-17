@@ -132,6 +132,35 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_subscription_id ON public.su
 CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_customer_id ON public.subscriptions(stripe_customer_id) WHERE stripe_customer_id IS NOT NULL;
 
 -- =============================================================================
+-- 3b. INVITE CODES (lifetime codes for influencers – never expire)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS public.invite_codes (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code text NOT NULL UNIQUE,
+  label text DEFAULT '',
+  created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  assigned_to uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  is_lifetime boolean NOT NULL DEFAULT true,
+  uses_remaining integer,
+  used_count integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.invite_code_redemptions (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  invite_code_id uuid NOT NULL REFERENCES public.invite_codes(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (invite_code_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON public.invite_codes(code);
+CREATE INDEX IF NOT EXISTS idx_invite_codes_assigned_to ON public.invite_codes(assigned_to) WHERE assigned_to IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_invite_code_redemptions_invite_code_id ON public.invite_code_redemptions(invite_code_id);
+
+-- =============================================================================
 -- 4. REMINDERS
 -- =============================================================================
 
@@ -623,6 +652,9 @@ ALTER TABLE public.manifestation_journal_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.manifestation_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.calendar_events ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE public.invite_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.invite_code_redemptions ENABLE ROW LEVEL SECURITY;
+
 -- Forum categories: read-only for all authenticated
 ALTER TABLE public.forum_categories ENABLE ROW LEVEL SECURITY;
 
@@ -880,6 +912,15 @@ CREATE POLICY "Users can CRUD own calendar_events"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+-- Invite codes: influencers read only codes assigned to them; create/update/delete via API (service role)
+CREATE POLICY "Users can read invite_codes assigned to them"
+  ON public.invite_codes FOR SELECT
+  USING (assigned_to = auth.uid());
+
+CREATE POLICY "Users can read own invite_code_redemptions"
+  ON public.invite_code_redemptions FOR SELECT
+  USING (user_id = auth.uid());
+
 -- =============================================================================
 -- TRIGGER: updated_at for goals, habits, journal_entries
 -- =============================================================================
@@ -908,6 +949,8 @@ BEGIN
   CREATE TRIGGER set_subscriptions_updated_at BEFORE UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
   DROP TRIGGER IF EXISTS set_calendar_events_updated_at ON public.calendar_events;
   CREATE TRIGGER set_calendar_events_updated_at BEFORE UPDATE ON public.calendar_events FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+  DROP TRIGGER IF EXISTS set_invite_codes_updated_at ON public.invite_codes;
+  CREATE TRIGGER set_invite_codes_updated_at BEFORE UPDATE ON public.invite_codes FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 END
 $$;
 

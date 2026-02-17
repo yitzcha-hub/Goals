@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { TrialAnalyticsDashboard } from "@/components/TrialAnalyticsDashboard";
+import { InviteCodesManager } from "@/components/InviteCodesManager";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
@@ -63,6 +64,10 @@ export default function Admin() {
         </Button>
 
         <TrialAnalyticsDashboard />
+
+        <section id="invite-codes" className="mt-10 scroll-mt-8">
+          <InviteCodesManager />
+        </section>
       </div>
     </div>
   );

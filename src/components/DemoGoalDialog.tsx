@@ -18,10 +18,13 @@ const DemoGoalDialog: React.FC<DemoGoalDialogProps> = ({ trigger, onGoalAdd }) =
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [timeframe, setTimeframe] = useState('');
+  const [timeline, setTimeline] = useState('90');
   const [progress, setProgress] = useState([0]);
   const [steps, setSteps] = useState<string[]>(['']);
   const [images, setImages] = useState<string[]>([]);
+  const [budget, setBudget] = useState('');
+  const [budgetForPeople, setBudgetForPeople] = useState('');
+  const [peopleInput, setPeopleInput] = useState('');
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -56,15 +59,31 @@ const DemoGoalDialog: React.FC<DemoGoalDialogProps> = ({ trigger, onGoalAdd }) =
       return;
     }
 
+    const budgetNum = budget.trim() ? Math.max(0, Number(budget.replace(/[^0-9.]/g, '')) || 0) : 0;
+    const budgetForPeopleNum = budgetForPeople.trim() ? Math.max(0, Number(budgetForPeople.replace(/[^0-9.]/g, '')) || 0) : 0;
+    const people = peopleInput.split(',').map(s => s.trim()).filter(Boolean);
+
+    const categoryMap: Record<string, string> = {
+      health: 'Health', business: 'Business', personal: 'Personal', finance: 'Finance',
+      education: 'Education', creative: 'Creative', wellness: 'Wellness', purpose: 'Purpose',
+    };
+    const mappedCategory = categoryMap[category] || category;
+
     const newGoal = {
       id: Date.now().toString(),
       title: title.trim(),
       description: description.trim(),
-      category,
-      timeframe: timeframe || '3 months',
+      category: mappedCategory,
+      timeline: timeline || '90',
+      priority: 'medium',
+      targetDate: '',
+      image: '',
+      budget: budgetNum,
+      budgetForPeople: budgetForPeopleNum,
+      people,
       progress: progress[0],
-      steps: steps.filter(s => s.trim() !== ''),
-      images: images
+      steps: steps.filter(s => s.trim() !== '').map((s, i) => ({ id: `s${i}`, title: s, completed: false })),
+      images: images,
     };
 
 
@@ -74,10 +93,13 @@ const DemoGoalDialog: React.FC<DemoGoalDialogProps> = ({ trigger, onGoalAdd }) =
     setTitle('');
     setDescription('');
     setCategory('');
-    setTimeframe('');
+    setTimeline('90');
     setProgress([0]);
     setSteps(['']);
     setImages([]);
+    setBudget('');
+    setBudgetForPeople('');
+    setPeopleInput('');
     setOpen(false);
   };
 
@@ -134,22 +156,63 @@ const DemoGoalDialog: React.FC<DemoGoalDialogProps> = ({ trigger, onGoalAdd }) =
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="timeframe">Timeline</Label>
+            <Label>Timeline</Label>
+            <Select value={timeline} onValueChange={setTimeline}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose timeline" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">30 Days</SelectItem>
+                <SelectItem value="60">60 Days</SelectItem>
+                <SelectItem value="90">90 Days</SelectItem>
+                <SelectItem value="1year">1 Year</SelectItem>
+                <SelectItem value="5year">5 Year Plan</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="budget">Budget ($)</Label>
+              <Input
+                id="budget"
+                type="text"
+                inputMode="numeric"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                placeholder="e.g., 5000"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="budgetForPeople">Budget for people ($)</Label>
+              <Input
+                id="budgetForPeople"
+                type="text"
+                inputMode="numeric"
+                value={budgetForPeople}
+                onChange={(e) => setBudgetForPeople(e.target.value)}
+                placeholder="e.g., 2000"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="people">People (comma-separated)</Label>
             <Input
-              id="timeframe"
-              value={timeframe}
-              onChange={(e) => setTimeframe(e.target.value)}
-              placeholder="e.g., 6 months, 1 year"
+              id="people"
+              value={peopleInput}
+              onChange={(e) => setPeopleInput(e.target.value)}
+              placeholder="e.g., Sarah, Mike, Coach Alex"
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Current Progress: {progress[0]}%</Label>
+            <Label>Current Progress: {progress[0]}/10</Label>
             <Slider
               value={progress}
               onValueChange={setProgress}
-              max={100}
-              step={5}
+              max={10}
+              step={1}
               className="w-full"
             />
           </div>

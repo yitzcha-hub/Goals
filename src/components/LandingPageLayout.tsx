@@ -35,7 +35,17 @@ export const LandingPageLayout: React.FC<LandingPageLayoutProps> = ({ children, 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = useMemo(() => {
-    if (navItemsProp) return navItemsProp;
+    const closeAndNav = (onClick: () => void) => () => {
+      setMobileMenuOpen(false);
+      onClick();
+    };
+    if (navItemsProp) {
+      return navItemsProp.map((item) =>
+        'path' in item
+          ? { ...item, onClick: closeAndNav(item.onClick) }
+          : { ...item, onClick: closeAndNav(item.onClick) }
+      );
+    }
     return DEFAULT_NAV_CONFIG.map(({ label, path }) => ({
       label,
       path,

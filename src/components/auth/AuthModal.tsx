@@ -7,13 +7,20 @@ import { PasswordResetForm } from './PasswordResetForm';
 type AuthMode = 'login' | 'signup' | 'reset';
 
 interface AuthModalProps {
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
   defaultMode?: AuthMode;
+  /** When provided, dialog is controlled (e.g. open from mobile nav without unmounting when sheet closes). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ trigger, defaultMode = 'login' }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ trigger, defaultMode = 'login', open: controlledOpen, onOpenChange: controlledOnOpenChange }) => {
   const [mode, setMode] = useState<AuthMode>(defaultMode);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const isControlled = controlledOpen !== undefined && controlledOnOpenChange !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? controlledOnOpenChange : setInternalOpen;
 
   const handleToggleMode = () => {
     setMode(mode === 'login' ? 'signup' : 'login');
@@ -52,7 +59,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ trigger, defaultMode = 'lo
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger != null && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-md p-0 border-0 bg-transparent max-h-[90vh] overflow-y-auto landing">
         <DialogTitle className="sr-only">Authentication</DialogTitle>
         {renderForm()}

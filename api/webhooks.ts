@@ -172,6 +172,41 @@ export default async function handler(req: Req, res: Res): Promise<void> {
         break;
       }
 
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode !== 'payment' || session.payment_status !== 'paid') break;
+        const userId = (session.metadata?.user_id as string) || null;
+        if (!userId || session.metadata?.offer !== 'lifetime_1000') break;
+
+        const farFuture = 4102444800; // Jan 1, 2100 (unix)
+        const record = {
+          user_id: userId,
+          status: 'active',
+          plan_name: 'Lifetime',
+          stripe_subscription_id: null,
+          stripe_customer_id: session.customer as string | null,
+          stripe_price_id: null,
+          trial_start: null,
+          trial_end: null,
+          current_period_start: Math.floor(Date.now() / 1000),
+          current_period_end: farFuture,
+          cancel_at_period_end: false,
+          plan_amount: 1999,
+          plan_currency: 'usd',
+          plan_interval: null,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabase
+          .from('subscriptions')
+          .upsert(record, { onConflict: 'user_id' });
+
+        if (error) {
+          console.error('Lifetime subscription upsert error:', error);
+        }
+        break;
+      }
+
       default:
         break;
     }
