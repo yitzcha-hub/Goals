@@ -7,8 +7,8 @@ import { AIChatbot } from '@/components/AIChatbot';
 import { AuthenticatedLayout } from '@/components/AuthenticatedLayout';
 
 export type NavItem =
-  | { label: string; path: string; onClick: () => void }
-  | { label: string; sectionId: string; onClick: () => void };
+  | { label: string; path: string; onClick: () => void; mobileOnly?: boolean }
+  | { label: string; sectionId: string; onClick: () => void; mobileOnly?: boolean };
 
 const DEFAULT_NAV_CONFIG = [
   { label: 'Home', path: '/' },

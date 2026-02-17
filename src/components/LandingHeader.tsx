@@ -9,8 +9,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import type { User } from '@supabase/supabase-js';
 
 export type NavItem =
-  | { label: string; path: string; onClick: () => void }
-  | { label: string; sectionId: string; onClick: () => void };
+  | { label: string; path: string; onClick: () => void; mobileOnly?: boolean }
+  | { label: string; sectionId: string; onClick: () => void; mobileOnly?: boolean };
 
 interface LandingHeaderProps {
   navItems: NavItem[];
@@ -67,9 +67,9 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
           </span>
         </button>
 
-        {/* Nav — desktop */}
+        {/* Nav — desktop (no mobile-only items e.g. Demo) */}
         <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-0.5">
-          {navItems.map((item) => {
+          {navItems.filter((item) => !item.mobileOnly).map((item) => {
             const isActive =
               'path' in item
                 ? location.pathname === item.path
@@ -111,6 +111,18 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
           >
             <span className={`relative z-10 bg-clip-text text-transparent transition-colors duration-150 ${location.pathname === '/' ? 'bg-gradient-to-r from-[var(--landing-primary)] via-[var(--landing-primary)] to-[var(--landing-primary)]' : 'bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280]'}`}>
               Home
+            </span>
+          </button>
+          {/* Demo — visible on mobile only */}
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              navigate('/demo');
+            }}
+            className="md:hidden text-sm font-bold text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--landing-primary)]"
+          >
+            <span className={`relative z-10 bg-clip-text text-transparent transition-colors duration-150 ${location.pathname === '/demo' ? 'bg-gradient-to-r from-[var(--landing-primary)] via-[var(--landing-primary)] to-[var(--landing-primary)]' : 'bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280]'}`}>
+              Demo
             </span>
           </button>
           <button

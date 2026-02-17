@@ -64,6 +64,7 @@ const AppLayout: React.FC = () => {
     { label: 'Pricing', path: '/pricing', onClick: () => { setMobileMenuOpen(false); navigate('/pricing'); }, sectionId: 'pricing' },
     { label: 'About Us', path: '/about', onClick: () => { setMobileMenuOpen(false); navigate('/about'); }, sectionId: 'about' },
     { label: 'FAQ', path: '/faq', onClick: () => { setMobileMenuOpen(false); navigate('/faq'); }, sectionId: 'faq' },
+    { label: 'Demo', path: '/demo', onClick: () => { setMobileMenuOpen(false); navigate('/demo'); }, sectionId: 'demo', mobileOnly: true },
   ];
 
   if (loading) {
