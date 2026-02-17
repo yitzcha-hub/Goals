@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, Target, TrendingUp, CheckCircle2, DollarSign, Users } from 'lucide-react';
+import { ArrowLeft, Calendar, Target, TrendingUp, CheckCircle2, DollarSign } from 'lucide-react';
 import VisualProgressTimeline, { TaggedImage } from './VisualProgressTimeline';
 import { analyzeProgressImage } from '@/lib/aiImageAnalysis';
 import { AIMilestoneSuggestions } from './AIMilestoneSuggestions';
@@ -41,8 +41,7 @@ interface Goal {
   steps?: Step[];
   images?: string[];
   budget?: number;
-  budgetForPeople?: number;
-  people?: string[];
+  spent?: number;
 }
 
 
@@ -236,23 +235,16 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
             </div>
           )}
 
-          {(currentGoal.budget != null && currentGoal.budget > 0) || (currentGoal.people?.length ?? 0) > 0 ? (
-            <div className="flex flex-wrap gap-4 py-3 border-t mt-4" style={{ borderColor: 'var(--landing-border)' }}>
-              {currentGoal.budget != null && currentGoal.budget > 0 && (
-                <div className="flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
-                  <DollarSign className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />
-                  <span><strong>Budget:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(currentGoal.budget)}</span>
-                  {currentGoal.budgetForPeople != null && currentGoal.budgetForPeople > 0 && (
-                    <span className="opacity-80">(People: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(currentGoal.budgetForPeople)})</span>
-                  )}
-                </div>
-              )}
-              {currentGoal.people?.length ? (
-                <div className="flex items-start gap-2" style={{ color: 'var(--landing-text)' }}>
-                  <Users className="h-5 w-5 mt-0.5 shrink-0" style={{ color: 'var(--landing-primary)' }} />
-                  <span><strong>People:</strong> {currentGoal.people.join(', ')}</span>
-                </div>
-              ) : null}
+          {currentGoal.budget != null && currentGoal.budget > 0 ? (
+            <div className="flex flex-wrap gap-6 py-3 border-t mt-4" style={{ borderColor: 'var(--landing-border)' }}>
+              <div className="flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
+                <DollarSign className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />
+                <span><strong>Budget:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(currentGoal.budget)}</span>
+              </div>
+              <div className="flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
+                <DollarSign className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />
+                <span><strong>Spent:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(currentGoal.spent ?? 0)}</span>
+              </div>
             </div>
           ) : null}
           

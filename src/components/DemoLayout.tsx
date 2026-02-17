@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AuthModal } from '@/components/auth/AuthModal';
-import { Target, CheckCircle2, Plus, Heart, Award, Calendar, TrendingUp, Flame, DollarSign, Users, RotateCcw, Sparkles } from 'lucide-react';
+import { Target, CheckCircle2, Plus, Heart, Award, Calendar, TrendingUp, Flame, DollarSign, RotateCcw, Sparkles } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -34,8 +34,7 @@ const DEFAULT_DEMO_GOALS = [
       targetDate: '2027-01-15',
       image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312841255_ba6990ea.webp',
       budget: 15000,
-      budgetForPeople: 5000,
-      people: ['Sarah (Marketing)', 'Mike (Tech)'],
+      spent: 10500,
       steps: [
         { id: 's1', title: 'Define niche and target audience', completed: true },
         { id: 's2', title: 'Create business plan', completed: true },
@@ -54,8 +53,7 @@ const DEFAULT_DEMO_GOALS = [
       targetDate: '2026-04-15',
       image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312839241_43f789a1.webp',
       budget: 800,
-      budgetForPeople: 400,
-      people: ['Coach Alex'],
+      spent: 480,
       steps: [
         { id: 's1', title: 'Build base mileage', completed: true },
         { id: 's2', title: 'Follow training plan', completed: true },
@@ -74,8 +72,7 @@ const DEFAULT_DEMO_GOALS = [
       targetDate: '2030-10-01',
       image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312839994_d53dd0af.webp',
       budget: 450000,
-      budgetForPeople: 120000,
-      people: ['Architect', 'General Contractor', 'Interior Designer'],
+      spent: 180000,
       steps: [
         { id: 's1', title: 'Save for down payment', completed: true },
         { id: 's2', title: 'Find perfect land', completed: false },
@@ -94,8 +91,7 @@ const DEFAULT_DEMO_GOALS = [
       targetDate: '2026-03-20',
       image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312845466_22d02da1.webp',
       budget: 600,
-      budgetForPeople: 400,
-      people: ['Tutor Maria'],
+      spent: 300,
       steps: [
         { id: 's1', title: 'Complete beginner course', completed: true },
         { id: 's2', title: 'Practice daily with app', completed: true },
@@ -114,8 +110,7 @@ const DEFAULT_DEMO_GOALS = [
       targetDate: '2027-10-01',
       image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760530848740_26e90107.webp',
       budget: 5000,
-      budgetForPeople: 0,
-      people: [],
+      spent: 1500,
       steps: [
         { id: 's1', title: 'Save travel fund', completed: true },
         { id: 's2', title: 'Research destinations', completed: false },
@@ -134,8 +129,7 @@ const DEFAULT_DEMO_GOALS = [
       targetDate: '2026-12-31',
       image: 'https://d64gsuwffb70l.cloudfront.net/692dfc7e4cdd91a34e5e367b_1768963852567_f1acdb0c.jpg',
       budget: 50000,
-      budgetForPeople: 0,
-      people: [],
+      spent: 40000,
       steps: [
         { id: 's1', title: 'Create budget plan', completed: true },
         { id: 's2', title: 'Automate savings', completed: true },
@@ -212,8 +206,7 @@ const DemoLayout: React.FC = () => {
       timeline: newGoal.timeline || '90',
       priority: newGoal.priority || 'medium',
       budget: newGoal.budget ?? 0,
-      budgetForPeople: newGoal.budgetForPeople ?? 0,
-      people: newGoal.people ?? [],
+      spent: newGoal.spent ?? 0,
       steps: newGoal.steps ?? [],
     }]);
   };
@@ -412,24 +405,19 @@ const DemoLayout: React.FC = () => {
                         {goal.priority}
                       </Badge>
                     </div>
-                    {/* Budget & People */}
-                    <div className="space-y-1.5 mb-3 text-sm" style={{ color: 'var(--landing-text)' }}>
-                      {(goal.budget != null && goal.budget > 0) && (
+                    {/* Budget & Spent */}
+                    {(goal.budget != null && goal.budget > 0) && (
+                      <div className="flex flex-wrap gap-4 mb-3 text-sm" style={{ color: 'var(--landing-text)' }}>
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4" style={{ color: 'var(--landing-primary)' }} />
-                          <span>Budget: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.budget)}</span>
-                          {goal.budgetForPeople != null && goal.budgetForPeople > 0 && (
-                            <span className="opacity-80">(People: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.budgetForPeople)})</span>
-                          )}
+                          <span><strong>Budget:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.budget)}</span>
                         </div>
-                      )}
-                      {goal.people?.length > 0 && (
-                        <div className="flex items-start gap-2">
-                          <Users className="h-4 w-4 mt-0.5 shrink-0" style={{ color: 'var(--landing-primary)' }} />
-                          <span>People: {goal.people.join(', ')}</span>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" style={{ color: 'var(--landing-primary)' }} />
+                          <span><strong>Spent:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.spent ?? 0)}</span>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Slider
                         value={[goal.progress]}

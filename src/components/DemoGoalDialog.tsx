@@ -23,8 +23,7 @@ const DemoGoalDialog: React.FC<DemoGoalDialogProps> = ({ trigger, onGoalAdd }) =
   const [steps, setSteps] = useState<string[]>(['']);
   const [images, setImages] = useState<string[]>([]);
   const [budget, setBudget] = useState('');
-  const [budgetForPeople, setBudgetForPeople] = useState('');
-  const [peopleInput, setPeopleInput] = useState('');
+  const [spent, setSpent] = useState('');
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -60,8 +59,7 @@ const DemoGoalDialog: React.FC<DemoGoalDialogProps> = ({ trigger, onGoalAdd }) =
     }
 
     const budgetNum = budget.trim() ? Math.max(0, Number(budget.replace(/[^0-9.]/g, '')) || 0) : 0;
-    const budgetForPeopleNum = budgetForPeople.trim() ? Math.max(0, Number(budgetForPeople.replace(/[^0-9.]/g, '')) || 0) : 0;
-    const people = peopleInput.split(',').map(s => s.trim()).filter(Boolean);
+    const spentNum = spent.trim() ? Math.max(0, Number(spent.replace(/[^0-9.]/g, '')) || 0) : 0;
 
     const categoryMap: Record<string, string> = {
       health: 'Health', business: 'Business', personal: 'Personal', finance: 'Finance',
@@ -79,8 +77,7 @@ const DemoGoalDialog: React.FC<DemoGoalDialogProps> = ({ trigger, onGoalAdd }) =
       targetDate: '',
       image: '',
       budget: budgetNum,
-      budgetForPeople: budgetForPeopleNum,
-      people,
+      spent: spentNum,
       progress: progress[0],
       steps: steps.filter(s => s.trim() !== '').map((s, i) => ({ id: `s${i}`, title: s, completed: false })),
       images: images,
@@ -98,8 +95,7 @@ const DemoGoalDialog: React.FC<DemoGoalDialogProps> = ({ trigger, onGoalAdd }) =
     setSteps(['']);
     setImages([]);
     setBudget('');
-    setBudgetForPeople('');
-    setPeopleInput('');
+    setSpent('');
     setOpen(false);
   };
 
@@ -184,26 +180,16 @@ const DemoGoalDialog: React.FC<DemoGoalDialogProps> = ({ trigger, onGoalAdd }) =
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="budgetForPeople">Budget for people ($)</Label>
+              <Label htmlFor="spent">Spent ($)</Label>
               <Input
-                id="budgetForPeople"
+                id="spent"
                 type="text"
                 inputMode="numeric"
-                value={budgetForPeople}
-                onChange={(e) => setBudgetForPeople(e.target.value)}
+                value={spent}
+                onChange={(e) => setSpent(e.target.value)}
                 placeholder="e.g., 2000"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="people">People (comma-separated)</Label>
-            <Input
-              id="people"
-              value={peopleInput}
-              onChange={(e) => setPeopleInput(e.target.value)}
-              placeholder="e.g., Sarah, Mike, Coach Alex"
-            />
           </div>
 
           <div className="space-y-2">
