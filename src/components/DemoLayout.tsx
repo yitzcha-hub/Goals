@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { AuthModal } from '@/components/auth/AuthModal';
-import { Target, CheckCircle2, Plus, Heart, Award, Calendar, TrendingUp, Flame, DollarSign, RotateCcw, Sparkles } from 'lucide-react';
+import { Target, CheckCircle2, Plus, Heart, Award, Calendar, TrendingUp, Flame, DollarSign, RotateCcw, Sparkles, Clock, SparklesIcon } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DemoGoalDialog from '@/components/DemoGoalDialog';
 import DemoGoalDetailView from '@/components/DemoGoalDetailView';
 import DemoTestimonials from '@/components/DemoTestimonials';
@@ -16,6 +18,8 @@ import { DemoAnalyticsSection } from '@/components/DemoAnalyticsSection';
 import DemoProgressTimeline from '@/components/DemoProgressTimeline';
 import PricingSection from '@/components/PricingSection';
 import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
+import { DemoOnboardingModals } from '@/components/DemoOnboardingModals';
+import { getMockTodosForDay } from '@/data/demoOnboardingMockData';
 import demoHeroBg from '@/assets/images/Demo-bg.png';
 import { BookOpen, PenLine } from 'lucide-react';
 
@@ -139,19 +143,40 @@ const DEFAULT_DEMO_GOALS = [
     }
 ];
 
-const DEFAULT_DEMO_TASKS = [
-  { id: '1', title: 'Morning meditation - 15 minutes', completed: true, points: 5, priority: 'high' as const },
-  { id: '2', title: 'Review weekly goals', completed: true, points: 5, priority: 'high' as const },
-  { id: '3', title: 'Call mom', completed: true, points: 5, priority: 'medium' as const },
-  { id: '4', title: 'Workout session', completed: true, points: 5, priority: 'high' as const },
-  { id: '5', title: 'Read for 30 minutes', completed: true, points: 5, priority: 'medium' as const },
-  { id: '6', title: 'Prepare healthy lunch', completed: false, points: 5, priority: 'medium' as const },
-  { id: '7', title: 'Evening walk', completed: false, points: 5, priority: 'low' as const },
-  { id: '8', title: 'Journal before bed', completed: false, points: 5, priority: 'medium' as const }
+/** Demo task: can have day (today/tomorrow/ISO date) and optional time slot */
+type DemoTask = {
+  id: string;
+  title: string;
+  completed: boolean;
+  points: number;
+  priority: 'high' | 'medium' | 'low';
+  day?: string;
+  timeSlot?: string;
+};
+
+const DEFAULT_DEMO_TASKS: DemoTask[] = [
+  { id: '1', title: 'Morning meditation - 15 minutes', completed: true, points: 5, priority: 'high', day: 'today', timeSlot: '08:00' },
+  { id: '2', title: 'Review weekly goals', completed: true, points: 5, priority: 'high', day: 'today', timeSlot: '09:00' },
+  { id: '3', title: 'Call mom', completed: true, points: 5, priority: 'medium', day: 'today', timeSlot: '12:00' },
+  { id: '4', title: 'Workout session', completed: true, points: 5, priority: 'high', day: 'today', timeSlot: '17:00' },
+  { id: '5', title: 'Read for 30 minutes', completed: true, points: 5, priority: 'medium', day: 'today' },
+  { id: '6', title: 'Prepare healthy lunch', completed: false, points: 5, priority: 'medium', day: 'today', timeSlot: '13:00' },
+  { id: '7', title: 'Evening walk', completed: false, points: 5, priority: 'low', day: 'today', timeSlot: '19:00' },
+  { id: '8', title: 'Journal before bed', completed: false, points: 5, priority: 'medium', day: 'today', timeSlot: '21:00' },
+  { id: '9', title: 'Block 30 min for top goal', completed: false, points: 5, priority: 'high', day: 'tomorrow', timeSlot: '10:00' },
+  { id: '10', title: 'Plan next day priorities', completed: false, points: 5, priority: 'medium', day: 'tomorrow', timeSlot: '21:00' },
 ];
+
+const todayIso = () => new Date().toISOString().split('T')[0];
+const tomorrowIso = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split('T')[0];
+};
 
 const DemoLayout: React.FC = () => {
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
 
   const [demoGoals, setDemoGoals] = useState(() => {
     try {
@@ -161,15 +186,20 @@ const DemoLayout: React.FC = () => {
     return DEFAULT_DEMO_GOALS;
   });
 
-  const [demoTasks, setDemoTasks] = useState(() => {
+  const [demoTasks, setDemoTasks] = useState<DemoTask[]>(() => {
     try {
       const raw = localStorage.getItem(DEMO_STORAGE_TASKS);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw) as DemoTask[];
+        return parsed.map(t => ({ ...t, day: t.day ?? 'today', timeSlot: t.timeSlot }));
+      }
     } catch {}
     return DEFAULT_DEMO_TASKS;
   });
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDay, setNewTaskDay] = useState<'today' | 'tomorrow'>('today');
+  const [newTaskTimeSlot, setNewTaskTimeSlot] = useState('');
 
   useEffect(() => {
     try {
@@ -219,6 +249,45 @@ const DemoLayout: React.FC = () => {
     setDemoGoals(prev => prev.map(g => g.id === goalId ? { ...g, progress } : g));
   };
 
+  const handleOnboardingRecommended = (goals: any[]) => {
+    setDemoGoals(goals.map(g => ({
+      ...g,
+      steps: g.steps ?? [],
+    })));
+    setOnboardingOpen(false);
+    document.getElementById('demo-dashboard')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleAIGenerateTodos = (day: 'today' | 'tomorrow') => {
+    const mock = getMockTodosForDay(day, demoGoals);
+    const newTasks: DemoTask[] = mock.map((m, i) => ({
+      id: `ai-${day}-${Date.now()}-${i}`,
+      title: m.title,
+      completed: false,
+      points: 5,
+      priority: 'medium' as const,
+      day,
+      timeSlot: m.timeSlot,
+    }));
+    setDemoTasks(prev => [...prev, ...newTasks]);
+  };
+
+  const tasksByDay = useMemo(() => {
+    const today = todayIso();
+    const tomorrow = tomorrowIso();
+    const byDay: Record<string, DemoTask[]> = { today: [], tomorrow: [] };
+    demoTasks.forEach(t => {
+      const d = t.day ?? 'today';
+      if (d === 'today' || d === today) byDay.today.push(t);
+      else if (d === 'tomorrow' || d === tomorrow) byDay.tomorrow.push(t);
+      else {
+        if (!byDay[d]) byDay[d] = [];
+        byDay[d].push(t);
+      }
+    });
+    return byDay;
+  }, [demoTasks]);
+
   const earnedAchievementBonus = 150;
   const totalPoints = demoTasks.filter(t => t.completed).reduce((sum, t) => sum + (t.points ?? 5), 0) + earnedAchievementBonus;
   const streak = 14;
@@ -248,7 +317,7 @@ const DemoLayout: React.FC = () => {
           className="bg-white/20 hover:bg-white/30 text-white border-0 shrink-0"
           onClick={() => {
             setDemoGoals(DEFAULT_DEMO_GOALS);
-            setDemoTasks(DEFAULT_DEMO_TASKS);
+            setDemoTasks(DEFAULT_DEMO_TASKS as DemoTask[]);
             setGratitudeEntries([
               { id: '1', content: "I'm grateful for my supportive family who believes in my dreams", date: '2026-01-18' },
               { id: '2', content: "Thankful for my health and the ability to pursue my goals", date: '2026-01-17' },
@@ -273,7 +342,7 @@ const DemoLayout: React.FC = () => {
         />
         <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.85 }} aria-hidden />
         <HeroFloatingCircles />
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
           <h1
             className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up"
             style={{
@@ -306,9 +375,18 @@ const DemoLayout: React.FC = () => {
             className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up"
             style={{ animationDelay: '0.4s' }}
           >
+            <Button
+              size="lg"
+              variant="default"
+              className="hero-cta-primary"
+              onClick={() => setOnboardingOpen(true)}
+            >
+              <Sparkles className="h-5 w-5 mr-2" />
+              Start guided demo
+            </Button>
             <AuthModal
               trigger={
-                <Button size="lg" variant="default" className="hero-cta-primary">
+                <Button size="lg" variant="outline" className="hero-cta-outline">
                   Start 7-day free trial
                 </Button>
               }
@@ -326,12 +404,19 @@ const DemoLayout: React.FC = () => {
         </div>
       </section>
 
+      <DemoOnboardingModals
+        open={onboardingOpen}
+        onClose={() => setOnboardingOpen(false)}
+        onCompleteWithOwnPlan={() => setOnboardingOpen(false)}
+        onCompleteWithRecommended={handleOnboardingRecommended}
+      />
+
 
 
 
 
       {/* Stats Bar */}
-      <section className="py-8 px-4 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
+      <section className="py-8 px-4 sm:px-6 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
             <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{demoGoals.length}</div>
@@ -353,7 +438,7 @@ const DemoLayout: React.FC = () => {
       </section>
 
       {/* Demo Dashboard */}
-      <section id="demo-dashboard" className="py-12 px-4 border-t scroll-mt-24" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
+      <section id="demo-dashboard" className="py-12 px-4 sm:px-6 border-t scroll-mt-24" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
         <div className="max-w-6xl mx-auto space-y-12">
           {/* Goals Grid */}
           <div>
@@ -437,65 +522,161 @@ const DemoLayout: React.FC = () => {
 
           {/* Two Column Layout */}
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* Tasks Section */}
+            {/* To-Do List by day */}
             <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
                     <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>To-Do List</h3>
-                    <Badge style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>+5 pts each</Badge>
+                    <Badge style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>By day · +5 pts each</Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleAIGenerateTodos('today')}
+                      className="text-xs"
+                    >
+                      <SparklesIcon className="h-3 w-3 mr-1" />
+                      AI: Today
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleAIGenerateTodos('tomorrow')}
+                      className="text-xs"
+                    >
+                      <SparklesIcon className="h-3 w-3 mr-1" />
+                      AI: Tomorrow
+                    </Button>
                   </div>
                 </div>
-                <div className="space-y-3 mb-4">
-                  {demoTasks.map(task => (
-                    <div
-                      key={task.id}
-                      className={`flex items-center gap-3 p-4 rounded-xl transition-all ${
-                        task.completed ? 'border-2' : ''
-                      }`}
-                      style={{
-                        backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)',
-                        borderColor: task.completed ? 'var(--landing-primary)' : 'transparent',
-                      }}
-                    >
-                      <button
-                        onClick={() => setDemoTasks(demoTasks.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t))}
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                          task.completed ? '' : 'border-gray-300'
+                <Tabs defaultValue="today" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                    <TabsTrigger value="today">Today</TabsTrigger>
+                    <TabsTrigger value="tomorrow">Tomorrow</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="today" className="space-y-3 mt-0">
+                    {(tasksByDay.today ?? []).map(task => (
+                      <div
+                        key={task.id}
+                        className={`flex items-center gap-3 p-4 rounded-xl transition-all ${
+                          task.completed ? 'border-2' : ''
                         }`}
-                        style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}
+                        style={{
+                          backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)',
+                          borderColor: task.completed ? 'var(--landing-primary)' : 'transparent',
+                        }}
                       >
-                        {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
-                      </button>
-                      <span className={`flex-1 ${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>
-                        {task.title}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                        <button
+                          onClick={() => setDemoTasks(demoTasks.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t))}
+                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
+                            task.completed ? '' : 'border-gray-300'
+                          }`}
+                          style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}
+                        >
+                          {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
+                        </button>
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                          {task.timeSlot && (
+                            <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}>
+                              <Clock className="h-3 w-3" /> {task.timeSlot}
+                            </span>
+                          )}
+                          <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>
+                            {task.title}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </TabsContent>
+                  <TabsContent value="tomorrow" className="space-y-3 mt-0">
+                    {(tasksByDay.tomorrow ?? []).map(task => (
+                      <div
+                        key={task.id}
+                        className={`flex items-center gap-3 p-4 rounded-xl transition-all ${
+                          task.completed ? 'border-2' : ''
+                        }`}
+                        style={{
+                          backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)',
+                          borderColor: task.completed ? 'var(--landing-primary)' : 'transparent',
+                        }}
+                      >
+                        <button
+                          onClick={() => setDemoTasks(demoTasks.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t))}
+                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
+                            task.completed ? '' : 'border-gray-300'
+                          }`}
+                          style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}
+                        >
+                          {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
+                        </button>
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                          {task.timeSlot && (
+                            <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}>
+                              <Clock className="h-3 w-3" /> {task.timeSlot}
+                            </span>
+                          )}
+                          <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>
+                            {task.title}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </TabsContent>
+                </Tabs>
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     const title = newTaskTitle.trim();
                     if (title) {
-                      setDemoTasks([...demoTasks, { id: Date.now().toString(), title, completed: false, points: 5, priority: 'medium' as const }]);
+                      setDemoTasks([...demoTasks, {
+                        id: Date.now().toString(),
+                        title,
+                        completed: false,
+                        points: 5,
+                        priority: 'medium',
+                        day: newTaskDay,
+                        timeSlot: newTaskTimeSlot.trim() || undefined,
+                      }]);
                       setNewTaskTitle('');
+                      setNewTaskTimeSlot('');
                     }
                   }}
-                  className="flex gap-2"
+                  className="space-y-2 mt-4"
                 >
-                  <Input
-                    placeholder="Add a task..."
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    className="flex-1"
-                    style={{ borderColor: 'var(--landing-border)' }}
-                  />
-                  <Button type="submit" size="sm" className="hero-cta-primary" disabled={!newTaskTitle.trim()}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <Input
+                      placeholder="Add a task..."
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      className="flex-1 min-w-[140px]"
+                      style={{ borderColor: 'var(--landing-border)' }}
+                    />
+                    <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
+                      <SelectTrigger className="w-[110px]" style={{ borderColor: 'var(--landing-border)' }}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="tomorrow">Tomorrow</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      placeholder="Time (e.g. 09:00)"
+                      value={newTaskTimeSlot}
+                      onChange={(e) => setNewTaskTimeSlot(e.target.value)}
+                      className="w-[100px]"
+                      style={{ borderColor: 'var(--landing-border)' }}
+                    />
+                    <Button type="submit" size="sm" className="hero-cta-primary" disabled={!newTaskTitle.trim()}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
@@ -633,7 +814,7 @@ const DemoLayout: React.FC = () => {
 
           {/* CTA Section — matches About/Features/Pricing pattern */}
           <section className="py-20 px-4">
-            <div className="max-w-4xl mx-auto text-center rounded-3xl p-10 sm:p-14 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)' }}>
+            <div className="max-w-6xl mx-auto text-center rounded-3xl p-10 sm:p-14 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)' }}>
               <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: 'white' }} aria-hidden />
               <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: 'white' }} aria-hidden />
               <div className="relative z-10">

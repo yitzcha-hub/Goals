@@ -20,7 +20,7 @@ const Pricing: React.FC = () => {
         </div>
         <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.85 }} aria-hidden />
         <HeroFloatingCircles />
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
           <h1
             className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up"
             style={{

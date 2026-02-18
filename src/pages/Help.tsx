@@ -267,7 +267,7 @@ const Help = () => {
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600 text-white py-16 px-4">
         <HeroFloatingCircles variant="dark" />
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
             <HelpCircle className="w-8 h-8" />
           </div>
@@ -291,7 +291,7 @@ const Help = () => {
       </section>
 
       {/* Quick Links */}
-      <section className="py-12 px-4 border-b border-gray-100">
+      <section className="py-12 px-4 sm:px-6 border-b border-gray-100">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
@@ -318,7 +318,7 @@ const Help = () => {
 
       {/* FAQ Categories */}
       <section className="py-12 px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
             Frequently Asked Questions
           </h2>
@@ -409,7 +409,7 @@ const Help = () => {
 
       {/* Still Need Help CTA */}
       <section className="py-16 px-4 bg-gradient-to-br from-gray-900 to-gray-800">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-6xl mx-auto text-center px-4 sm:px-6">
           <h2 className="text-3xl font-bold text-white mb-4">Still have questions?</h2>
           <p className="text-gray-300 text-lg mb-8">
             Our support team is here to help you succeed with your goals

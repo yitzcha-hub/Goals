@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, Plus, Trash2, CalendarClock, PenLine, Sparkles } from 'lucide-react';
+import { Target, Plus, Trash2, CalendarClock, PenLine, Sparkles, CheckCircle2, ChevronDown, ChevronUp, ImageIcon } from 'lucide-react';
 import { useManifestationDatabase } from '@/hooks/useManifestationDatabase';
 import { useReminders } from '@/hooks/useReminders';
 import { InspirationSection } from '@/components/InspirationSection';
@@ -21,6 +21,8 @@ import goalsImg from '@/assets/images/Goals.jpg';
 import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 import { TrialBanner } from '@/components/TrialBanner';
 import { useToast } from '@/hooks/use-toast';
+import { ProgressPhotos } from '@/components/ProgressPhotos';
+import type { GoalStep } from '@/hooks/useManifestationDatabase';
 
 const timelineLabels: Record<string, string> = {
   '30': '30 Days',
@@ -50,6 +52,7 @@ export default function Goals() {
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEventData | undefined>();
   const [prefilledGoal, setPrefilledGoal] = useState<{ id: string; title: string } | undefined>();
+  const [photosOpenGoalIds, setPhotosOpenGoalIds] = useState<Set<string>>(new Set());
 
   const { goals, addGoal, updateGoalProgress, deleteGoal } = useManifestationDatabase();
   const { events, addEvent, updateEvent, deleteEvent } = useEvents();
@@ -168,7 +171,7 @@ export default function Goals() {
                   Your goals, your timeline
                 </h1>
                 <p className="mt-3 text-sm sm:text-base text-white/90 max-w-2xl leading-relaxed">
-                  Define what you want to achieve, add a default goal or create your own, then attach it to dates and times on your calendar. Update progress, schedule sessions, and remove or edit goals anytime—full control in one place.
+                  Set goals with clear steps, timelines, and deadlines. Track percent complete, upload progress photos, and attach sessions to your calendar—so it doesn&apos;t look like a calendar; it looks like your goals.
                 </p>
               </div>
               <Button
@@ -256,7 +259,7 @@ export default function Goals() {
                 <Target className="h-10 w-10 mx-auto mb-3 opacity-50" style={{ color: 'var(--landing-primary)' }} />
                 <p className="font-medium text-sm" style={{ color: 'var(--landing-text)' }}>Your goals will appear here</p>
                 <p className="text-xs mt-1" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>
-                  Add a default goal above or create your own.
+                  Add a default goal above or create your own with steps and a deadline.
                 </p>
                 <Button onClick={() => setAddGoalOpen(true)} className="mt-4 rounded-xl" size="sm">
                   <Plus className="h-4 w-4 mr-2" />
@@ -268,6 +271,19 @@ export default function Goals() {
             <div className="space-y-6">
               {goals.map((goal) => {
                 const goalEvents = eventsByGoalId[goal.id] ?? [];
+                const steps = goal.steps ?? [];
+                const completedSteps = steps.filter((s) => s.completed).length;
+                const percentComplete = steps.length > 0
+                  ? Math.round((completedSteps / steps.length) * 100)
+                  : goal.progress * 10;
+                const photosOpen = photosOpenGoalIds.has(goal.id);
+                const setPhotosOpen = (open: boolean) => {
+                  setPhotosOpenGoalIds((prev) => {
+                    const next = new Set(prev);
+                    if (open) next.add(goal.id); else next.delete(goal.id);
+                    return next;
+                  });
+                };
                 return (
                   <Card
                     key={goal.id}
@@ -279,9 +295,16 @@ export default function Goals() {
                         <CardTitle className="text-lg flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
                           {goal.title}
                         </CardTitle>
-                        <p className="text-xs mt-1 font-normal" style={{ color: 'var(--landing-text)', opacity: 0.8 }}>
-                          {timelineLabels[goal.timeline] ?? goal.timeline}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span className="text-xs font-medium rounded-full px-2 py-0.5 border" style={{ borderColor: 'var(--landing-primary)', color: 'var(--landing-primary)' }}>
+                            {timelineLabels[goal.timeline] ?? goal.timeline}
+                          </span>
+                          {goal.targetDate && (
+                            <span className="text-xs" style={{ color: 'var(--landing-text)', opacity: 0.9 }}>
+                              Deadline: {new Date(goal.targetDate).toLocaleDateString('en-US')}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex gap-2">
                         <Button
@@ -314,27 +337,65 @@ export default function Goals() {
                           {goal.description}
                         </p>
                       )}
+                      {/* Steps */}
+                      {steps.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>
+                            Steps
+                          </p>
+                          <ul className="space-y-1.5">
+                            {steps.map((step) => (
+                              <li
+                                key={step.id}
+                                className="flex items-center gap-2 py-1.5 rounded-lg px-2"
+                                style={{ backgroundColor: step.completed ? 'var(--landing-accent)' : 'transparent' }}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const next = steps.map((s) => s.id === step.id ? { ...s, completed: !s.completed } : s);
+                                    const done = next.filter((s) => s.completed).length;
+                                    const newProgress = steps.length ? Math.round((done / steps.length) * 10) : goal.progress;
+                                    await updateGoal(goal.id, { steps: next, progress: newProgress });
+                                    toast({ title: step.completed ? 'Unchecked' : 'Step completed!' });
+                                  }}
+                                  className="flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center"
+                                  style={{ borderColor: step.completed ? 'var(--landing-primary)' : 'var(--landing-border)' }}
+                                >
+                                  {step.completed && <CheckCircle2 className="h-3.5 w-3.5" style={{ color: 'var(--landing-primary)' }} />}
+                                </button>
+                                <span className={`text-sm ${step.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>
+                                  {step.title}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {/* Percent complete & progress */}
                       <div>
                         <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--landing-text)', opacity: 0.8 }}>
-                          <span>Progress</span>
-                          <span>{goal.progress}/10</span>
+                          <span>Percent complete</span>
+                          <span>{steps.length > 0 ? `${percentComplete}%` : `${goal.progress}/10`}</span>
                         </div>
-                        <Progress value={goal.progress * 10} className="h-2 rounded-full" />
-                        <div className="flex gap-2 mt-2">
-                          {[0, 2, 4, 6, 8, 10].map((v) => (
-                            <Button
-                              key={v}
-                              size="sm"
-                              variant={goal.progress === v ? 'default' : 'outline'}
-                              className="rounded-lg h-7 px-2"
-                              onClick={() => updateGoalProgress(goal.id, v)}
-                            >
-                              {v}
-                            </Button>
-                          ))}
-                        </div>
+                        <Progress value={steps.length > 0 ? percentComplete : goal.progress * 10} className="h-2 rounded-full" />
+                        {steps.length === 0 && (
+                          <div className="flex gap-2 mt-2">
+                            {[0, 2, 4, 6, 8, 10].map((v) => (
+                              <Button
+                                key={v}
+                                size="sm"
+                                variant={goal.progress === v ? 'default' : 'outline'}
+                                className="rounded-lg h-7 px-2"
+                                onClick={() => updateGoalProgress(goal.id, v)}
+                              >
+                                {v}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      {/* Schedule dates (time included) */}
+                      {/* Schedule (secondary) */}
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>
                           Schedule
@@ -393,6 +454,26 @@ export default function Goals() {
                           </ul>
                         )}
                       </div>
+                      {/* Progress photos (collapsible) */}
+                      <div className="border rounded-xl overflow-hidden" style={{ borderColor: 'var(--landing-border)' }}>
+                        <button
+                          type="button"
+                          onClick={() => setPhotosOpen(!photosOpen)}
+                          className="w-full flex items-center justify-between gap-2 p-3 text-left"
+                          style={{ backgroundColor: 'var(--landing-accent)' }}
+                        >
+                          <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
+                            <ImageIcon className="h-4 w-4" style={{ color: 'var(--landing-primary)' }} />
+                            Progress photos
+                          </span>
+                          {photosOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </button>
+                        {photosOpen && (
+                          <div className="p-3" style={{ backgroundColor: 'var(--landing-bg)' }}>
+                            <ProgressPhotos goalId={goal.id} />
+                          </div>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -448,6 +529,8 @@ function AddGoalDialog({
   const [description, setDescription] = useState('');
   const [timeline, setTimeline] = useState<'30' | '60' | '90' | '1year' | '5year'>('30');
   const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
+  const [targetDate, setTargetDate] = useState('');
+  const [stepTitles, setStepTitles] = useState<string[]>(['']);
 
   React.useEffect(() => {
     if (open) {
@@ -455,18 +538,35 @@ function AddGoalDialog({
       setDescription('');
       setTimeline('30');
       setPriority('medium');
+      setTargetDate('');
+      setStepTitles(['']);
     }
   }, [open]);
+
+  const addStep = () => setStepTitles((s) => [...s, '']);
+  const removeStep = (i: number) => setStepTitles((s) => s.filter((_, idx) => idx !== i));
+  const setStep = (i: number, v: string) => setStepTitles((s) => { const n = [...s]; n[i] = v; return n; });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAdd({ title: title.trim(), description: description.trim(), timeline, priority, imageUrl: '' });
+    const steps: GoalStep[] = stepTitles
+      .filter((s) => s.trim() !== '')
+      .map((s, i) => ({ id: `s${Date.now()}-${i}`, title: s.trim(), completed: false }));
+    onAdd({
+      title: title.trim(),
+      description: description.trim(),
+      timeline,
+      priority,
+      imageUrl: '',
+      targetDate: targetDate.trim() || undefined,
+      steps: steps.length ? steps : undefined,
+    });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl border-2 max-w-md" style={{ borderColor: 'var(--landing-border)' }}>
+      <DialogContent className="rounded-2xl border-2 max-w-md max-h-[90vh] overflow-y-auto" style={{ borderColor: 'var(--landing-border)' }}>
         <DialogHeader>
           <DialogTitle style={{ color: 'var(--landing-text)' }}>Add goal</DialogTitle>
         </DialogHeader>
@@ -503,6 +603,40 @@ function AddGoalDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <Label style={{ color: 'var(--landing-text)' }}>Deadline (optional)</Label>
+            <Input
+              type="date"
+              value={targetDate}
+              onChange={(e) => setTargetDate(e.target.value)}
+              className="mt-1.5 rounded-xl border-[var(--landing-border)]"
+            />
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <Label style={{ color: 'var(--landing-text)' }}>Steps (optional)</Label>
+              <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={addStep}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add step
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {stepTitles.map((step, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input
+                    value={step}
+                    onChange={(e) => setStep(i, e.target.value)}
+                    placeholder={`Step ${i + 1}`}
+                    className="rounded-xl border-[var(--landing-border)] flex-1"
+                  />
+                  {stepTitles.length > 1 && (
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-red-600" onClick={() => removeStep(i)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
           <div>
             <Label style={{ color: 'var(--landing-text)' }}>Priority</Label>

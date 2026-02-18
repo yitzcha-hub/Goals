@@ -130,7 +130,7 @@ const FAQ: React.FC = () => {
         />
         <HeroFloatingCircles />
         <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} aria-hidden />
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
           <div
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-6 animate-slide-up"
             style={{ backgroundColor: 'var(--landing-primary)', color: 'white', animationDelay: '0.1s' }}
@@ -169,7 +169,7 @@ const FAQ: React.FC = () => {
         style={{ backgroundColor: 'var(--landing-bg)', borderTop: '1px solid var(--landing-border)' }}
       >
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, var(--landing-primary) 1px, transparent 0)', backgroundSize: '28px 28px' }} />
-        <div className="max-w-3xl mx-auto text-center relative">
+        <div className="max-w-6xl mx-auto text-center relative px-4 sm:px-6">
           <p className="text-base sm:text-lg leading-relaxed" style={{ color: 'var(--landing-text)', opacity: 0.9 }}>
             We believe transparency builds trust. Below you&apos;ll find detailed answers to the questions we hear most—grouped by topic so you can quickly find what matters to you. If something isn&apos;t covered here, we&apos;re always happy to help via{' '}
             <button onClick={() => navigate('/contact')} className="font-semibold underline underline-offset-2 hover:no-underline" style={{ color: 'var(--landing-primary)' }}>contact</button>.
@@ -182,7 +182,7 @@ const FAQ: React.FC = () => {
         className="sticky top-16 z-40 py-4 px-4 border-b"
         style={{ backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderColor: 'var(--landing-border)' }}
       >
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 scrollbar-hide justify-center">
             {faqCategories.map((cat) => {
               const Icon = cat.icon;
@@ -214,7 +214,7 @@ const FAQ: React.FC = () => {
       {/* FAQ Grid — bento-style, non-traditional layout */}
       <section id="faq" className="py-16 sm:py-24 px-4 relative overflow-hidden" style={{ backgroundColor: 'var(--landing-accent)', borderTop: '1px solid var(--landing-border)' }}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, var(--landing-primary) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-        <div className="max-w-5xl mx-auto relative space-y-16">
+        <div className="max-w-6xl mx-auto relative space-y-16 px-4 sm:px-6">
           {faqCategories.map((category, catIndex) => {
             const Icon = category.icon;
             return (

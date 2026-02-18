@@ -297,7 +297,7 @@ export const LandingContent: React.FC = () => {
     { image: problemImg2, title: "Apps that don't change your life", stats: [{ value: '1', label: 'SYSTEM' }, { value: 'Goals', label: '+ PLAN' }, { value: 'Full', label: 'TRANSFORMATION' }], problemDesc: "Another to-do app, another habit tracker. They organize tasks but don't help you become someone new. You need a development system, not another inbox.", solution: 'Full development system: goals + written plan + calendar + AI feedback. One place to be the person you want to become.', basicClosing: 'Transformation, not another inbox.' },
     { image: problemImg3, title: 'Goals you set and forget', stats: [{ value: 'Written', label: 'PLAN' }, { value: 'Calendar', label: 'REVISIT' }, { value: 'Goals', label: 'STICK' }], problemDesc: 'New Year resolutions. Big ideas in a notes app. Without a written plan and a place to revisit them, goals fade by February.', solution: "Written plan + calendar + revisit. Attach goals to time with reminders so they don't fade.", basicClosing: 'Plans on paper stick. Notes fade.' },
     { image: problemImg4, title: 'No real accountability', stats: [{ value: 'Trusted', label: 'CIRCLE' }, { value: 'No', label: 'BROADCAST' }, { value: 'Real', label: 'SUPPORT' }], problemDesc: 'Going it alone is hard. You need someone in your corner—without broadcasting to the world.', solution: 'Family connection. Private accountability partners. Invite trusted people—no social feed.', basicClosing: 'Real support, no noise.' },
-    { image: problemImg5, title: "No way to measure growth", stats: [{ value: 'Progress', label: 'TRACK' }, { value: 'AI', label: 'INSIGHTS' }, { value: 'Proof', label: 'OVER FEELING' }], problemDesc: "You feel like you're improving, but where's the proof? Without tracking progress over time, it's hard to see how far you've come.", solution: "Progress tracking + AI insights. Get AI feedback on patterns, when you slip, and how to improve.", basicClosing: 'Proof over feeling.' },
+    { image: problemImg5, title: "No way to measure growth", stats: [{ value: 'Progress', label: 'TRACK' }, { value: 'AI', label: 'INSIGHTS' }, { value: 'Proof', label: 'OVER FEELING' }], problemDesc: "You feel like you're improving, but where's the proof? Without tracking progress over time, it's hard to see how far you've come.", solution: "Progress tracking with photos, percent complete, and AI insights. Upload progress photos, see percent complete, and get AI feedback on patterns and how to improve.", basicClosing: 'Proof over feeling.' },
   ];
 
   const stepItems: StepItem[] = [
@@ -352,7 +352,7 @@ export const LandingContent: React.FC = () => {
         </div>
         <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0 }} aria-hidden />
         <HeroFloatingCircles />
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
           <h1
             key={heroSlideIndex}
             className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-white opacity-0 animate-hero-headline-in"
@@ -425,7 +425,7 @@ export const LandingContent: React.FC = () => {
         <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-[0.05] blur-3xl pointer-events-none" style={{ background: 'radial-gradient(circle, var(--landing-primary) 0%, transparent 70%)' }} aria-hidden />
         <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, var(--landing-text) 1px, transparent 0)', backgroundSize: '40px 40px' }} aria-hidden />
 
-        <div className="max-w-5xl mx-auto relative z-10" style={{ perspective: '1200px' }}>
+        <div className="max-w-6xl mx-auto relative z-10 px-4 sm:px-6" style={{ perspective: '1200px' }}>
           <div ref={problemIntroRef} className="text-center mb-16">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -526,7 +526,7 @@ export const LandingContent: React.FC = () => {
         />
         {/* 3D content card */}
         <motion.div
-          className="relative z-10 w-full max-w-3xl mx-auto"
+          className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6"
           style={{ perspective: '1000px', transformStyle: 'preserve-3d' }}
           initial={false}
           animate={isVisionBadgeInView ? { opacity: 1 } : { opacity: 0.6 }}
@@ -601,7 +601,7 @@ export const LandingContent: React.FC = () => {
                 animate={isVisionBodyInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 20, rotateX: 4 }}
                 transition={{ delay: 0.15, duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
               >
-                A place where you choose who you want to become, write your plan, measure your progress, and stay accountable—without comparison or noise.
+                A place where you choose who you want to become, set goals with steps and deadlines, track percent complete, upload progress photos, and customize your home screen—without comparison or noise.
               </motion.p>
               <motion.div
                 className="mt-10 mx-auto h-1 w-16 rounded-full"
@@ -625,7 +625,7 @@ export const LandingContent: React.FC = () => {
           perspective: '1200px',
         }}
       >
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div ref={howItWorksIntroRef} className="text-center mb-14">
             <motion.h2
               className="text-2xl sm:text-3xl font-bold mb-4"
@@ -655,7 +655,7 @@ export const LandingContent: React.FC = () => {
           {/* Social proof + guarantee strip — after Step 4 (animation + 3D + image) */}
           <motion.div
             ref={guaranteeStripRef}
-            className="mt-16 sm:mt-20 max-w-5xl mx-auto"
+            className="mt-16 sm:mt-20 max-w-6xl mx-auto px-4 sm:px-6"
             style={{ perspective: '1200px', transformStyle: 'preserve-3d' }}
           >
             <motion.div

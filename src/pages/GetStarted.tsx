@@ -52,14 +52,14 @@ const GetStarted: React.FC = () => {
 
         {/* Personalization: Choose who you want to become */}
         <section className="py-16 px-4" style={{ backgroundColor: 'var(--landing-bg)', borderTop: '1px solid var(--landing-border)' }}>
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <ChooseYourPath />
           </div>
         </section>
 
         {/* Inspiration: Examples from successful people */}
         <section className="py-16 px-4" style={{ backgroundColor: 'var(--landing-accent)' }}>
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <InspirationSection
               title="Inspired by successful people"
               subtitle="Goals and development plans from entrepreneurs, professionals, athletes, and creators. Use them as a starting point."

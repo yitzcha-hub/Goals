@@ -44,7 +44,7 @@ export default function About() {
         </div>
         <div className="absolute inset-0" style={{ backgroundColor: "var(--landing-accent)", opacity: 0.88 }} aria-hidden />
         <HeroFloatingCircles />
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
           <h1
             className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up"
             style={{
@@ -79,7 +79,7 @@ export default function About() {
       {/* Mission + Vision — single editorial block with image */}
       <section className="py-20 px-4 overflow-hidden relative" style={{ backgroundColor: "var(--landing-bg)", borderTop: "1px solid var(--landing-border)" }}>
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, var(--landing-primary) 1px, transparent 0)", backgroundSize: "24px 24px" }} />
-        <div className="max-w-6xl mx-auto relative">
+        <div className="max-w-6xl mx-auto relative px-4 sm:px-6">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <div className="order-2 lg:order-1">
               <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4" style={{ backgroundColor: "var(--landing-accent)", color: "var(--landing-primary)" }}>
@@ -110,7 +110,7 @@ export default function About() {
 
       {/* Why we're different — split: Others vs Us */}
       <section className="py-20 px-4 overflow-hidden" style={{ backgroundColor: "var(--landing-bg)", borderTop: "1px solid var(--landing-border)" }}>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-center" style={{ color: "var(--landing-text)" }}>Why we're different</h2>
           <p className="text-center text-sm opacity-80 mb-12 max-w-xl mx-auto" style={{ color: "var(--landing-text)" }}>No highlight reels. No leaderboards. Just your progress.</p>
 
@@ -148,7 +148,7 @@ export default function About() {
         style={{ backgroundColor: "var(--landing-bg)", borderTop: "1px solid var(--landing-border)" }}
       >
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, var(--landing-primary) 1px, transparent 0)", backgroundSize: "24px 24px" }} />
-        <div className="max-w-4xl mx-auto relative">
+        <div className="max-w-6xl mx-auto relative px-4 sm:px-6">
           <div className="text-center mb-16">
             <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4" style={{ backgroundColor: "var(--landing-accent)", color: "var(--landing-primary)" }}>
               Our journey
@@ -209,7 +209,7 @@ export default function About() {
 
       {/* Values — compact row with icons */}
       <section className="py-20 px-4 overflow-hidden" style={{ backgroundColor: "var(--landing-bg)", borderTop: "1px solid var(--landing-border)" }}>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-center" style={{ color: "var(--landing-text)" }}>What we stand for</h2>
           <p className="text-center text-sm opacity-80 mb-12 max-w-xl mx-auto" style={{ color: "var(--landing-text)" }}>Every feature is designed around these beliefs.</p>
 
@@ -231,7 +231,7 @@ export default function About() {
 
       {/* Testimonials — editorial quote style */}
       <section className="py-20 px-4 overflow-hidden" style={{ backgroundColor: "var(--landing-bg)", borderTop: "1px solid var(--landing-border)" }}>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-center" style={{ color: "var(--landing-text)" }}>What our users say</h2>
           <p className="text-center text-sm opacity-80 mb-12 max-w-xl mx-auto" style={{ color: "var(--landing-text)" }}>Real people, real progress.</p>
 
@@ -255,7 +255,7 @@ export default function About() {
 
       {/* Features summary — 3 cards */}
       <section className="py-16 px-4 overflow-hidden" style={{ backgroundColor: "var(--landing-bg)", borderTop: "1px solid var(--landing-border)" }}>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid sm:grid-cols-3 gap-6">
             <div className="rounded-2xl p-6 text-center border-t-4 feature-card-shadow" style={{ borderColor: "var(--landing-primary)", backgroundColor: "var(--landing-accent)" }}>
               <Target className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--landing-primary)" }} />
@@ -278,7 +278,7 @@ export default function About() {
 
       {/* CTA */}
       <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center rounded-3xl p-10 sm:p-14 relative overflow-hidden" style={{ background: "linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)" }}>
+        <div className="max-w-6xl mx-auto text-center rounded-3xl p-10 sm:p-14 relative overflow-hidden px-4 sm:px-6" style={{ background: "linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)" }}>
           <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: "white" }} />
           <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: "white" }} />
           <div className="relative z-10">

@@ -599,3 +599,31 @@ Respond in JSON: { "message": "2-3 sentence advice", "nextSteps": ["step 1", "st
   if (!raw) return null;
   return parseJsonResponse<{ message: string; nextSteps: string[] }>(raw);
 }
+
+/* ------------------------------------------------------------------ */
+/*  suggestTodosForDayWithAI                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Suggest 3–5 actionable to-dos for today or tomorrow based on the user's goals
+ * and recent todos. Returns an array of task title strings.
+ */
+export async function suggestTodosForDayWithAI(
+  day: 'today' | 'tomorrow',
+  goals: { title: string; progress: number; description?: string }[],
+  recentTodos: { title: string; completed: boolean }[],
+): Promise<string[]> {
+  const prompt = `You are a supportive productivity coach. Suggest 3 to 5 specific, actionable to-do items for ${day} that will help this user make progress.
+
+Their goals: ${goals.length ? goals.map((g) => `"${g.title}" (${g.progress}/10)`).join('; ') : 'None yet'}
+Recent to-dos (for context): ${recentTodos.slice(0, 10).map((t) => (t.completed ? '[done] ' : '') + t.title).join('; ') || 'None'}
+
+Return only a JSON array of strings: short task titles, one per item. E.g. ["Review weekly goals", "15 min work on [goal name]", "Evening reflection"]`;
+
+  const raw = await chatCompletion(prompt, { maxTokens: 400, temperature: 0.7 });
+  if (!raw) return [];
+
+  const parsed = parseJsonResponse<string[]>(raw);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter((t) => typeof t === 'string' && t.trim().length > 0).slice(0, 5);
+}

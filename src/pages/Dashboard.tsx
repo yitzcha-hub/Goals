@@ -19,10 +19,19 @@ import {
   CalendarClock,
   ListTodo,
   PenLine,
+  CheckCircle2,
+  SparklesIcon,
+  ImageIcon,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useManifestationDatabase } from '@/hooks/useManifestationDatabase';
 import { useEvents } from '@/hooks/useEvents';
 import { useReminders } from '@/hooks/useReminders';
+import { suggestTodosForDayWithAI } from '@/lib/openaiProgressAnalysis';
 import { EventDialog } from '@/components/EventDialog';
 import { DayTimelineView } from '@/components/DayTimelineView';
 import type { DayEventInput } from '@/lib/dayEventLayout';
@@ -41,8 +50,21 @@ function isSameDay(a: Date, b: Date): boolean {
   return toISODate(a) === toISODate(b);
 }
 
+const timelineLabels: Record<string, string> = {
+  '30': '30 Days',
+  '60': '60 Days',
+  '90': '90 Days',
+  '1year': '1 Year',
+  '5year': '5 Year Plan',
+};
+
 export default function Dashboard() {
   const { toast } = useToast();
+  const [dashboardHeroUrl, setDashboardHeroUrl] = useState<string>(dashboardHeroImg);
+  const [heroEditOpen, setHeroEditOpen] = useState(false);
+  const [heroInputUrl, setHeroInputUrl] = useState('');
+  const heroFileInputRef = React.useRef<HTMLInputElement>(null);
+  const MAX_HERO_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB for data URL in localStorage
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const selectedIso = toISODate(selectedDate);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
@@ -50,12 +72,19 @@ export default function Dashboard() {
   const [gratitudeDialogOpen, setGratitudeDialogOpen] = useState(false);
   const [journalDialogOpen, setJournalDialogOpen] = useState(false);
   const [slotClickTime, setSlotClickTime] = useState<string | undefined>();
+  const [overviewNewTaskTitle, setOverviewNewTaskTitle] = useState('');
+  const [overviewNewGratitude, setOverviewNewGratitude] = useState('');
+  const [newTaskDay, setNewTaskDay] = useState<'today' | 'tomorrow'>('today');
+  const [aiGenerateLoading, setAiGenerateLoading] = useState<'today' | 'tomorrow' | null>(null);
+  const navigate = useNavigate();
 
   const {
     goals,
     todos,
     gratitudeEntries,
     journalEntries,
+    totalPoints,
+    streak,
     addGoal,
     updateGoalProgress,
     deleteGoal,
@@ -69,6 +98,15 @@ export default function Dashboard() {
     updateJournalEntry,
     deleteJournalEntry,
   } = useManifestationDatabase();
+
+  const todayIso = toISODate(new Date());
+  const tomorrowIso = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return toISODate(d);
+  })();
+  const todosToday = useMemo(() => todos.filter((t) => t.scheduledDate === todayIso), [todos, todayIso]);
+  const todosTomorrow = useMemo(() => todos.filter((t) => t.scheduledDate === tomorrowIso), [todos, tomorrowIso]);
 
   const { events, addEvent, updateEvent, deleteEvent } = useEvents();
   const { createReminder } = useReminders();
@@ -214,6 +252,26 @@ export default function Dashboard() {
     setEventDialogOpen(true);
   };
 
+  const handleAIGenerateTodos = async (day: 'today' | 'tomorrow') => {
+    const targetIso = day === 'today' ? todayIso : tomorrowIso;
+    setAiGenerateLoading(day);
+    try {
+      const suggested = await suggestTodosForDayWithAI(
+        day,
+        goals.map((g) => ({ title: g.title, progress: g.progress, description: g.description })),
+        todos.slice(0, 15).map((t) => ({ title: t.title, completed: t.completed })),
+      );
+      for (const title of suggested) {
+        await addTodo({ title, completed: false, points: 5, scheduledDate: targetIso });
+      }
+      toast({ title: 'Added', description: suggested.length ? `${suggested.length} suggested tasks added for ${day}.` : 'No new suggestions right now.' });
+    } catch {
+      toast({ title: 'Error', description: 'Could not generate suggestions.', variant: 'destructive' });
+    } finally {
+      setAiGenerateLoading(null);
+    }
+  };
+
   const dateLabel = selectedDate.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -223,75 +281,109 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
-      {/* Hero — full width, modern style, point animation */}
+      {/* Hero — Demo style: tall section, gradient headline, overlay */}
       <section
-        className="relative w-full overflow-hidden"
-        style={{ minHeight: '240px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
+        id="hero"
+        className="relative py-20 sm:py-28 px-4 min-h-[28rem] flex items-center justify-center overflow-hidden"
       >
-        <div className="absolute inset-0">
-          <img src={dashboardHeroImg} alt="" className="w-full h-full object-cover" />
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(160deg, rgba(15,23,42,0.75) 0%, rgba(26,107,79,0.82) 40%, rgba(44,157,115,0.78) 100%)',
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${dashboardHeroUrl})` }}
+          aria-hidden
+        />
+        <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.85 }} aria-hidden />
+        <HeroFloatingCircles />
+        <div className="absolute top-4 right-4 z-20">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="bg-white/90 hover:bg-white text-[var(--landing-primary)] rounded-xl shadow"
+            onClick={() => {
+              setHeroInputUrl(dashboardHeroUrl === dashboardHeroImg ? '' : dashboardHeroUrl.startsWith('data:') ? '[Uploaded image]' : dashboardHeroUrl);
+              setHeroEditOpen(true);
             }}
-          />
+          >
+            <ImageIcon className="h-4 w-4 mr-2" />
+            Customize home screen
+          </Button>
         </div>
-        <HeroFloatingCircles variant="dark" />
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-          <div className="mb-6">
-            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Your day at a glance
-            </h1>
-            <p className="mt-3 text-sm sm:text-base text-white/90 max-w-2xl leading-relaxed">
-              Choose any date to view your 24-hour timeline: scheduled events, to-dos, gratitude, and journal. Use the tabs below for Overview, Goals, Tasks, Gratitude, Journals, and Feedback—all in one dashboard.
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-3">
-                <Label htmlFor="dashboard-date" className="text-white/95 font-semibold text-sm sr-only sm:not-sr-only">
-                  Date
-                </Label>
-                <Input
-                  id="dashboard-date"
-                  type="date"
-                  value={selectedIso}
-                  onChange={(e) => setSelectedDate(new Date(e.target.value + 'T12:00:00'))}
-                  className="max-w-[180px] bg-white/95 border-0 text-[var(--landing-primary)] font-semibold rounded-xl h-11"
-                />
-              </div>
-                <Button
-                  onClick={openNewSchedule}
-                  className="hero-cta-primary font-semibold rounded-xl"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  New schedule
-                </Button>
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <h1
+            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up"
+            style={{
+              backgroundImage: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              animationDelay: '0.1s',
+            }}
+          >
+            Your day at a glance
+          </h1>
+          <p
+            className="text-lg sm:text-xl mb-4 font-bold max-w-2xl mx-auto bg-clip-text text-transparent animate-slide-up"
+            style={{
+              backgroundImage: 'linear-gradient(135deg, #4a5568 0%, #2d3748 50%, #1a1a1a 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              animationDelay: '0.25s',
+            }}
+          >
+            Timeline, goals, tasks, gratitude, and journal — all in one dashboard
+          </p>
+          <p className="text-sm font-medium opacity-90 mb-8 animate-slide-up" style={{ color: 'var(--landing-text)', animationDelay: '0.3s' }}>
+            Pick a date, add schedule items, and use the tabs below to explore.
+          </p>
+          <div
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up"
+            style={{ animationDelay: '0.4s' }}
+          >
+            <div className="flex items-center gap-2">
+              <Label htmlFor="dashboard-date" className="text-sm font-semibold sr-only sm:not-sr-only" style={{ color: 'var(--landing-text)' }}>Date</Label>
+              <Input
+                id="dashboard-date"
+                type="date"
+                value={selectedIso}
+                onChange={(e) => setSelectedDate(new Date(e.target.value + 'T12:00:00'))}
+                className="max-w-[180px] bg-white/95 border border-[var(--landing-border)] text-[var(--landing-primary)] font-semibold rounded-xl h-11"
+              />
             </div>
-            <div className="flex flex-wrap gap-4 sm:gap-6">
-              <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-5 py-3 text-center min-w-[90px]">
-                <p className="text-2xl font-bold text-white">{stats.totalGoals}</p>
-                <p className="text-xs text-white/90">Goals</p>
-              </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-5 py-3 text-center min-w-[90px]">
-                <p className="text-2xl font-bold text-white">{stats.scheduleToday}</p>
-                <p className="text-xs text-white/90">Scheduled</p>
-              </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-5 py-3 text-center min-w-[90px]">
-                <p className="text-2xl font-bold text-white">{stats.todosToday}</p>
-                <p className="text-xs text-white/90">To-Do</p>
-              </div>
-            </div>
+            <Button onClick={openNewSchedule} size="lg" className="hero-cta-primary rounded-xl">
+              <Plus className="h-5 w-5 mr-2" />
+              New schedule
+            </Button>
           </div>
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      {/* Stats Bar — same as Demo */}
+      <section className="py-8 px-4 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{goals.length}</div>
+            <div className="text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Active Goals</div>
+          </div>
+          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{todos.filter((t) => t.completed).length}/{todos.length}</div>
+            <div className="text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Tasks Done</div>
+          </div>
+          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{totalPoints}</div>
+            <div className="text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Total Points</div>
+          </div>
+          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{streak} days</div>
+            <div className="text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Current Streak</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main content — Demo-style section wrapper */}
+      <section id="dashboard-content" className="py-12 px-4 border-t scroll-mt-24" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
+      <div className="max-w-6xl mx-auto space-y-8">
         <TrialBanner />
-        <Tabs defaultValue="overview" className="space-y-6 mt-6">
+        <Tabs defaultValue="overview" className="space-y-8">
           <TabsList
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 h-auto p-2 rounded-2xl border shadow-sm w-full"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 h-auto p-2 rounded-2xl border w-full feature-card-shadow"
             style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}
           >
             <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow data-[state=active]:text-[var(--landing-primary)] py-3">
@@ -320,153 +412,308 @@ export default function Dashboard() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview: 24h timeline + cards */}
-          <TabsContent value="overview" className="space-y-6">
-            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden" style={{ borderColor: 'var(--landing-border)' }}>
-              <CardHeader className="pb-3" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                <CardTitle className="flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
-                  <Clock className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />
-                  {dateLabel} — 24h timeline
-                </CardTitle>
-                {/* Day markers: To-Do, Gratitude, Journal — pill row */}
-                {(todosOnDate.length > 0 || gratitudeForDate || journalForDate) && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {todosOnDate.length > 0 && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)', border: '1px solid var(--landing-border)' }}>
-                        <ListTodo className="h-3.5 w-3.5" style={{ color: 'var(--landing-primary)' }} />
-                        {todosOnDate.length} To-Do{todosOnDate.length !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                    {gratitudeForDate && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'rgba(236, 72, 153, 0.12)', color: 'var(--landing-text)', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
-                        <Heart className="h-3.5 w-3.5" style={{ color: '#ec4899' }} />
-                        Gratitude
-                      </span>
-                    )}
-                    {journalForDate && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'rgba(59, 130, 246, 0.12)', color: 'var(--landing-text)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                        <BookOpen className="h-3.5 w-3.5" style={{ color: '#3b82f6' }} />
-                        Journal
-                      </span>
-                    )}
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent className="p-0">
-                <DayTimelineView
-                  events={dayEvents}
-                  showCurrentTime={selectedIso === toISODate(new Date())}
-                  pxPerMinute={1}
-                  eventColors={eventColors}
-                  onEventClick={(id) => {
-                    const ev = eventsOnDate.find((e) => e.id === id);
-                    if (ev) {
-                      setSlotClickTime(undefined);
-                      setEditingEvent(ev);
-                      setEventDialogOpen(true);
-                    }
-                  }}
-                  onEventUpdate={handleEventTimeUpdate}
-                  onSlotClick={handleSlotClick}
-                  selectedEventId={editingEvent?.id}
-                  maxHeight="min(2880px, 70vh)"
-                  emptyMessage="No schedule for this day"
-                />
-              </CardContent>
-            </Card>
-
-            {/* Completion timeline: to-dos completed / gratitude & journal created on selected date */}
-            {(() => {
-              type CompletionItem = { type: 'todo'; time: string; title: string; id: string } | { type: 'gratitude'; time: string; content: string; id: string } | { type: 'journal'; time: string; title: string; id: string };
-              const items: CompletionItem[] = [];
-              todos.forEach((t) => {
-                if (!t.completed || !t.completedAt) return;
-                const d = t.completedAt.split('T')[0];
-                if (d !== selectedIso) return;
-                items.push({ type: 'todo', time: t.completedAt, title: t.title, id: t.id });
-              });
-              if (gratitudeForDate && gratitudeForDate.date === selectedIso && gratitudeForDate.createdAt) {
-                items.push({ type: 'gratitude', time: gratitudeForDate.createdAt, content: gratitudeForDate.content.slice(0, 60) + (gratitudeForDate.content.length > 60 ? '…' : ''), id: gratitudeForDate.id });
-              }
-              if (journalForDate && journalForDate.date === selectedIso && journalForDate.createdAt) {
-                items.push({ type: 'journal', time: journalForDate.createdAt, title: journalForDate.title || 'Journal', id: journalForDate.id });
-              }
-              items.sort((a, b) => a.time.localeCompare(b.time));
-              if (items.length === 0) return null;
-              return (
-                <Card className="border-0 shadow-xl rounded-2xl overflow-hidden" style={{ borderColor: 'var(--landing-border)' }}>
-                  <CardHeader className="pb-3" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                    <CardTitle className="flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
-                      <Check className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />
-                      Completion timeline — {dateLabel}
-                    </CardTitle>
-                    <p className="text-sm mt-1" style={{ color: 'var(--landing-text)', opacity: 0.8 }}>
-                      When you completed tasks and added gratitude or journal for this day
-                    </p>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <ul className="space-y-3">
-                      {items.map((item) => {
-                        const timeStr = new Date(item.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                        return (
-                          <li key={`${item.type}-${item.id}`} className="flex items-start gap-3">
-                            <span className="text-xs font-medium shrink-0 mt-0.5 w-14" style={{ color: 'var(--landing-text)', opacity: 0.8 }}>{timeStr}</span>
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium shrink-0" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)', border: '1px solid var(--landing-border)' }}>
-                              {item.type === 'todo' && <ListTodo className="h-3.5 w-3.5" style={{ color: 'var(--landing-primary)' }} />}
-                              {item.type === 'gratitude' && <Heart className="h-3.5 w-3.5" style={{ color: '#ec4899' }} />}
-                              {item.type === 'journal' && <BookOpen className="h-3.5 w-3.5" style={{ color: '#3b82f6' }} />}
-                              {item.type === 'todo' ? 'To-Do' : item.type === 'gratitude' ? 'Gratitude' : 'Journal'}
-                            </span>
-                            <span className="text-sm min-w-0" style={{ color: 'var(--landing-text)' }}>
-                              {item.type === 'todo' ? item.title : item.type === 'gratitude' ? item.content : item.title}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
+          {/* Overview: Demo-style — Goals grid, Tasks + Gratitude, Calendar + Written Plan */}
+          <TabsContent value="overview" className="space-y-12">
+            {/* Goals Grid */}
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <Target className="h-8 w-8" style={{ color: 'var(--landing-primary)' }} />
+                  <h2 className="text-3xl font-bold" style={{ color: 'var(--landing-text)' }}>Your Goals (0-10 Scale)</h2>
+                </div>
+                <Button className="hero-cta-primary rounded-xl" onClick={() => navigate('/goals')}>
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add Goal
+                </Button>
+              </div>
+              {goals.length === 0 ? (
+                <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+                  <CardContent className="p-8 text-center">
+                    <Target className="h-10 w-10 mx-auto mb-3 opacity-50" style={{ color: 'var(--landing-primary)' }} />
+                    <p className="font-medium" style={{ color: 'var(--landing-text)' }}>No goals yet</p>
+                    <p className="text-sm mt-1" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>Add goals from the Goals page to see them here.</p>
+                    <Button onClick={() => navigate('/goals')} className="mt-4 rounded-xl" size="sm">Go to Goals</Button>
                   </CardContent>
                 </Card>
-              );
-            })()}
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {goals.map((goal) => (
+                    <Card
+                      key={goal.id}
+                      className="overflow-hidden shadow-lg hover:shadow-xl transition-all feature-card-shadow cursor-pointer"
+                      style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}
+                      onClick={() => navigate('/goals')}
+                    >
+                      {goal.imageUrl && (
+                        <div className="w-full h-40 overflow-hidden">
+                          <img src={goal.imageUrl} alt={goal.title} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <CardContent className="p-6" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="text-lg font-semibold" style={{ color: 'var(--landing-text)' }}>{goal.title}</h3>
+                          <span className="text-2xl font-bold" style={{ color: 'var(--landing-primary)' }}>{goal.progress}/10</span>
+                        </div>
+                        {goal.description && (
+                          <p className="text-sm mb-3 opacity-90" style={{ color: 'var(--landing-text)' }}>{goal.description}</p>
+                        )}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <Badge variant="outline" style={{ borderColor: 'var(--landing-primary)', color: 'var(--landing-primary)' }}>{timelineLabels[goal.timeline] ?? goal.timeline}</Badge>
+                          <Badge style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>{goal.priority}</Badge>
+                        </div>
+                        <div className="space-y-2">
+                          <Slider
+                            value={[goal.progress]}
+                            onValueChange={(v) => updateGoalProgress(goal.id, v[0])}
+                            onClick={(e) => e.stopPropagation()}
+                            max={10}
+                            step={1}
+                            className="w-full"
+                          />
+                          <Progress value={goal.progress * 10} className="h-2" style={{ backgroundColor: 'var(--landing-accent)' }} />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <OverviewCard
-                title="Goals"
-                count={goals.length}
-                icon={<Target className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />}
-                summary={goals.filter((g) => g.progress === 10).length + ' completed'}
-              />
-              <OverviewCard
-                title="To-Do"
-                count={todosOnDate.length}
-                icon={<ListTodo className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />}
-                summary={todosOnDate.filter((t) => t.completed).length + ' done today'}
-              />
-              <OverviewCard
-                title="Gratitude"
-                set={!!gratitudeForDate}
-                icon={<Heart className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />}
-                summary={gratitudeForDate ? gratitudeForDate.content.slice(0, 40) + (gratitudeForDate.content.length > 40 ? '…' : '') : 'Not set'}
-              />
-              <OverviewCard
-                title="Journal"
-                set={!!journalForDate}
-                icon={<BookOpen className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />}
-                summary={journalForDate ? (journalForDate.title || journalForDate.content.slice(0, 40)) + (journalForDate.content.length > 40 ? '…' : '') : 'Not set'}
-              />
-              <OverviewCard
-                title="Feedback"
-                icon={<Sparkles className="h-5 w-5" style={{ color: 'var(--landing-primary)' }} />}
-                summary="AI insights on your progress"
-              />
+            {/* Two Column: To-Do by day (Demo style) + Gratitude */}
+            <div className="grid lg:grid-cols-2 gap-8">
+              <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
+                      <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>To-Do List</h3>
+                      <Badge style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>By day · +5 pts each</Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAIGenerateTodos('today')}
+                        disabled={aiGenerateLoading !== null}
+                        className="text-xs"
+                      >
+                        {aiGenerateLoading === 'today' ? <span className="animate-pulse">...</span> : <SparklesIcon className="h-3 w-3 mr-1" />}
+                        AI: Today
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAIGenerateTodos('tomorrow')}
+                        disabled={aiGenerateLoading !== null}
+                        className="text-xs"
+                      >
+                        {aiGenerateLoading === 'tomorrow' ? <span className="animate-pulse">...</span> : <SparklesIcon className="h-3 w-3 mr-1" />}
+                        AI: Tomorrow
+                      </Button>
+                    </div>
+                  </div>
+                  <Tabs defaultValue="today" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-4" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                      <TabsTrigger value="today">Today</TabsTrigger>
+                      <TabsTrigger value="tomorrow">Tomorrow</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="today" className="space-y-3 mt-0">
+                      {todosToday.map((task) => (
+                        <div
+                          key={task.id}
+                          className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`}
+                          style={{
+                            backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)',
+                            borderColor: task.completed ? 'var(--landing-primary)' : 'transparent',
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleTodo(task.id)}
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`}
+                            style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}
+                          >
+                            {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
+                          </button>
+                          <span className={`flex-1 ${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
+                        </div>
+                      ))}
+                    </TabsContent>
+                    <TabsContent value="tomorrow" className="space-y-3 mt-0">
+                      {todosTomorrow.map((task) => (
+                        <div
+                          key={task.id}
+                          className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`}
+                          style={{
+                            backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)',
+                            borderColor: task.completed ? 'var(--landing-primary)' : 'transparent',
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleTodo(task.id)}
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`}
+                            style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}
+                          >
+                            {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
+                          </button>
+                          <span className={`flex-1 ${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
+                        </div>
+                      ))}
+                    </TabsContent>
+                  </Tabs>
+                  <form
+                    className="space-y-2 mt-4"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const title = overviewNewTaskTitle.trim();
+                      if (title) {
+                        const targetIso = newTaskDay === 'today' ? todayIso : tomorrowIso;
+                        addTodo({ title, completed: false, points: 5, scheduledDate: targetIso });
+                        setOverviewNewTaskTitle('');
+                        toast({ title: 'Added', description: `Task added for ${newTaskDay}.` });
+                      }
+                    }}
+                  >
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <Input
+                        placeholder="Add a task..."
+                        value={overviewNewTaskTitle}
+                        onChange={(e) => setOverviewNewTaskTitle(e.target.value)}
+                        className="flex-1 min-w-[140px] rounded-xl"
+                        style={{ borderColor: 'var(--landing-border)' }}
+                      />
+                      <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
+                        <SelectTrigger className="w-[110px] rounded-xl" style={{ borderColor: 'var(--landing-border)' }}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="today">Today</SelectItem>
+                          <SelectItem value="tomorrow">Tomorrow</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button type="submit" size="sm" className="hero-cta-primary rounded-xl" disabled={!overviewNewTaskTitle.trim()}>
+                        <Plus className="h-4 w-4 mr-1" /> Add
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Heart className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
+                    <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>Gratitude Journal</h3>
+                  </div>
+                  <div className="space-y-4 mb-4">
+                    {gratitudeForDate ? (
+                      <div className="p-4 rounded-xl border" style={{ backgroundColor: 'white', borderColor: 'var(--landing-border)' }}>
+                        <p style={{ color: 'var(--landing-text)' }}>{gratitudeForDate.content}</p>
+                        <p className="text-xs mt-2 opacity-70" style={{ color: 'var(--landing-text)' }}>{new Date(gratitudeForDate.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+                        <Button variant="ghost" size="sm" className="mt-2 rounded-lg" onClick={() => setGratitudeDialogOpen(true)}>Edit</Button>
+                      </div>
+                    ) : (
+                      gratitudeEntries.slice(0, 3).map((entry) => (
+                        <div key={entry.id} className="p-4 rounded-xl border" style={{ backgroundColor: 'white', borderColor: 'var(--landing-border)' }}>
+                          <p className="text-sm" style={{ color: 'var(--landing-text)' }}>{entry.content}</p>
+                          <p className="text-xs mt-2 opacity-70" style={{ color: 'var(--landing-text)' }}>{new Date(entry.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <form
+                    className="flex gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const content = overviewNewGratitude.trim();
+                      if (content) {
+                        addGratitudeForDate(selectedIso, content);
+                        setOverviewNewGratitude('');
+                        setGratitudeDialogOpen(false);
+                        toast({ title: 'Saved', description: 'Gratitude saved for this day.' });
+                      }
+                    }}
+                  >
+                    <Input
+                      placeholder="What are you grateful for today?"
+                      value={overviewNewGratitude}
+                      onChange={(e) => setOverviewNewGratitude(e.target.value)}
+                      className="flex-1 rounded-xl"
+                      style={{ borderColor: 'var(--landing-border)' }}
+                    />
+                    <Button type="submit" size="sm" className="hero-cta-primary rounded-xl" disabled={!overviewNewGratitude.trim()}>
+                      <PenLine className="h-4 w-4 mr-1" /> Add
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Calendar & Written Plan Row */}
+            <div className="grid lg:grid-cols-2 gap-8">
+              <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <CalendarIcon className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
+                    <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>Calendar</h3>
+                  </div>
+                  <p className="text-sm opacity-90 mb-4" style={{ color: 'var(--landing-text)' }}>
+                    Schedule for {dateLabel}. Goals are attached to your calendar with reminders.
+                  </p>
+                  <div className="p-4 rounded-xl border space-y-2" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+                    {eventsOnDate.length === 0 ? (
+                      <p className="text-sm" style={{ color: 'var(--landing-text)', opacity: 0.8 }}>No events this day. Click &quot;New schedule&quot; above to add.</p>
+                    ) : (
+                      eventsOnDate.map((ev) => (
+                        <div key={ev.id} className="flex gap-3 text-sm">
+                          <span className="font-semibold shrink-0" style={{ color: 'var(--landing-primary)' }}>
+                            {ev.startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                          </span>
+                          <span style={{ color: 'var(--landing-text)' }}>{ev.title}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <Button variant="outline" size="sm" className="mt-4 rounded-xl w-full" onClick={openNewSchedule}>
+                    <Plus className="h-4 w-4 mr-2" /> New schedule
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <BookOpen className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
+                    <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>Written Plan</h3>
+                  </div>
+                  <p className="text-sm opacity-90 mb-4" style={{ color: 'var(--landing-text)' }}>
+                    Each goal has a written development plan. Add and edit goals on the Goals page.
+                  </p>
+                  <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+                    {goals.length === 0 ? (
+                      <p className="text-sm italic opacity-90" style={{ color: 'var(--landing-text)' }}>No goals yet. Create goals to see your plan here.</p>
+                    ) : (
+                      <p className="text-sm opacity-90" style={{ color: 'var(--landing-text)' }}>
+                        {goals[0].description || `Your first goal: ${goals[0].title}. Add more on the Goals page.`}
+                      </p>
+                    )}
+                  </div>
+                  <Button variant="outline" size="sm" className="mt-4 rounded-xl w-full" onClick={() => navigate('/goals')}>
+                    Go to Goals
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
           {/* Goals tab: schedule for selected date, CRUD with goal select */}
-          <TabsContent value="goals" className="space-y-4">
-            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden" style={{ borderColor: 'var(--landing-border)' }}>
+          <TabsContent value="goals" className="space-y-6">
+            <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
               <CardHeader className="flex flex-row items-center justify-between" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                <CardTitle style={{ color: 'var(--landing-text)' }}>Schedule for {dateLabel}</CardTitle>
+                <CardTitle className="text-xl font-semibold" style={{ color: 'var(--landing-text)' }}>Schedule for {dateLabel}</CardTitle>
                 <Button onClick={openNewSchedule} size="sm" className="rounded-xl">
                   <Plus className="h-4 w-4 mr-2" />
                   New schedule
@@ -542,10 +789,10 @@ export default function Dashboard() {
           </TabsContent>
 
           {/* Gratitude tab: max 1 for selected date */}
-          <TabsContent value="gratitude" className="space-y-4">
-            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden" style={{ borderColor: 'var(--landing-border)' }}>
+          <TabsContent value="gratitude" className="space-y-6">
+            <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
               <CardHeader className="flex flex-row items-center justify-between" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                <CardTitle style={{ color: 'var(--landing-text)' }}>Gratitude for {dateLabel}</CardTitle>
+                <CardTitle className="text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--landing-text)' }}><Heart className="h-6 w-6" style={{ color: 'var(--landing-primary)' }} />Gratitude for {dateLabel}</CardTitle>
                 <Button
                   size="sm"
                   className="rounded-xl"
@@ -569,10 +816,10 @@ export default function Dashboard() {
           </TabsContent>
 
           {/* Journals tab: max 1 for selected date */}
-          <TabsContent value="journals" className="space-y-4">
-            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden" style={{ borderColor: 'var(--landing-border)' }}>
+          <TabsContent value="journals" className="space-y-6">
+            <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
               <CardHeader className="flex flex-row items-center justify-between" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                <CardTitle style={{ color: 'var(--landing-text)' }}>Journal for {dateLabel}</CardTitle>
+                <CardTitle className="text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--landing-text)' }}><BookOpen className="h-6 w-6" style={{ color: 'var(--landing-primary)' }} />Journal for {dateLabel}</CardTitle>
                 <Button size="sm" className="rounded-xl" onClick={() => setJournalDialogOpen(true)}>
                   {journalForDate ? 'Edit' : 'Add'}
                 </Button>
@@ -599,8 +846,8 @@ export default function Dashboard() {
           </TabsContent>
 
           {/* Feedback tab */}
-          <TabsContent value="feedback" className="space-y-4">
-            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden" style={{ borderColor: 'var(--landing-border)' }}>
+          <TabsContent value="feedback" className="space-y-6">
+            <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
               <CardContent className="p-8 text-center">
                 <div
                   className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
@@ -671,6 +918,78 @@ export default function Dashboard() {
           } : undefined}
         />
       </div>
+      </section>
+      <Dialog open={heroEditOpen} onOpenChange={setHeroEditOpen}>
+        <DialogContent className="rounded-2xl max-w-sm" style={{ borderColor: 'var(--landing-border)' }}>
+          <DialogHeader>
+            <DialogTitle style={{ color: 'var(--landing-text)' }}>Home screen picture</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm mb-3" style={{ color: 'var(--landing-text)', opacity: 0.9 }}>
+            Use an image URL or upload a photo from your device. Leave blank to use the default.
+          </p>
+          <div className="space-y-3">
+            <Label style={{ color: 'var(--landing-text)' }}>Image URL</Label>
+            <Input
+              value={heroInputUrl.startsWith('data:') || heroInputUrl === '[Uploaded image]' ? '' : heroInputUrl}
+              onChange={(e) => setHeroInputUrl(e.target.value)}
+              placeholder="https://... or upload below"
+              className="rounded-xl border-[var(--landing-border)]"
+            />
+            <div className="relative">
+              <Label style={{ color: 'var(--landing-text)' }}>Or upload from device</Label>
+              <input
+                ref={heroFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > MAX_HERO_IMAGE_BYTES) {
+                    toast({ title: 'File too large', description: 'Please choose an image under 2MB.', variant: 'destructive' });
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const dataUrl = reader.result as string;
+                    setHeroInputUrl(dataUrl);
+                    toast({ title: 'Image loaded', description: 'Click Save to set as home screen.' });
+                  };
+                  reader.readAsDataURL(file);
+                  e.target.value = '';
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full mt-1.5 rounded-xl"
+                style={{ borderColor: 'var(--landing-border)' }}
+                onClick={() => heroFileInputRef.current?.click()}
+              >
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Choose image (max 2MB)
+              </Button>
+              {heroInputUrl.startsWith('data:') && (
+                <p className="text-xs mt-1" style={{ color: 'var(--landing-primary)' }}>Image selected. Click Save to apply.</p>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2 mt-4">
+            <Button variant="outline" onClick={() => setHeroEditOpen(false)} className="rounded-xl flex-1">Cancel</Button>
+            <Button
+              className="rounded-xl flex-1"
+              onClick={() => {
+                const urlToSave = heroInputUrl === '[Uploaded image]' ? dashboardHeroUrl : heroInputUrl;
+                setDashboardHeroUrl(urlToSave.trim() || '');
+                setHeroEditOpen(false);
+                toast({ title: 'Saved', description: 'Home screen picture updated.' });
+              }}
+            >
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -689,10 +1008,10 @@ function OverviewCard({
   summary: string;
 }) {
   return (
-    <Card className="border-0 shadow-lg rounded-2xl overflow-hidden" style={{ borderColor: 'var(--landing-border)' }}>
+    <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
       <CardHeader className="pb-2 flex flex-row items-center gap-2" style={{ backgroundColor: 'var(--landing-accent)' }}>
         {icon}
-        <CardTitle className="text-base" style={{ color: 'var(--landing-text)' }}>
+        <CardTitle className="text-base font-semibold" style={{ color: 'var(--landing-text)' }}>
           {title}
           {(count !== undefined || set !== undefined) && (
             <span className="ml-2 text-sm font-normal opacity-80">
@@ -745,14 +1064,20 @@ function TasksTab({
   };
 
   return (
-    <Card className="border-0 shadow-xl rounded-2xl overflow-hidden" style={{ borderColor: 'var(--landing-border)' }}>
+    <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
       <CardHeader style={{ backgroundColor: 'var(--landing-accent)' }}>
-        <CardTitle style={{ color: 'var(--landing-text)' }}>To-Do for {selectedIso}</CardTitle>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <ListTodo className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
+            <CardTitle className="text-xl font-semibold" style={{ color: 'var(--landing-text)' }}>To-Do for {selectedIso}</CardTitle>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'var(--landing-primary)', color: 'white' }}>+5 pts each</span>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="p-6 space-y-4">
         <div className="flex gap-2">
           <Input
-            placeholder="New task..."
+            placeholder="Add a task..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}

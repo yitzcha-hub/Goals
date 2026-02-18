@@ -39,7 +39,7 @@ const Features: React.FC = () => {
         </div>
         <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.85 }} aria-hidden />
         <HeroFloatingCircles />
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
           <h1
             className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up"
             style={{
@@ -60,7 +60,7 @@ const Features: React.FC = () => {
               animationDelay: '0.25s',
             }}
           >
-            Not another task app or habit tracker. Intuitive features, AI-powered insights, and clear plans—in one place. Accelerate your path to success and build the confidence that comes with real progress.
+            Not another task app or habit tracker. Goals with steps, timelines, percent complete, and deadlines; progress photo uploads; and a home screen you can customize with your own picture. AI-powered insights and clear plans—in one place.
           </p>
           <div
             className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up"
@@ -88,7 +88,7 @@ const Features: React.FC = () => {
 
       {/* 1. Feature Showcase — bento-style with imagery */}
       <section id="features" className="py-20 px-4 overflow-hidden" style={{ backgroundColor: 'var(--landing-bg)', borderTop: '1px solid var(--landing-border)' }}>
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-center" style={{ color: 'var(--landing-text)' }}>Feature Showcase</h2>
           <p className="text-center text-sm opacity-80 mb-14 max-w-xl mx-auto" style={{ color: 'var(--landing-text)' }}>Everything you need to grow—beautifully designed</p>
 

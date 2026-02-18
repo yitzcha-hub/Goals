@@ -24,6 +24,8 @@ interface VisualProgressTimelineProps {
   onRemoveImage: (id: string) => void;
   currentProgress: number;
   goalType?: string;
+  /** When true, render without outer Card and with a smaller "Progress photos" heading (for embedding in another section) */
+  embedded?: boolean;
 }
 
 
@@ -32,7 +34,8 @@ export default function VisualProgressTimeline({
   onAddImage, 
   onRemoveImage,
   currentProgress,
-  goalType = 'General Goal'
+  goalType = 'General Goal',
+  embedded = false,
 }: VisualProgressTimelineProps) {
 
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -96,12 +99,12 @@ export default function VisualProgressTimeline({
     return 'In Progress';
   };
 
-  return (
-    <Card className="p-6">
+  const content = (
+    <>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold flex items-center gap-2">
+        <h2 className={embedded ? 'text-lg font-semibold flex items-center gap-2' : 'text-xl font-bold flex items-center gap-2'}>
           <ImageIcon className="h-5 w-5" />
-          Visual Progress Timeline
+          {embedded ? 'Progress photos' : 'Visual Progress Timeline'}
         </h2>
         <Button onClick={() => setShowUploadDialog(true)} size="sm">
           <ImageIcon className="h-4 w-4 mr-2" />
@@ -263,6 +266,8 @@ export default function VisualProgressTimeline({
           </div>
         </DialogContent>
       </Dialog>
-    </Card>
+    </>
   );
+
+  return embedded ? <div className="mt-4">{content}</div> : <Card className="p-6">{content}</Card>;
 }

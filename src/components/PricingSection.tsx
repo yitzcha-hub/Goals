@@ -175,8 +175,8 @@ const PricingSection: React.FC = () => {
 
 
   return (
-    <section className="py-16 px-4 bg-gradient-to-br from-green-50 via-lime-50 to-emerald-50">
-      <div className="max-w-5xl mx-auto">
+    <section className="py-16 px-4 sm:px-6 bg-gradient-to-br from-green-50 via-lime-50 to-emerald-50">
+      <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0">
             <Flame className="h-3 w-3 mr-1" />

@@ -94,7 +94,7 @@ const UseCase: React.FC = () => {
         </div>
         <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.85 }} aria-hidden />
         <HeroFloatingCircles />
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
           <h1
             className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up"
             style={{
@@ -148,7 +148,7 @@ const UseCase: React.FC = () => {
         style={{ backgroundColor: 'var(--landing-bg)', borderTop: '1px solid var(--landing-border)' }}
       >
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, var(--landing-primary) 1px, transparent 0)', backgroundSize: '28px 28px' }} />
-        <div className="max-w-6xl mx-auto relative">
+        <div className="max-w-6xl mx-auto relative px-4 sm:px-6">
           <div className="text-center mb-14">
             <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4" style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>Who This Is For</span>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold max-w-2xl mx-auto" style={{ color: 'var(--landing-text)' }}>
