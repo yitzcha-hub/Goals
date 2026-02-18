@@ -9,18 +9,29 @@ export function useNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    setPermission(Notification.permission);
+    try {
+      setPermission(typeof Notification !== 'undefined' ? Notification.permission : 'default');
+    } catch {
+      setPermission('default');
+    }
     loadUnreadCount();
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onMessageListener((payload) => {
-      toast.info(payload?.notification?.title || 'New notification', {
-        description: payload?.notification?.body,
+    let unsubscribe: (() => void) | undefined;
+    try {
+      unsubscribe = onMessageListener((payload) => {
+        toast.info(payload?.notification?.title || 'New notification', {
+          description: payload?.notification?.body,
+        });
+        setUnreadCount((prev) => prev + 1);
       });
-      setUnreadCount((prev) => prev + 1);
-    });
-    return unsubscribe;
+    } catch (e) {
+      console.warn('Notifications: foreground listener unavailable', e);
+    }
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, []);
 
   const loadUnreadCount = async () => {

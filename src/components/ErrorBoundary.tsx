@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -11,15 +11,16 @@ interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  copied: boolean;
 }
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false, error: null, errorInfo: null, copied: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error, errorInfo: null };
   }
 
@@ -42,6 +43,19 @@ class ErrorBoundary extends Component<Props, State> {
     window.location.href = '/';
   };
 
+  handleCopyError = () => {
+    const { error, errorInfo } = this.state;
+    if (!error) return;
+    const text = [error.toString(), errorInfo?.componentStack].filter(Boolean).join('\n\n');
+    navigator.clipboard?.writeText(text).then(
+      () => {
+        this.setState({ copied: true });
+        setTimeout(() => this.setState({ copied: false }), 2000);
+      },
+      () => {}
+    );
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -57,7 +71,7 @@ class ErrorBoundary extends Component<Props, State> {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-3 justify-center">
+              <div className="flex flex-wrap gap-3 justify-center">
                 <Button onClick={this.handleReset} className="gap-2">
                   <RefreshCw className="w-4 h-4" />
                   Try Again
@@ -66,6 +80,12 @@ class ErrorBoundary extends Component<Props, State> {
                   <Home className="w-4 h-4" />
                   Go Home
                 </Button>
+                {import.meta.env.PROD && this.state.error && (
+                  <Button onClick={this.handleCopyError} variant="outline" size="sm" className="gap-2">
+                    <Copy className="w-4 h-4" />
+                    {this.state.copied ? 'Copied!' : 'Copy error for support'}
+                  </Button>
+                )}
               </div>
               
               {!import.meta.env.PROD && this.state.error && (
