@@ -78,6 +78,14 @@ export const GoalInputDialog: React.FC<GoalInputDialogProps> = ({ onAddGoal, chi
                 <SelectItem value="personal">Personal Development</SelectItem>
                 <SelectItem value="creative">Creative & Hobbies</SelectItem>
                 <SelectItem value="financial">Financial</SelectItem>
+                <SelectItem value="family">Family</SelectItem>
+                <SelectItem value="friends">Friends</SelectItem>
+                <SelectItem value="relationships">Relationships</SelectItem>
+                <SelectItem value="community">Community</SelectItem>
+                <SelectItem value="volunteer">Volunteer</SelectItem>
+                <SelectItem value="contribute">Contribute</SelectItem>
+                <SelectItem value="donate">Donate</SelectItem>
+                <SelectItem value="ideas">Ideas</SelectItem>
               </SelectContent>
             </Select>
           </div>

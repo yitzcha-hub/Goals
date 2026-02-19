@@ -262,6 +262,7 @@ export const LandingContent: React.FC = () => {
   const heroRef = useRef<HTMLElement>(null);
   const problemSectionRef = useRef<HTMLElement>(null);
   const problemIntroRef = useRef<HTMLDivElement>(null);
+  const goalCategoriesRef = useRef<HTMLDivElement>(null);
   const problemClosingRef = useRef<HTMLDivElement>(null);
   const visionSectionRef = useRef<HTMLElement>(null);
   const visionBadgeRef = useRef<HTMLDivElement>(null);
@@ -277,6 +278,7 @@ export const LandingContent: React.FC = () => {
 
   const isProblemInView = useInView(problemSectionRef, { once: true, amount: 0.08 });
   const isProblemIntroInView = useInView(problemIntroRef, { once: true, amount: 0.2 });
+  const isGoalCategoriesInView = useInView(goalCategoriesRef, { once: true, amount: 0.15 });
   const isProblemClosingInView = useInView(problemClosingRef, { once: true, amount: 0.3 });
   const isVisionInView = useInView(visionSectionRef, { once: true, amount: 0.15 });
   const isVisionBadgeInView = useInView(visionBadgeRef, { once: true, amount: 0.25 });
@@ -449,7 +451,7 @@ export const LandingContent: React.FC = () => {
                 animate={isProblemIntroInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: 0.25, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
               >
-                What we do
+                Be the best you.
               </motion.h2>
               <motion.p
                 className="text-lg max-w-2xl mx-auto opacity-90 leading-relaxed"
@@ -458,7 +460,7 @@ export const LandingContent: React.FC = () => {
                 animate={isProblemIntroInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: 0.35, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
               >
-                You&apos;ve tried apps and hacks. What&apos;s missing isn&apos;t motivation—it&apos;s a system that actually fits how you want to grow.
+                When you are operating at your highest level, you are in the zone. No Fear, Frustration or Doubt—that&apos;s when you find out who you are. We help you get there.
               </motion.p>
             </motion.div>
           </div>

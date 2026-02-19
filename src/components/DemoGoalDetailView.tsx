@@ -56,10 +56,11 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
   const [newNote, setNewNote] = useState('');
 
   const getCategoryImages = (category: string): TaggedImage[] => {
+    const personalImages = { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313355593_1366f9cc.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313356469_7d5cbb6c.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313357732_45dc90f0.webp' };
     const imageMap: Record<string, { start: string; mid: string; advanced: string }> = {
       Purpose: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313337681_8f380009.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313338490_d34ce5f7.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313339293_90544afc.webp' },
       Health: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313346309_a977d9c8.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313347064_15ae5b20.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313347821_2f491fc4.webp' },
-      Personal: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313355593_1366f9cc.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313356469_7d5cbb6c.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313357732_45dc90f0.webp' },
+      Personal: personalImages,
       Business: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313364420_116e655c.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313365234_ba8c7e8e.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313365979_65d24337.webp' },
       Education: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313372407_435111e0.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313373329_3bd1e9fc.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313374079_754e70fb.webp' },
       Creative: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313381569_d052cb92.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313382703_29eb08a7.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313384066_98016a1d.webp' },
@@ -67,6 +68,8 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
       Wellness: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313400738_0397d33b.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313401543_1e9a42f2.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313402336_36dc20cf.webp' },
       Travel: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760531037278_55604682.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760531038069_b2a3394d.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760531039095_6b7be7f5.webp' },
       Career: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313364420_116e655c.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313365234_ba8c7e8e.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313365979_65d24337.webp' },
+      Family: personalImages, Friends: personalImages, Relationships: personalImages, Community: personalImages,
+      Volunteer: personalImages, Contribute: personalImages, Donate: personalImages, Ideas: personalImages,
     };
     const images = imageMap[category] || imageMap['Personal'];
     return [

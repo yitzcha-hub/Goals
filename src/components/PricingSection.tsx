@@ -97,16 +97,15 @@ const PricingSection: React.FC = () => {
     }
   };
 
-  const handleLifetime1000 = async () => {
-    if (!user) {
-      return;
-    }
-    setLoading('Lifetime');
+  const handleLifetimeOffer = async (offer: 'lifetime_100' | 'lifetime_1000') => {
+    if (!user) return;
+    const label = offer === 'lifetime_100' ? 'Lifetime 100' : 'Lifetime 1000';
+    setLoading(label);
     try {
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ offer: 'lifetime_1000', userId: user.id }),
+        body: JSON.stringify({ offer, userId: user.id }),
       });
       const contentType = res.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
@@ -136,7 +135,7 @@ const PricingSection: React.FC = () => {
       period: '/month',
       dailyEquivalent: '16¢ a day',
       priceId: monthlyPriceId || 'price_monthly',
-      description: 'Early bird special — 33% savings',
+      description: 'Introductory offer — 33% off',
       features: [
         'All goal timelines (30 days - 5 years)',
         '0-10 progress tracking scale',
@@ -157,7 +156,7 @@ const PricingSection: React.FC = () => {
       period: '/year',
       dailyEquivalent: '11¢ a day',
       priceId: annualPriceId || 'price_yearly',
-      description: 'Early bird special — over 33% savings',
+      description: 'Introductory offer — 33% off',
       monthlyEquivalent: '$3.33/month',
       features: [
         'Everything in Monthly',
@@ -188,13 +187,15 @@ const PricingSection: React.FC = () => {
           </p>
         </div>
 
-        {/* First 1,000 subscribers — lifetime membership */}
-        <div className="max-w-xl mx-auto mb-10">
+        {/* First 100 — influencers, lifetime $19.99 */}
+        <div className="max-w-2xl mx-auto mb-6">
           <Card className="border-2 border-green-600 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg">
             <CardHeader className="text-center pb-2">
-              <Badge className="w-fit mx-auto mb-2 bg-green-600">Limited offer</Badge>
-              <CardTitle className="text-xl">First 1,000 Subscribers — Lifetime Membership</CardTitle>
-              <CardDescription>One payment. Lifetime access. Our fastest way to get you signed up.</CardDescription>
+              <Badge className="w-fit mx-auto mb-2 bg-green-600">First 100 — Influencers</Badge>
+              <CardTitle className="text-xl">First 100 Subscribers — Lifetime Membership</CardTitle>
+              <CardDescription>
+                Be an influencer. For $19.99 you get lifetime membership and direct contact with us for improvements and modifications—an opportunity to be part of something that will impact a lot of people&apos;s lives.
+              </CardDescription>
               <div className="mt-3">
                 <span className="text-4xl font-bold text-green-700">$19.99</span>
                 <span className="text-gray-600 text-sm"> one time</span>
@@ -203,11 +204,11 @@ const PricingSection: React.FC = () => {
             <CardContent className="pt-0">
               {user ? (
                 <Button
-                  onClick={handleLifetime1000}
-                  disabled={loading === 'Lifetime'}
+                  onClick={() => handleLifetimeOffer('lifetime_100')}
+                  disabled={loading === 'Lifetime 100'}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
                 >
-                  {loading === 'Lifetime' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Leaf className="h-4 w-4 mr-2" />}
+                  {loading === 'Lifetime 100' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Leaf className="h-4 w-4 mr-2" />}
                   Get Lifetime Access — $19.99
                 </Button>
               ) : (
@@ -216,6 +217,44 @@ const PricingSection: React.FC = () => {
                     <Button className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
                       <Leaf className="h-4 w-4 mr-2" />
                       Get Lifetime Access — $19.99
+                    </Button>
+                  }
+                  defaultMode="signup"
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Next 1,000 — lifetime $29.99 */}
+        <div className="max-w-2xl mx-auto mb-10">
+          <Card className="border-2 border-green-400 bg-white shadow-md">
+            <CardHeader className="text-center pb-2">
+              <Badge className="w-fit mx-auto mb-2 bg-green-500">Next 1,000</Badge>
+              <CardTitle className="text-xl">Next 1,000 Subscribers — Lifetime Membership</CardTitle>
+              <CardDescription>One payment. Lifetime access.</CardDescription>
+              <div className="mt-3">
+                <span className="text-4xl font-bold text-green-700">$29.99</span>
+                <span className="text-gray-600 text-sm"> one time</span>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {user ? (
+                <Button
+                  onClick={() => handleLifetimeOffer('lifetime_1000')}
+                  disabled={loading === 'Lifetime 1000'}
+                  variant="outline"
+                  className="w-full border-green-600 text-green-700 hover:bg-green-50"
+                >
+                  {loading === 'Lifetime 1000' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Leaf className="h-4 w-4 mr-2" />}
+                  Get Lifetime Access — $29.99
+                </Button>
+              ) : (
+                <AuthModal
+                  trigger={
+                    <Button variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50">
+                      <Leaf className="h-4 w-4 mr-2" />
+                      Get Lifetime Access — $29.99
                     </Button>
                   }
                   defaultMode="signup"

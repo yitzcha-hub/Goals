@@ -48,10 +48,12 @@ export default async function handler(
     }
 
     // One-time payment (e.g. lifetime offer) — webhook already created subscription; just confirm success
-    if (session.mode === 'payment' && session.metadata?.offer === 'lifetime_1000') {
+    const offer = session.metadata?.offer as string | undefined;
+    if (session.mode === 'payment' && (offer === 'lifetime_100' || offer === 'lifetime_1000')) {
       const userId = (session.metadata.user_id as string) || null;
       if (userId) {
         const farFuture = 4102444800;
+        const planAmount = offer === 'lifetime_100' ? 1999 : 2999;
         await supabase
           .from('subscriptions')
           .upsert(
@@ -67,7 +69,7 @@ export default async function handler(
               current_period_start: Math.floor(Date.now() / 1000),
               current_period_end: farFuture,
               cancel_at_period_end: false,
-              plan_amount: 1999,
+              plan_amount: planAmount,
               plan_currency: 'usd',
               plan_interval: null,
               updated_at: new Date().toISOString(),

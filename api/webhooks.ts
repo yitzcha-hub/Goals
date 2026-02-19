@@ -176,9 +176,11 @@ export default async function handler(req: Req, res: Res): Promise<void> {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode !== 'payment' || session.payment_status !== 'paid') break;
         const userId = (session.metadata?.user_id as string) || null;
-        if (!userId || session.metadata?.offer !== 'lifetime_1000') break;
+        const offer = session.metadata?.offer as string | undefined;
+        if (!userId || (offer !== 'lifetime_100' && offer !== 'lifetime_1000')) break;
 
         const farFuture = 4102444800; // Jan 1, 2100 (unix)
+        const planAmount = offer === 'lifetime_100' ? 1999 : 2999;
         const record = {
           user_id: userId,
           status: 'active',
@@ -191,7 +193,7 @@ export default async function handler(req: Req, res: Res): Promise<void> {
           current_period_start: Math.floor(Date.now() / 1000),
           current_period_end: farFuture,
           cancel_at_period_end: false,
-          plan_amount: 1999,
+          plan_amount: planAmount,
           plan_currency: 'usd',
           plan_interval: null,
           updated_at: new Date().toISOString(),
