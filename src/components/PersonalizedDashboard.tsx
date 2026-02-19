@@ -34,7 +34,7 @@ import {
 
 import SubscriptionManager from './SubscriptionManager';
 import BillingHistory from './BillingHistory';
-import GoalCard from './GoalCard';
+import { GoalCard } from './GoalCard';
 import HabitTracker from './HabitTracker';
 import MoodTracker from './MoodTracker';
 import SimpleGoalDialog from './SimpleGoalDialog';
@@ -64,7 +64,7 @@ import BudgetTracker from './BudgetTracker';
 import { ComprehensiveAnalytics } from './ComprehensiveAnalytics';
 import { useDatabase } from '@/hooks/useDatabase';
 import { useRecommendations } from '@/hooks/useRecommendations';
-import GoalTemplates, { GoalTemplate } from './GoalTemplates';
+import GoalTemplates, { GoalTemplateData } from './GoalTemplates';
 import CommunityTemplates, { CommunityTemplate } from './CommunityTemplates';
 import CommunityFeed from './CommunityFeed';
 import CalendarSync from './CalendarSync';
@@ -125,7 +125,7 @@ const PersonalizedDashboard: React.FC = () => {
     });
   };
 
-  const handleTemplateSelect = async (template: GoalTemplate | CommunityTemplate) => {
+  const handleTemplateSelect = async (template: GoalTemplateData | CommunityTemplate) => {
     const durationInDays = parseInt(template.duration) * (template.duration.includes('week') ? 7 : 
                                                           template.duration.includes('month') ? 30 : 1);
     await addGoal({
@@ -272,8 +272,6 @@ const PersonalizedDashboard: React.FC = () => {
               AI Coach
             </TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
-            <TabsTrigger value="community">Community</TabsTrigger>
-            <TabsTrigger value="volunteer">Volunteer</TabsTrigger>
             <TabsTrigger value="habits">Tasks/Habits</TabsTrigger>
             <TabsTrigger value="fitness">
               <Activity className="h-4 w-4 mr-1" />
@@ -427,7 +425,7 @@ const PersonalizedDashboard: React.FC = () => {
               <h3 className="text-lg font-semibold">Analytics Dashboard</h3>
               <p className="text-sm text-gray-600">Track your progress patterns and optimize your approach</p>
             </div>
-            <ComprehensiveAnalytics goals={goals || []} />
+            <ComprehensiveAnalytics goals={(goals || []).map(g => ({ ...g, dueDate: g.due_date ?? '', id: Number(g.id) || 0, status: g.status ?? 'active', createdAt: g.created_at }))} />
 
           </TabsContent>
           
@@ -549,103 +547,8 @@ const PersonalizedDashboard: React.FC = () => {
             </div>
             <GoalTemplates onSelectTemplate={handleTemplateSelect} />
           </TabsContent>
-          
-          <TabsContent value="community" className="space-y-6">
-            <CommunityFeed />
-          </TabsContent>
 
           
-          <TabsContent value="volunteer" className="space-y-6">
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Community & Volunteer</h3>
-              <p className="text-gray-600">Track your community service and volunteer activities</p>
-            </div>
-            
-            {/* Hero Image */}
-            <div className="relative rounded-xl overflow-hidden shadow-lg mb-6">
-              <img 
-                src="https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1759374882276_84ce7732.webp" 
-                alt="Community volunteers working together"
-                className="w-full h-64 object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                <div className="p-6 text-white">
-                  <h4 className="text-2xl font-bold mb-2">Make a Difference</h4>
-                  <p className="text-sm">Join community service projects and track your volunteer hours</p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Volunteer Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-green-600 mb-1">24</div>
-                  <p className="text-sm text-gray-600">Hours Volunteered</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-blue-600 mb-1">5</div>
-                  <p className="text-sm text-gray-600">Projects Completed</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-purple-600 mb-1">12</div>
-                  <p className="text-sm text-gray-600">Community Impact</p>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Upcoming Opportunities */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Volunteer Opportunities</CardTitle>
-                <CardDescription>Find ways to give back to your community</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-semibold">Park Cleanup Day</h4>
-                      <p className="text-sm text-gray-600">Saturday, Oct 15 • 9:00 AM - 12:00 PM</p>
-                    </div>
-                    <Badge>Environment</Badge>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">Help clean up the local park and plant new trees</p>
-                  <Button size="sm">Sign Up</Button>
-                </div>
-                
-                <div className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-semibold">Food Bank Volunteering</h4>
-                      <p className="text-sm text-gray-600">Every Tuesday • 2:00 PM - 5:00 PM</p>
-                    </div>
-                    <Badge>Community</Badge>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">Sort and distribute food to families in need</p>
-                  <Button size="sm">Sign Up</Button>
-                </div>
-                
-                <div className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-semibold">Youth Mentorship Program</h4>
-                      <p className="text-sm text-gray-600">Flexible Schedule • 2 hours/week</p>
-                    </div>
-                    <Badge>Education</Badge>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">Mentor young students and help them reach their goals</p>
-                  <Button size="sm">Sign Up</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-
-
           <TabsContent value="habits" className="space-y-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Your Habits</h3>
@@ -698,7 +601,7 @@ const PersonalizedDashboard: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">
-            <ProgressHistorySystem />
+            <ProgressHistorySystem events={[]} goals={goals ?? []} />
           </TabsContent>
 
           

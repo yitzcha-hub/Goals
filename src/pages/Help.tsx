@@ -83,7 +83,7 @@ const faqData: FAQCategory[] = [
       },
       {
         question: 'How do goal categories work?',
-        answer: 'Categories help you organize goals by area of life: Health, Career, Finance, Education, Personal Growth, Relationships, Family, Friends, Community, Volunteer, Contribute, Donate, Ideas, and more. You can filter your dashboard by category and see progress charts for each area.'
+        answer: 'Categories help you organize goals by area of life: Health, Career, Finance, Education, Personal Growth, etc. You can filter your dashboard by category and see progress charts for each area.'
       }
     ]
   },

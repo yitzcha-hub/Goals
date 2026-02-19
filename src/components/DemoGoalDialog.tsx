@@ -64,8 +64,6 @@ const DemoGoalDialog: React.FC<DemoGoalDialogProps> = ({ trigger, onGoalAdd }) =
     const categoryMap: Record<string, string> = {
       health: 'Health', business: 'Business', personal: 'Personal', finance: 'Finance',
       education: 'Education', creative: 'Creative', wellness: 'Wellness', purpose: 'Purpose',
-      family: 'Family', friends: 'Friends', relationships: 'Relationships', community: 'Community',
-      volunteer: 'Volunteer', contribute: 'Contribute', donate: 'Donate', ideas: 'Ideas',
     };
     const mappedCategory = categoryMap[category] || category;
 
@@ -149,14 +147,6 @@ const DemoGoalDialog: React.FC<DemoGoalDialogProps> = ({ trigger, onGoalAdd }) =
                 <SelectItem value="creative">Creative</SelectItem>
                 <SelectItem value="wellness">Wellness</SelectItem>
                 <SelectItem value="purpose">Purpose</SelectItem>
-                <SelectItem value="family">Family</SelectItem>
-                <SelectItem value="friends">Friends</SelectItem>
-                <SelectItem value="relationships">Relationships</SelectItem>
-                <SelectItem value="community">Community</SelectItem>
-                <SelectItem value="volunteer">Volunteer</SelectItem>
-                <SelectItem value="contribute">Contribute</SelectItem>
-                <SelectItem value="donate">Donate</SelectItem>
-                <SelectItem value="ideas">Ideas</SelectItem>
               </SelectContent>
             </Select>
           </div>

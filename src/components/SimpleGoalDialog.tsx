@@ -83,14 +83,6 @@ const SimpleGoalDialog: React.FC<SimpleGoalDialogProps> = ({ trigger, onGoalAdd 
                 <SelectItem value="Personal">Personal Growth</SelectItem>
                 <SelectItem value="Finance">Money & Finance</SelectItem>
                 <SelectItem value="Learning">Learning & Skills</SelectItem>
-                <SelectItem value="Relationships">Relationships</SelectItem>
-                <SelectItem value="Family">Family</SelectItem>
-                <SelectItem value="Friends">Friends</SelectItem>
-                <SelectItem value="Community">Community</SelectItem>
-                <SelectItem value="Volunteer">Volunteer</SelectItem>
-                <SelectItem value="Contribute">Contribute</SelectItem>
-                <SelectItem value="Donate">Donate</SelectItem>
-                <SelectItem value="Ideas">Ideas</SelectItem>
               </SelectContent>
             </Select>
           </div>

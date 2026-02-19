@@ -105,13 +105,6 @@ const GoalDialog: React.FC<GoalDialogProps> = ({ trigger, onGoalAdd }) => {
                   <SelectItem value="Finance">Finance</SelectItem>
                   <SelectItem value="Education">Education</SelectItem>
                   <SelectItem value="Relationships">Relationships</SelectItem>
-                  <SelectItem value="Family">Family</SelectItem>
-                  <SelectItem value="Friends">Friends</SelectItem>
-                  <SelectItem value="Community">Community</SelectItem>
-                  <SelectItem value="Volunteer">Volunteer</SelectItem>
-                  <SelectItem value="Contribute">Contribute</SelectItem>
-                  <SelectItem value="Donate">Donate</SelectItem>
-                  <SelectItem value="Ideas">Ideas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -148,6 +141,7 @@ const GoalDialog: React.FC<GoalDialogProps> = ({ trigger, onGoalAdd }) => {
                   initialFocus
                 />
               </PopoverContent>
+            </Popover>
           </div>
           
           <GoalPrivacySelector value={privacy} onChange={setPrivacy} />

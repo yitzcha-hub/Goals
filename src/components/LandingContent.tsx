@@ -295,7 +295,7 @@ export const LandingContent: React.FC = () => {
   const [slideTick, setSlideTick] = useState(0);
 
   const problemItems: ProblemItem[] = [
-    { image: problemImg1, title: 'Social media comparison', stats: [{ value: '100%', label: 'PRIVATE' }, { value: '0', label: 'FEED' }, { value: '1', label: 'YOUR JOURNEY' }], problemDesc: 'Your feed becomes a highlight reel of everyone else. You compare your behind-the-scenes to their best moments—and it drains you.', solution: 'Private space, no feed. Your journey stays yours—no highlight reels, no comparison.', basicClosing: 'Comparison collapses your identity.' },
+    { image: problemImg1, title: 'No Trolls', stats: [{ value: '100%', label: 'PRIVATE' }, { value: '0', label: 'FEED' }, { value: '1', label: 'YOUR JOURNEY' }], problemDesc: 'Your feed becomes a highlight reel of everyone else. You compare your behind-the-scenes to their best moments—and it drains you.', solution: 'Private space, no feed. Your journey stays yours—no highlight reels, no comparison.', basicClosing: 'Comparison collapses your identity.' },
     { image: problemImg2, title: "Apps that don't change your life", stats: [{ value: '1', label: 'SYSTEM' }, { value: 'Goals', label: '+ PLAN' }, { value: 'Full', label: 'TRANSFORMATION' }], problemDesc: "Another to-do app, another habit tracker. They organize tasks but don't help you become someone new. You need a development system, not another inbox.", solution: 'Full development system: goals + written plan + calendar + AI feedback. One place to be the person you want to become.', basicClosing: 'Transformation, not another inbox.' },
     { image: problemImg3, title: 'Goals you set and forget', stats: [{ value: 'Written', label: 'PLAN' }, { value: 'Calendar', label: 'REVISIT' }, { value: 'Goals', label: 'STICK' }], problemDesc: 'New Year resolutions. Big ideas in a notes app. Without a written plan and a place to revisit them, goals fade by February.', solution: "Written plan + calendar + revisit. Attach goals to time with reminders so they don't fade.", basicClosing: 'Plans on paper stick. Notes fade.' },
     { image: problemImg4, title: 'No real accountability', stats: [{ value: 'Trusted', label: 'CIRCLE' }, { value: 'No', label: 'BROADCAST' }, { value: 'Real', label: 'SUPPORT' }], problemDesc: 'Going it alone is hard. You need someone in your corner—without broadcasting to the world.', solution: 'Family connection. Private accountability partners. Invite trusted people—no social feed.', basicClosing: 'Real support, no noise.' },
@@ -582,7 +582,7 @@ export const LandingContent: React.FC = () => {
                 animate={isVisionBadgeInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 24, rotateX: 8 }}
                 transition={{ delay: 0.35, duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
               >
-                This is not a goal tracker.
+                This is a personal development space
               </motion.h2>
               <motion.p
                 className="text-xl sm:text-2xl font-semibold mb-6"

@@ -36,7 +36,7 @@ const DEFAULT_DEMO_GOALS = [
       priority: 'high',
       category: 'Business', 
       targetDate: '2027-01-15',
-      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312841255_ba6990ea.webp',
+      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313364420_116e655c.webp',
       budget: 15000,
       spent: 10500,
       steps: [
@@ -55,7 +55,7 @@ const DEFAULT_DEMO_GOALS = [
       priority: 'high',
       category: 'Health', 
       targetDate: '2026-04-15',
-      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312839241_43f789a1.webp',
+      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313346309_a977d9c8.webp',
       budget: 800,
       spent: 480,
       steps: [
@@ -74,7 +74,7 @@ const DEFAULT_DEMO_GOALS = [
       priority: 'medium',
       category: 'Personal', 
       targetDate: '2030-10-01',
-      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312839994_d53dd0af.webp',
+      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313355593_1366f9cc.webp',
       budget: 450000,
       spent: 180000,
       steps: [
@@ -86,25 +86,43 @@ const DEFAULT_DEMO_GOALS = [
     },
     { 
       id: '4', 
-      title: 'Learn Spanish Fluently', 
-      description: 'Achieve conversational fluency in Spanish', 
+      title: 'Build Deeper Connections', 
+      description: 'Strengthen relationships with family, friends, and loved ones', 
       progress: 5, 
       timeline: '60',
       priority: 'medium',
-      category: 'Education', 
+      category: 'Family', 
       targetDate: '2026-03-20',
-      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312845466_22d02da1.webp',
-      budget: 600,
-      spent: 300,
+      image: 'https://d64gsuwffb70l.cloudfront.net/68c468b90879cba7ca0dcccd_1757703340244_c4563a20.webp',
+      budget: 0,
+      spent: 0,
       steps: [
-        { id: 's1', title: 'Complete beginner course', completed: true },
-        { id: 's2', title: 'Practice daily with app', completed: true },
-        { id: 's3', title: 'Find language partner', completed: false },
-        { id: 's4', title: 'Travel to Spanish-speaking country', completed: false }
+        { id: 's1', title: 'Family', completed: true },
+        { id: 's2', title: 'Friends', completed: true },
+        { id: 's3', title: 'Relationships', completed: false }
       ]
     },
     { 
       id: '5', 
+      title: 'Community', 
+      description: 'Give back through volunteering, contributing, donating, and sharing ideas', 
+      progress: 3, 
+      timeline: '90',
+      priority: 'medium',
+      category: 'Community', 
+      targetDate: '2026-05-01',
+      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313337681_8f380009.webp',
+      budget: 0,
+      spent: 0,
+      steps: [
+        { id: 's1', title: 'Volunteer', completed: true },
+        { id: 's2', title: 'Contribute', completed: false },
+        { id: 's3', title: 'Donate', completed: false },
+        { id: 's4', title: 'Ideas', completed: false }
+      ]
+    },
+    { 
+      id: '6', 
       title: 'Travel to Japan', 
       description: 'Experience Japanese culture and cuisine', 
       progress: 3, 
@@ -112,7 +130,7 @@ const DEFAULT_DEMO_GOALS = [
       priority: 'low',
       category: 'Travel', 
       targetDate: '2027-10-01',
-      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760530848740_26e90107.webp',
+      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760531037278_55604682.webp',
       budget: 5000,
       spent: 1500,
       steps: [
@@ -123,7 +141,7 @@ const DEFAULT_DEMO_GOALS = [
       ]
     },
     { 
-      id: '6', 
+      id: '7', 
       title: 'Save $50,000 Emergency Fund', 
       description: 'Build financial security for my family', 
       progress: 8, 
@@ -131,7 +149,7 @@ const DEFAULT_DEMO_GOALS = [
       priority: 'high',
       category: 'Finance', 
       targetDate: '2026-12-31',
-      image: 'https://d64gsuwffb70l.cloudfront.net/692dfc7e4cdd91a34e5e367b_1768963852567_f1acdb0c.jpg',
+      image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313391802_60649dba.webp',
       budget: 50000,
       spent: 40000,
       steps: [
@@ -180,7 +198,7 @@ const DemoLayout: React.FC = () => {
 
   const [demoGoals, setDemoGoals] = useState(() => {
     try {
-      const raw = localStorage.getItem(DEMO_STORAGE_GOALS);
+      const raw = sessionStorage.getItem(DEMO_STORAGE_GOALS);
       if (raw) return JSON.parse(raw);
     } catch {}
     return DEFAULT_DEMO_GOALS;
@@ -188,7 +206,7 @@ const DemoLayout: React.FC = () => {
 
   const [demoTasks, setDemoTasks] = useState<DemoTask[]>(() => {
     try {
-      const raw = localStorage.getItem(DEMO_STORAGE_TASKS);
+      const raw = sessionStorage.getItem(DEMO_STORAGE_TASKS);
       if (raw) {
         const parsed = JSON.parse(raw) as DemoTask[];
         return parsed.map(t => ({ ...t, day: t.day ?? 'today', timeSlot: t.timeSlot }));
@@ -203,13 +221,13 @@ const DemoLayout: React.FC = () => {
 
   useEffect(() => {
     try {
-      localStorage.setItem(DEMO_STORAGE_GOALS, JSON.stringify(demoGoals));
+      sessionStorage.setItem(DEMO_STORAGE_GOALS, JSON.stringify(demoGoals));
     } catch {}
   }, [demoGoals]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(DEMO_STORAGE_TASKS, JSON.stringify(demoTasks));
+      sessionStorage.setItem(DEMO_STORAGE_TASKS, JSON.stringify(demoTasks));
     } catch {}
   }, [demoTasks]);
 
@@ -737,7 +755,7 @@ const DemoLayout: React.FC = () => {
                 <div className="p-4 rounded-xl border space-y-2" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
                   {[
                     { date: 'Feb 18', goal: 'Run a Marathon — 90-day check-in' },
-                    { date: 'Feb 20', goal: 'Learn Spanish — Tutor session' },
+                    { date: 'Feb 20', goal: 'Build Deeper Connections — Family time' },
                     { date: 'Mar 15', goal: 'Launch Business — First client milestone' }
                   ].map((item, i) => (
                     <div key={i} className="flex gap-3 text-sm">
