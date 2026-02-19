@@ -19,7 +19,8 @@ import DemoProgressTimeline from '@/components/DemoProgressTimeline';
 import PricingSection from '@/components/PricingSection';
 import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 import { DemoOnboardingModals } from '@/components/DemoOnboardingModals';
-import { getMockTodosForDay } from '@/data/demoOnboardingMockData';
+import { getMockTodosForDay, getDefaultImageForCategory, type DemoGoalGenerated } from '@/data/demoOnboardingMockData';
+import { generateGoalsWithOpenAI, recommendImagesForGoals } from '@/lib/openaiProgressAnalysis';
 import demoHeroBg from '@/assets/images/Demo-bg.png';
 import { BookOpen, PenLine } from 'lucide-react';
 
@@ -267,13 +268,47 @@ const DemoLayout: React.FC = () => {
     setDemoGoals(prev => prev.map(g => g.id === goalId ? { ...g, progress } : g));
   };
 
-  const handleOnboardingRecommended = (goals: any[]) => {
-    setDemoGoals(goals.map(g => ({
-      ...g,
-      steps: g.steps ?? [],
-    })));
+  const handleOnboardingRecommended = (goals: DemoGoalGenerated[]) => {
+    setDemoGoals(prev => [
+      ...prev,
+      ...goals.map(g => ({
+        ...g,
+        steps: g.steps ?? [],
+      })),
+    ]);
     setOnboardingOpen(false);
     document.getElementById('demo-dashboard')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleRecommendRequest = async (
+    occupation: string,
+    aspiration: string,
+    description: string,
+  ): Promise<DemoGoalGenerated[]> => {
+    const result = await generateGoalsWithOpenAI(occupation, aspiration, description);
+    if (!result || result.length === 0) return [];
+    const images = await recommendImagesForGoals(result);
+    const id = () => `ai-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    return result.map((g, i) => ({
+      id: id(),
+      title: g.title,
+      description: g.description,
+      progress: 0,
+      timeline: g.timeline,
+      priority: g.priority,
+      category: g.category,
+      targetDate: g.targetDate,
+      image: images[i] ?? getDefaultImageForCategory(g.category),
+      budget: g.budget,
+      spent: 0,
+      steps: (g.steps ?? []).map((s, j) => ({
+        id: `s${j}-${id()}`,
+        title: s.title,
+        completed: false,
+        predictDate: s.predictDate,
+        predictPrice: s.predictPrice,
+      })),
+    }));
   };
 
   const handleAIGenerateTodos = (day: 'today' | 'tomorrow') => {
@@ -427,6 +462,8 @@ const DemoLayout: React.FC = () => {
         onClose={() => setOnboardingOpen(false)}
         onCompleteWithOwnPlan={() => setOnboardingOpen(false)}
         onCompleteWithRecommended={handleOnboardingRecommended}
+        onRecommendRequest={handleRecommendRequest}
+        acceptButtonLabel="Add these to my demo"
       />
 
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -33,6 +34,12 @@ const timelineLabels: Record<string, string> = {
   '5year': '5 Year Plan',
 };
 
+const GENERATING_MESSAGES = [
+  'Analyzing your occupation and aspiration...',
+  'Generating personalized goals and steps...',
+  'Almost there...',
+];
+
 export type OnboardingStep = 'occupation' | 'aspiration' | 'plan-choice' | 'recommended-result' | null;
 
 interface DemoOnboardingModalsProps {
@@ -42,6 +49,8 @@ interface DemoOnboardingModalsProps {
   onCompleteWithRecommended: (goals: DemoGoalGenerated[]) => void;
   /** When provided (e.g. Dashboard), use OpenAI to generate goals instead of mock. */
   onRecommendRequest?: (occupation: string, aspiration: string, description: string) => Promise<DemoGoalGenerated[]>;
+  /** Label for the accept button when goals are generated (e.g. "Add these to my goals" for Dashboard, "Add these to my demo" for demo page). */
+  acceptButtonLabel?: string;
 }
 
 export function DemoOnboardingModals({
@@ -49,6 +58,8 @@ export function DemoOnboardingModals({
   onClose,
   onCompleteWithOwnPlan,
   onCompleteWithRecommended,
+  onRecommendRequest,
+  acceptButtonLabel = 'Add these to my goals',
 }: DemoOnboardingModalsProps) {
   const [step, setStep] = useState<OnboardingStep>('occupation');
   const [occupation, setOccupation] = useState('');
@@ -56,8 +67,20 @@ export function DemoOnboardingModals({
   const [aspirationCustom, setAspirationCustom] = useState('');
   const [description, setDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingStep, setGeneratingStep] = useState(0);
   const [generatedGoals, setGeneratedGoals] = useState<DemoGoalGenerated[]>([]);
   const [recommendError, setRecommendError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isGenerating) {
+      setGeneratingStep(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setGeneratingStep((s) => (s < GENERATING_MESSAGES.length - 1 ? s + 1 : s));
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [isGenerating]);
 
   const aspirationOptions = useMemo(
     () => (occupation ? ASPIRATION_PRESETS[occupation] ?? ASPIRATION_PRESETS.other : []),
@@ -247,9 +270,10 @@ export function DemoOnboardingModals({
           <DialogTitle>Your recommended plan</DialogTitle>
         </DialogHeader>
         {isGenerating ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-4">
+          <div className="flex flex-col items-center justify-center py-12 gap-6">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Analyzing your input and generating goals...</p>
+            <p className="text-sm font-medium text-center">{GENERATING_MESSAGES[generatingStep]}</p>
+            <Progress value={((generatingStep + 1) / GENERATING_MESSAGES.length) * 100} className="w-full max-w-xs h-2" />
           </div>
         ) : recommendError ? (
           <div className="py-6 text-center">
@@ -315,7 +339,7 @@ export function DemoOnboardingModals({
             <Button variant="outline" onClick={handleClose}>Cancel</Button>
             <Button onClick={handleAcceptRecommended}>
               <Target className="h-4 w-4 mr-2" />
-              Add these to my demo
+              {acceptButtonLabel}
             </Button>
           </DialogFooter>
         )}

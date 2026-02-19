@@ -463,7 +463,11 @@ CREATE TABLE IF NOT EXISTS public.manifestation_goals (
   priority text NOT NULL DEFAULT 'medium' CHECK (priority IN ('high', 'medium', 'low')),
   recommendations jsonb DEFAULT '[]',
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  target_date date,
+  steps jsonb DEFAULT '[]',
+  budget integer NOT NULL DEFAULT 0,
+  spent integer NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS public.manifestation_todos (
@@ -474,7 +478,8 @@ CREATE TABLE IF NOT EXISTS public.manifestation_todos (
   points integer NOT NULL DEFAULT 0,
   scheduled_date date DEFAULT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
-  completed_at timestamptz DEFAULT NULL
+  completed_at timestamptz DEFAULT NULL,
+  time_slot text
 );
 
 CREATE TABLE IF NOT EXISTS public.manifestation_gratitude_entries (

@@ -45,7 +45,7 @@ import GoalDetailView from '@/components/GoalDetailView';
 import { DemoOnboardingModals } from '@/components/DemoOnboardingModals';
 import type { DemoGoalGenerated } from '@/data/demoOnboardingMockData';
 import { getDefaultImageForCategory } from '@/data/demoOnboardingMockData';
-import { generateGoalsWithOpenAI, generateTodosWithOpenAI, getActiveProvider } from '@/lib/openaiProgressAnalysis';
+import { generateGoalsWithOpenAI, recommendImagesForGoals, generateTodosWithOpenAI, getActiveProvider } from '@/lib/openaiProgressAnalysis';
 import demoHeroBg from '@/assets/images/Demo-bg.png';
 
 function toISODate(d: Date): string {
@@ -127,30 +127,35 @@ export default function Dashboard() {
   }, [goals.length]);
 
   const handleOnboardingRecommended = async (generated: DemoGoalGenerated[]) => {
-    for (const g of generated) {
-      await addGoal({
-        title: g.title,
-        description: g.description,
-        timeline: g.timeline as '30' | '60' | '90' | '1year' | '5year',
-        progress: g.progress,
-        imageUrl: g.image,
-        priority: g.priority,
-        recommendations: [],
-        targetDate: g.targetDate,
-        steps: (g.steps ?? []).map((s) => ({
-          id: s.id,
-          title: s.title,
-          completed: s.completed ?? false,
-          predictDate: s.predictDate,
-          predictPrice: s.predictPrice,
-        })),
-        budget: g.budget ?? 0,
-        spent: g.spent ?? 0,
-      });
+    try {
+      for (const g of generated) {
+        await addGoal({
+          title: g.title,
+          description: g.description,
+          timeline: g.timeline as '30' | '60' | '90' | '1year' | '5year',
+          progress: g.progress,
+          imageUrl: g.image,
+          priority: g.priority,
+          recommendations: [],
+          targetDate: g.targetDate,
+          steps: (g.steps ?? []).map((s) => ({
+            id: s.id,
+            title: s.title,
+            completed: s.completed ?? false,
+            predictDate: s.predictDate,
+            predictPrice: s.predictPrice,
+          })),
+          budget: g.budget ?? 0,
+          spent: g.spent ?? 0,
+        });
+      }
+      localStorage.setItem('goals_app_dashboard_onboarding_done', '1');
+      setOnboardingOpen(false);
+      toast({ title: 'Goals added', description: `${generated.length} goal${generated.length === 1 ? '' : 's'} added to your goals list.` });
+      document.getElementById('dashboard-content')?.scrollIntoView({ behavior: 'smooth' });
+    } catch (e) {
+      toast({ title: 'Could not add goals', description: e instanceof Error ? e.message : 'Something went wrong.', variant: 'destructive' });
     }
-    localStorage.setItem('goals_app_dashboard_onboarding_done', '1');
-    setOnboardingOpen(false);
-    toast({ title: 'Goals added', description: `${generated.length} recommended goals added to your dashboard.` });
   };
 
   const handleRecommendRequest = async (
@@ -160,8 +165,9 @@ export default function Dashboard() {
   ): Promise<DemoGoalGenerated[]> => {
     const result = await generateGoalsWithOpenAI(occupation, aspiration, description);
     if (!result || result.length === 0) return [];
+    const images = await recommendImagesForGoals(result);
     const id = () => `ai-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    return result.map((g) => ({
+    return result.map((g, i) => ({
       id: id(),
       title: g.title,
       description: g.description,
@@ -170,11 +176,11 @@ export default function Dashboard() {
       priority: g.priority,
       category: g.category,
       targetDate: g.targetDate,
-      image: getDefaultImageForCategory(g.category),
+      image: images[i] ?? getDefaultImageForCategory(g.category),
       budget: g.budget,
       spent: 0,
-      steps: (g.steps ?? []).map((s, i) => ({
-        id: `s${i}-${id()}`,
+      steps: (g.steps ?? []).map((s, j) => ({
+        id: `s${j}-${id()}`,
         title: s.title,
         completed: false,
         predictDate: s.predictDate,
@@ -422,7 +428,7 @@ export default function Dashboard() {
             Goals, steps, progress timeline, and daily to-dos — all in one place
           </p>
           <p className="text-sm font-medium opacity-90 mb-8 animate-slide-up" style={{ color: 'var(--landing-text)', animationDelay: '0.3s' }}>
-            Click a goal to see details • Use AI to generate to-dos (mock) • Add gratitude
+            Click a goal to see details • Use AI to generate to-dos • Add gratitude
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: '0.4s' }}>
             <Button size="lg" variant="default" className="hero-cta-primary" onClick={() => setOnboardingOpen(true)}>
@@ -447,7 +453,7 @@ export default function Dashboard() {
         onRecommendRequest={handleRecommendRequest}
       />
 
-      {/* Stats Bar — same as Demo */}
+      {/* Stats Bar */}
       <section className="py-8 px-4 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
@@ -469,10 +475,10 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Main content — Demo-style: Goals grid + To-Do by day + Gratitude */}
+      {/* Main content: Goals grid + To-Do by day + Gratitude */}
       <section id="dashboard-content" className="py-12 px-4 sm:px-6 border-t scroll-mt-24" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
         <div className="max-w-6xl mx-auto space-y-12">
-          {/* Goals Grid — Demo card style */}
+          {/* Goals Grid */}
           <div>
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
@@ -540,9 +546,9 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Two Column: To-Do by day + Gratitude — Demo style */}
+          {/* Two Column: To-Do by day + Gratitude */}
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* To-Do List by day — Demo style with Today/Tomorrow, time slot, AI generate (mock) */}
+            {/* To-Do List by day — Today/Tomorrow, time slot, AI generate */}
             <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">

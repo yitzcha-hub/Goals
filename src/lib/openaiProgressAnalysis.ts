@@ -601,6 +601,150 @@ Respond in JSON: { "message": "2-3 sentence advice", "nextSteps": ["step 1", "st
 }
 
 /* ------------------------------------------------------------------ */
+/*  Image recommendation for generated goals (CDN pool)                */
+/* ------------------------------------------------------------------ */
+
+const CDN_BASE = 'https://d64gsuwffb70l.cloudfront.net/';
+
+/** URLs already used in mock/demo data (DEFAULT_DEMO_GOALS, MOCK_IMAGES, DemoGoalDetailView). Recommendation will exclude these so generated goals get distinct, non-demo images. */
+const DEMO_REGISTERED_IMAGE_URLS = new Set([
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313364420_116e655c.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313346309_a977d9c8.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313355593_1366f9cc.webp`,
+  `${CDN_BASE}68c468b90879cba7ca0dcccd_1757703340244_c4563a20.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313337681_8f380009.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760531037278_55604682.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313391802_60649dba.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313372407_435111e0.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313381569_d052cb92.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313400738_0397d33b.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313356469_7d5cbb6c.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313357732_45dc90f0.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313338490_d34ce5f7.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313339293_90544afc.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313347064_15ae5b20.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313347821_2f491fc4.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313365234_ba8c7e8e.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313365979_65d24337.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313373329_3bd1e9fc.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313374079_754e70fb.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313382703_29eb08a7.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313384066_98016a1d.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313393555_473380cf.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313394327_57e28b17.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313401543_1e9a42f2.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760313402336_36dc20cf.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760531038069_b2a3394d.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760531039095_6b7be7f5.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1760530848740_26e90107.webp`,
+  `${CDN_BASE}68c468b90879cba7ca0dcccd_1757702374900_fddb27a2.webp`,
+  `${CDN_BASE}68c468b90879cba7ca0dcccd_1757702384626_a69fcdca.webp`,
+  `${CDN_BASE}68c468b90879cba7ca0dcccd_1757702389056_af014788.webp`,
+  `${CDN_BASE}68c468b90879cba7ca0dcccd_1757703337273_2dced4c4.webp`,
+  `${CDN_BASE}68c468b90879cba7ca0dcccd_1757703338555_17e75cdc.webp`,
+  `${CDN_BASE}68c468b90879cba7ca0dcccd_1757703335687_2cec7799.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1759372135118_4c9c2359.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1759372137380_e7047228.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1759372139359_be9a5c69.webp`,
+  `${CDN_BASE}68dab31588d806ca5c085b8d_1759372142163_71220ea3.webp`,
+  `${CDN_BASE}692dfc7e4cdd91a34e5e367b_1768963852567_f1acdb0c.jpg`,
+]);
+
+/** Curated pool of goal images from CDN with semantic keywords for AI matching. Each image used at most once per batch. */
+export const GOAL_IMAGE_POOL: { url: string; keywords: string[] }[] = [
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313364420_116e655c.webp`, keywords: ['business', 'career', 'office', 'professional', 'work'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313365234_ba8c7e8e.webp`, keywords: ['business', 'team', 'meeting', 'growth'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313365979_65d24337.webp`, keywords: ['business', 'success', 'leadership'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313346309_a977d9c8.webp`, keywords: ['health', 'fitness', 'exercise', 'workout'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313347064_15ae5b20.webp`, keywords: ['health', 'wellness', 'active', 'running'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313347821_2f491fc4.webp`, keywords: ['health', 'fitness', 'strength'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313355593_1366f9cc.webp`, keywords: ['personal', 'growth', 'reflection', 'mindset'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313356469_7d5cbb6c.webp`, keywords: ['personal', 'development', 'goals'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313357732_45dc90f0.webp`, keywords: ['personal', 'achievement', 'success'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313337681_8f380009.webp`, keywords: ['purpose', 'community', 'volunteer', 'giving', 'contribute'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313338490_d34ce5f7.webp`, keywords: ['purpose', 'meaning', 'impact'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313339293_90544afc.webp`, keywords: ['purpose', 'community', 'donate'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313372407_435111e0.webp`, keywords: ['education', 'learning', 'study', 'books'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313373329_3bd1e9fc.webp`, keywords: ['education', 'course', 'skill'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313374079_754e70fb.webp`, keywords: ['education', 'graduation', 'achievement'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313381569_d052cb92.webp`, keywords: ['creative', 'art', 'music', 'design'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313382703_29eb08a7.webp`, keywords: ['creative', 'painting', 'expression'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313384066_98016a1d.webp`, keywords: ['creative', 'portfolio', 'project'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313391802_60649dba.webp`, keywords: ['finance', 'money', 'savings', 'budget'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313393555_473380cf.webp`, keywords: ['finance', 'investment', 'growth'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313394327_57e28b17.webp`, keywords: ['finance', 'financial freedom', 'planning'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313400738_0397d33b.webp`, keywords: ['wellness', 'meditation', 'mindfulness', 'yoga'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313401543_1e9a42f2.webp`, keywords: ['wellness', 'balance', 'calm'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760313402336_36dc20cf.webp`, keywords: ['wellness', 'self-care', 'peace'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760531037278_55604682.webp`, keywords: ['travel', 'adventure', 'explore', 'journey'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760531038069_b2a3394d.webp`, keywords: ['travel', 'destination', 'culture'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760531039095_6b7be7f5.webp`, keywords: ['travel', 'trip', 'vacation'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1760530848740_26e90107.webp`, keywords: ['travel', 'Japan', 'Asia', 'culture'] },
+  { url: `${CDN_BASE}68c468b90879cba7ca0dcccd_1757703340244_c4563a20.webp`, keywords: ['family', 'friends', 'relationships', 'connection', 'together'] },
+  { url: `${CDN_BASE}68c468b90879cba7ca0dcccd_1757702374900_fddb27a2.webp`, keywords: ['writing', 'book', 'author', 'creative writing'] },
+  { url: `${CDN_BASE}68c468b90879cba7ca0dcccd_1757702384626_a69fcdca.webp`, keywords: ['photography', 'skill', 'portfolio', 'creative'] },
+  { url: `${CDN_BASE}68c468b90879cba7ca0dcccd_1757702389056_af014788.webp`, keywords: ['travel', 'Europe', 'adventure'] },
+  { url: `${CDN_BASE}68c468b90879cba7ca0dcccd_1757703337273_2dced4c4.webp`, keywords: ['wellness', 'yoga', 'meditation', 'mindfulness'] },
+  { url: `${CDN_BASE}68c468b90879cba7ca0dcccd_1757703338555_17e75cdc.webp`, keywords: ['creative', 'art', 'music', 'expression'] },
+  { url: `${CDN_BASE}68c468b90879cba7ca0dcccd_1757703335687_2cec7799.webp`, keywords: ['business', 'startup', 'entrepreneur'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1759582856408_5daccfe2.webp`, keywords: ['goal', 'target', 'achievement'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1759582857210_3b046c70.webp`, keywords: ['growth', 'progress', 'development'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1759582857965_f943f4b3.webp`, keywords: ['success', 'milestone', 'celebration'] },
+  { url: `${CDN_BASE}68dab31588d806ca5c085b8d_1759582858737_2de0bd37.webp`, keywords: ['planning', 'strategy', 'roadmap'] },
+  { url: `${CDN_BASE}692dfc7e4cdd91a34e5e367b_1768963852567_f1acdb0c.jpg`, keywords: ['finance', 'savings', 'emergency fund', 'money'] },
+];
+
+/**
+ * Use AI to recommend one image per goal. Uses only images NOT already registered in mock/demo data,
+ * and picks the best-matching image for each goal. No duplicate images across goals.
+ */
+export async function recommendImagesForGoals(goals: AIGeneratedGoal[]): Promise<string[]> {
+  if (goals.length === 0) return [];
+  const poolToUse = GOAL_IMAGE_POOL.filter((img) => !DEMO_REGISTERED_IMAGE_URLS.has(img.url));
+  if (poolToUse.length === 0) return goals.map(() => GOAL_IMAGE_POOL[0]?.url ?? '');
+  const imageList = poolToUse
+    .map((img, i) => `  ${i}: ${img.keywords.join(', ')}`)
+    .join('\n');
+
+  const goalsDesc = goals
+    .map(
+      (g, i) =>
+        `Goal ${i}: title="${g.title}" description="${g.description}" category=${g.category} steps=[${(g.steps ?? []).map((s) => s.title).join('; ')}]`,
+    )
+    .join('\n');
+
+  const prompt = `You are matching goals to the best-suited image. We have ${poolToUse.length} images (index 0 to ${poolToUse.length - 1}) with these themes. Pick the image that best fits each goal.
+${imageList}
+
+Goals to match (one image index per goal; use each image at most once):
+${goalsDesc}
+
+Return a JSON array of ${goals.length} integers: the image index for goal 0, then goal 1, etc. Use only indices 0-${poolToUse.length - 1}. Prefer no duplicate indices when possible; if there are more goals than images, reuse the best-matching index. Choose the image that best suits each goal. Example: [0, 1, 2, 3]`;
+
+  const raw = await chatCompletion(prompt, { maxTokens: 150, temperature: 0.3 });
+  if (!raw) {
+    const used = new Set<number>();
+    return goals.map((g) => {
+      const match = poolToUse.findIndex((img, i) => !used.has(i) && img.keywords.some((k) => g.category.toLowerCase().includes(k) || g.title.toLowerCase().includes(k)));
+      const firstUnused = poolToUse.findIndex((_, i) => !used.has(i));
+      const idx = match >= 0 ? match : (firstUnused >= 0 ? firstUnused : 0);
+      used.add(idx);
+      return poolToUse[idx]?.url ?? poolToUse[0]?.url ?? GOAL_IMAGE_POOL[0].url;
+    });
+  }
+
+  const indices = parseJsonResponse<number[]>(raw);
+  if (!Array.isArray(indices) || indices.length !== goals.length) {
+    return goals.map((_, i) => poolToUse[i % poolToUse.length]?.url ?? poolToUse[0]?.url ?? GOAL_IMAGE_POOL[0].url);
+  }
+
+  return indices.map((idx) => {
+    const n = Math.max(0, Math.min(poolToUse.length - 1, Math.floor(Number(idx))));
+    return poolToUse[n]?.url ?? poolToUse[0]?.url ?? GOAL_IMAGE_POOL[0].url;
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /*  generateGoalsWithOpenAI (dashboard onboarding)                     */
 /* ------------------------------------------------------------------ */
 

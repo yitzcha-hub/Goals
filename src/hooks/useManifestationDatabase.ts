@@ -174,18 +174,18 @@ export function useManifestationDatabase() {
     if (!user) return;
     const payload: Record<string, unknown> = {
       user_id: user.id,
-      title: goal.title,
-      description: goal.description,
+      title: goal.title ?? '',
+      description: goal.description ?? '',
       timeline: goal.timeline,
-      progress: goal.progress,
-      image_url: goal.imageUrl,
+      progress: Math.round(Number(goal.progress)) || 0,
+      image_url: goal.imageUrl ?? null,
       priority: goal.priority,
-      recommendations: goal.recommendations ?? [],
-      budget: goal.budget ?? 0,
-      spent: goal.spent ?? 0,
+      recommendations: Array.isArray(goal.recommendations) ? goal.recommendations : [],
+      budget: Math.round(Number(goal.budget)) || 0,
+      spent: Math.round(Number(goal.spent)) || 0,
     };
     if (goal.targetDate) payload.target_date = goal.targetDate;
-    if (goal.steps && goal.steps.length) payload.steps = goal.steps;
+    if (goal.steps && goal.steps.length > 0) payload.steps = goal.steps;
     const { data, error } = await supabase.from('manifestation_goals').insert(payload).select('id,created_at').single();
     if (error) throw error;
     setGoals(prev => [{ ...goal, id: data.id, createdAt: data.created_at }, ...prev]);

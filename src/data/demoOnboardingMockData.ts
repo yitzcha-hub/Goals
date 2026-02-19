@@ -74,14 +74,26 @@ export interface DemoGoalGenerated {
   steps: DemoStep[];
 }
 
-/** Default image URL per category (for demo and for mapping AI-generated goals). */
+/** Default image URL per category (for demo and for mapping AI-generated goals). Uses same "start" images as progress timeline. */
 export const MOCK_IMAGES: Record<string, string> = {
-  Business: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312841255_ba6990ea.webp',
-  Health: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312839241_43f789a1.webp',
-  Personal: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312839994_d53dd0af.webp',
-  Education: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312845466_22d02da1.webp',
-  Finance: 'https://d64gsuwffb70l.cloudfront.net/692dfc7e4cdd91a34e5e367b_1768963852567_f1acdb0c.jpg',
+  Business: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313364420_116e655c.webp',
+  Health: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313346309_a977d9c8.webp',
+  Personal: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313355593_1366f9cc.webp',
+  Education: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313372407_435111e0.webp',
+  Finance: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313391802_60649dba.webp',
   Career: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313364420_116e655c.webp',
+  Travel: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760531037278_55604682.webp',
+  Purpose: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313337681_8f380009.webp',
+  Community: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313337681_8f380009.webp',
+  Volunteer: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313337681_8f380009.webp',
+  Contribute: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313337681_8f380009.webp',
+  Donate: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313337681_8f380009.webp',
+  Ideas: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313337681_8f380009.webp',
+  Family: 'https://d64gsuwffb70l.cloudfront.net/68c468b90879cba7ca0dcccd_1757703340244_c4563a20.webp',
+  Friends: 'https://d64gsuwffb70l.cloudfront.net/68c468b90879cba7ca0dcccd_1757703340244_c4563a20.webp',
+  Relationships: 'https://d64gsuwffb70l.cloudfront.net/68c468b90879cba7ca0dcccd_1757703340244_c4563a20.webp',
+  Wellness: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313400738_0397d33b.webp',
+  Creative: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313381569_d052cb92.webp',
 };
 
 export function getDefaultImageForCategory(category: string): string {
