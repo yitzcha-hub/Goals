@@ -997,3 +997,38 @@ ALTER TABLE public.reminders ADD CONSTRAINT reminders_type_check
 ALTER TABLE public.reminders DROP CONSTRAINT IF EXISTS reminders_entity_type_check;
 ALTER TABLE public.reminders ADD CONSTRAINT reminders_entity_type_check
   CHECK (entity_type IN ('goal', 'habit', 'family_goal', 'family_activity', 'calendar_event'));
+
+-- =============================================================================
+-- MANIFESTATION GOALS/TODOS EXTENSION (Demo-style: steps, target_date, budget, notes)
+-- =============================================================================
+ALTER TABLE public.manifestation_goals
+  ADD COLUMN IF NOT EXISTS target_date date,
+  ADD COLUMN IF NOT EXISTS steps jsonb DEFAULT '[]',
+  ADD COLUMN IF NOT EXISTS budget integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS spent integer NOT NULL DEFAULT 0;
+
+ALTER TABLE public.manifestation_todos
+  ADD COLUMN IF NOT EXISTS time_slot text;
+
+-- Goal notes (for Detail page: notes per goal with date)
+CREATE TABLE IF NOT EXISTS public.goal_notes (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  goal_id uuid NOT NULL REFERENCES public.manifestation_goals(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  content text NOT NULL,
+  date date NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_goal_notes_goal_id ON public.goal_notes(goal_id);
+CREATE INDEX IF NOT EXISTS idx_goal_notes_user_id ON public.goal_notes(user_id);
+ALTER TABLE public.goal_notes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can CRUD own goal_notes" ON public.goal_notes;
+CREATE POLICY "Users can CRUD own goal_notes"
+  ON public.goal_notes FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Progress photos: allow linking to manifestation_goals (goal_id stays for legacy goals)
+ALTER TABLE public.progress_photos
+  ADD COLUMN IF NOT EXISTS manifestation_goal_id uuid REFERENCES public.manifestation_goals(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_progress_photos_manifestation_goal ON public.progress_photos(manifestation_goal_id) WHERE manifestation_goal_id IS NOT NULL;

@@ -123,7 +123,7 @@ const UseCase: React.FC = () => {
           >
             <AuthModal
               trigger={
-                <Button size="lg" variant="default" className="hero-cta-primary">
+                <Button size="lg" variant="default" className="trial-cta">
                   Start 7-day free trial
                 </Button>
               }

@@ -70,7 +70,7 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({ feature, inline = false }
               <Button 
                 onClick={handleStartTrial} 
                 disabled={loading}
-                className="bg-green-600 hover:bg-green-700"
+                className="trial-cta"
               >
                 {loading ? 'Starting...' : 'Start 7-Day Free Trial'}
               </Button>
@@ -116,7 +116,7 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({ feature, inline = false }
           <Button 
             onClick={handleStartTrial}
             disabled={loading}
-            className="w-full bg-green-600 hover:bg-green-700"
+            className="w-full trial-cta"
           >
             {loading ? 'Starting Trial...' : '🎉 Start 7-Day Free Trial'}
           </Button>

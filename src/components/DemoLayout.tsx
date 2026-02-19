@@ -386,7 +386,7 @@ const DemoLayout: React.FC = () => {
             </Button>
             <AuthModal
               trigger={
-                <Button size="lg" variant="outline" className="hero-cta-outline">
+                <Button size="lg" variant="default" className="trial-cta">
                   Start 7-day free trial
                 </Button>
               }

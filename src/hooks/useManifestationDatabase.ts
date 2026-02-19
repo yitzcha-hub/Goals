@@ -5,6 +5,15 @@ import { useStorageMode } from '@/contexts/StorageModeContext';
 
 const DEMO_KEY_MANIFESTATION = 'goals_app_demo_manifestation';
 
+export interface GoalStep {
+  id: string;
+  title: string;
+  completed: boolean;
+  predictDate?: string;
+  predictPrice?: number;
+  completedAt?: string;
+}
+
 export interface ManifestationGoal {
   id: string;
   title: string;
@@ -15,6 +24,10 @@ export interface ManifestationGoal {
   priority: 'high' | 'medium' | 'low';
   createdAt: string;
   recommendations: string[];
+  targetDate?: string | null;
+  steps?: GoalStep[];
+  budget?: number;
+  spent?: number;
 }
 
 export interface ManifestationTodo {
@@ -23,10 +36,10 @@ export interface ManifestationTodo {
   completed: boolean;
   points: number;
   createdAt: string;
-  /** ISO date YYYY-MM-DD; null/undefined = draft */
   scheduledDate?: string | null;
-  /** When the task was marked completed (ISO string); null if not completed */
   completedAt?: string | null;
+  /** Optional time e.g. "09:00" for by-day layout */
+  timeSlot?: string | null;
 }
 
 export interface ManifestationGratitude {
@@ -76,8 +89,8 @@ export function useManifestationDatabase() {
         supabase.from('manifestation_journal_entries').select('*').eq('user_id', user.id).order('date', { ascending: false }),
         supabase.from('manifestation_stats').select('*').eq('user_id', user.id).maybeSingle()
       ]);
-      if (goalsRes.data) setGoals(goalsRes.data.map((r: any) => ({ id: r.id, title: r.title, description: r.description ?? '', timeline: r.timeline, progress: r.progress, imageUrl: r.image_url, priority: r.priority, createdAt: r.created_at, recommendations: (r.recommendations ?? []) as string[], targetDate: r.target_date ?? null, steps: (r.steps ?? []) as import('./useManifestationDatabase').GoalStep[] })));
-      if (todosRes.data) setTodos(todosRes.data.map((r: any) => ({ id: r.id, title: r.title, completed: r.completed, points: r.points, createdAt: r.created_at, scheduledDate: r.scheduled_date ?? null, completedAt: r.completed_at ?? null })));
+      if (goalsRes.data) setGoals(goalsRes.data.map((r: any) => ({ id: r.id, title: r.title, description: r.description ?? '', timeline: r.timeline, progress: r.progress, imageUrl: r.image_url, priority: r.priority, createdAt: r.created_at, recommendations: (r.recommendations ?? []) as string[], targetDate: r.target_date ?? null, steps: (r.steps ?? []) as GoalStep[], budget: r.budget ?? 0, spent: r.spent ?? 0 })));
+      if (todosRes.data) setTodos(todosRes.data.map((r: any) => ({ id: r.id, title: r.title, completed: r.completed, points: r.points, createdAt: r.created_at, scheduledDate: r.scheduled_date ?? null, completedAt: r.completed_at ?? null, timeSlot: r.time_slot ?? null })));
       if (gratitudeRes.data) setGratitudeEntries(gratitudeRes.data.map((r: any) => ({ id: r.id, content: r.content, date: r.date, createdAt: r.created_at })));
       if (journalRes.data) setJournalEntries(journalRes.data.map((r: any) => ({ id: r.id, title: r.title ?? '', content: r.content, imageUrl: r.image_url, mood: r.mood, date: r.date, createdAt: r.created_at })));
       if (statsRes.data) {
@@ -168,6 +181,8 @@ export function useManifestationDatabase() {
       image_url: goal.imageUrl,
       priority: goal.priority,
       recommendations: goal.recommendations ?? [],
+      budget: goal.budget ?? 0,
+      spent: goal.spent ?? 0,
     };
     if (goal.targetDate) payload.target_date = goal.targetDate;
     if (goal.steps && goal.steps.length) payload.steps = goal.steps;
@@ -197,10 +212,10 @@ export function useManifestationDatabase() {
     if (!wasComplete && isNowComplete) await updateStats(100, 0);
   };
 
-  /** Update goal fields (steps, targetDate, progress, etc.). */
+  /** Update goal fields (steps, targetDate, progress, budget, spent, etc.). */
   const updateGoal = async (
     goalId: string,
-    updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'title' | 'description' | 'timeline' | 'priority'>>
+    updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'title' | 'description' | 'timeline' | 'priority' | 'budget' | 'spent'>>
   ) => {
     const goal = goals.find(g => g.id === goalId);
     if (!goal) return;
@@ -220,6 +235,8 @@ export function useManifestationDatabase() {
     if (updates.description !== undefined) payload.description = updates.description;
     if (updates.timeline !== undefined) payload.timeline = updates.timeline;
     if (updates.priority !== undefined) payload.priority = updates.priority;
+    if (updates.budget !== undefined) payload.budget = updates.budget;
+    if (updates.spent !== undefined) payload.spent = updates.spent;
     if (Object.keys(payload).length === 0) return;
     await supabase.from('manifestation_goals').update(payload).eq('id', goalId);
     setGoals(prev => prev.map(g => (g.id === goalId ? { ...g, ...updates } : g)));
@@ -257,9 +274,10 @@ export function useManifestationDatabase() {
       points: todo.points,
     };
     if (todo.scheduledDate) payload.scheduled_date = todo.scheduledDate;
-    const { data, error } = await supabase.from('manifestation_todos').insert(payload).select('id,created_at,scheduled_date,completed_at').single();
+    if (todo.timeSlot) payload.time_slot = todo.timeSlot;
+    const { data, error } = await supabase.from('manifestation_todos').insert(payload).select('id,created_at,scheduled_date,completed_at,time_slot').single();
     if (error) throw error;
-    setTodos(prev => [{ ...todo, id: data.id, createdAt: data.created_at, scheduledDate: data.scheduled_date ?? null, completedAt: data.completed_at ?? null }, ...prev]);
+    setTodos(prev => [{ ...todo, id: data.id, createdAt: data.created_at, scheduledDate: data.scheduled_date ?? null, completedAt: data.completed_at ?? null, timeSlot: data.time_slot ?? null }, ...prev]);
   };
 
   const toggleTodo = async (todoId: string) => {

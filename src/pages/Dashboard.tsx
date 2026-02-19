@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,22 +17,20 @@ import {
   Plus,
   Trash2,
   Clock,
-  CalendarClock,
   ListTodo,
   PenLine,
   CheckCircle2,
+  Image as ImageIcon,
+  DollarSign,
   SparklesIcon,
-  ImageIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useManifestationDatabase } from '@/hooks/useManifestationDatabase';
 import { useEvents } from '@/hooks/useEvents';
 import { useReminders } from '@/hooks/useReminders';
-import { suggestTodosForDayWithAI } from '@/lib/openaiProgressAnalysis';
 import { EventDialog } from '@/components/EventDialog';
 import { DayTimelineView } from '@/components/DayTimelineView';
 import type { DayEventInput } from '@/lib/dayEventLayout';
@@ -41,6 +40,11 @@ import type { ManifestationGoal, ManifestationTodo, ManifestationGratitude, Mani
 import dashboardHeroImg from '@/assets/images/Life-is-in-Time-woman.jpg';
 import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 import { useToast } from '@/hooks/use-toast';
+import GoalDetailView from '@/components/GoalDetailView';
+import { DemoOnboardingModals } from '@/components/DemoOnboardingModals';
+import { getMockTodosForDay } from '@/data/demoOnboardingMockData';
+import type { DemoGoalGenerated } from '@/data/demoOnboardingMockData';
+import demoHeroBg from '@/assets/images/Demo-bg.png';
 
 function toISODate(d: Date): string {
   return d.toISOString().split('T')[0];
@@ -60,7 +64,7 @@ const timelineLabels: Record<string, string> = {
 
 export default function Dashboard() {
   const { toast } = useToast();
-  const [dashboardHeroUrl, setDashboardHeroUrl] = useState<string>(dashboardHeroImg);
+  const [dashboardHeroUrl, setDashboardHeroUrl] = useState(dashboardHeroImg);
   const [heroEditOpen, setHeroEditOpen] = useState(false);
   const [heroInputUrl, setHeroInputUrl] = useState('');
   const heroFileInputRef = React.useRef<HTMLInputElement>(null);
@@ -74,8 +78,6 @@ export default function Dashboard() {
   const [slotClickTime, setSlotClickTime] = useState<string | undefined>();
   const [overviewNewTaskTitle, setOverviewNewTaskTitle] = useState('');
   const [overviewNewGratitude, setOverviewNewGratitude] = useState('');
-  const [newTaskDay, setNewTaskDay] = useState<'today' | 'tomorrow'>('today');
-  const [aiGenerateLoading, setAiGenerateLoading] = useState<'today' | 'tomorrow' | null>(null);
   const navigate = useNavigate();
 
   const {
@@ -86,6 +88,7 @@ export default function Dashboard() {
     totalPoints,
     streak,
     addGoal,
+    updateGoal,
     updateGoalProgress,
     deleteGoal,
     addTodo,
@@ -99,12 +102,70 @@ export default function Dashboard() {
     deleteJournalEntry,
   } = useManifestationDatabase();
 
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const selectedGoal = selectedGoalId ? goals.find((g) => g.id === selectedGoalId) : null;
+
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDay, setNewTaskDay] = useState<'today' | 'tomorrow'>('today');
+  const [newTaskTimeSlot, setNewTaskTimeSlot] = useState('');
+  const [newGratitude, setNewGratitude] = useState('');
+
   const todayIso = toISODate(new Date());
   const tomorrowIso = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     return toISODate(d);
   })();
+
+  useEffect(() => {
+    if (goals.length === 0 && !localStorage.getItem('goals_app_dashboard_onboarding_done')) {
+      setOnboardingOpen(true);
+    }
+  }, [goals.length]);
+
+  const handleOnboardingRecommended = async (generated: DemoGoalGenerated[]) => {
+    for (const g of generated) {
+      await addGoal({
+        title: g.title,
+        description: g.description,
+        timeline: g.timeline as '30' | '60' | '90' | '1year' | '5year',
+        progress: g.progress,
+        imageUrl: g.image,
+        priority: g.priority,
+        recommendations: [],
+        targetDate: g.targetDate,
+        steps: (g.steps ?? []).map((s) => ({
+          id: s.id,
+          title: s.title,
+          completed: s.completed ?? false,
+          predictDate: s.predictDate,
+          predictPrice: s.predictPrice,
+        })),
+        budget: g.budget ?? 0,
+        spent: g.spent ?? 0,
+      });
+    }
+    localStorage.setItem('goals_app_dashboard_onboarding_done', '1');
+    setOnboardingOpen(false);
+    toast({ title: 'Goals added', description: `${generated.length} recommended goals added to your dashboard.` });
+  };
+
+  const handleAIGenerateTodos = (day: 'today' | 'tomorrow') => {
+    const iso = day === 'today' ? todayIso : tomorrowIso;
+    const mock = getMockTodosForDay(day, goals);
+    mock.forEach((m) => {
+      addTodo({
+        title: m.title,
+        completed: false,
+        points: 5,
+        scheduledDate: iso,
+        timeSlot: m.timeSlot ?? undefined,
+      });
+    });
+    toast({ title: 'To-dos added', description: `Generated ${mock.length} tasks for ${day}.` });
+  };
+
   const todosToday = useMemo(() => todos.filter((t) => t.scheduledDate === todayIso), [todos, todayIso]);
   const todosTomorrow = useMemo(() => todos.filter((t) => t.scheduledDate === tomorrowIso), [todos, tomorrowIso]);
 
@@ -252,26 +313,6 @@ export default function Dashboard() {
     setEventDialogOpen(true);
   };
 
-  const handleAIGenerateTodos = async (day: 'today' | 'tomorrow') => {
-    const targetIso = day === 'today' ? todayIso : tomorrowIso;
-    setAiGenerateLoading(day);
-    try {
-      const suggested = await suggestTodosForDayWithAI(
-        day,
-        goals.map((g) => ({ title: g.title, progress: g.progress, description: g.description })),
-        todos.slice(0, 15).map((t) => ({ title: t.title, completed: t.completed })),
-      );
-      for (const title of suggested) {
-        await addTodo({ title, completed: false, points: 5, scheduledDate: targetIso });
-      }
-      toast({ title: 'Added', description: suggested.length ? `${suggested.length} suggested tasks added for ${day}.` : 'No new suggestions right now.' });
-    } catch {
-      toast({ title: 'Error', description: 'Could not generate suggestions.', variant: 'destructive' });
-    } finally {
-      setAiGenerateLoading(null);
-    }
-  };
-
   const dateLabel = selectedDate.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -279,35 +320,32 @@ export default function Dashboard() {
     year: 'numeric',
   });
 
+  if (selectedGoal && selectedGoalId) {
+    return (
+      <GoalDetailView
+        goal={selectedGoal}
+        onBack={() => setSelectedGoalId(null)}
+        updateGoal={updateGoal}
+        useMockInsightsOnly
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
-      {/* Hero — Demo style: tall section, gradient headline, overlay */}
+      {/* Hero — Demo-style: same as Demo page */}
       <section
         id="hero"
         className="relative py-20 sm:py-28 px-4 min-h-[28rem] flex items-center justify-center overflow-hidden"
       >
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${dashboardHeroUrl})` }}
+          style={{ backgroundImage: `url(${demoHeroBg})` }}
           aria-hidden
         />
         <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.85 }} aria-hidden />
         <HeroFloatingCircles />
-        <div className="absolute top-4 right-4 z-20">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="bg-white/90 hover:bg-white text-[var(--landing-primary)] rounded-xl shadow"
-            onClick={() => {
-              setHeroInputUrl(dashboardHeroUrl === dashboardHeroImg ? '' : dashboardHeroUrl.startsWith('data:') ? '[Uploaded image]' : dashboardHeroUrl);
-              setHeroEditOpen(true);
-            }}
-          >
-            <ImageIcon className="h-4 w-4 mr-2" />
-            Customize home screen
-          </Button>
-        </div>
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
           <h1
             className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up"
             style={{
@@ -317,7 +355,7 @@ export default function Dashboard() {
               animationDelay: '0.1s',
             }}
           >
-            Your day at a glance
+            Your Dashboard
           </h1>
           <p
             className="text-lg sm:text-xl mb-4 font-bold max-w-2xl mx-auto bg-clip-text text-transparent animate-slide-up"
@@ -328,32 +366,32 @@ export default function Dashboard() {
               animationDelay: '0.25s',
             }}
           >
-            Timeline, goals, tasks, gratitude, and journal — all in one dashboard
+            Goals, steps, progress timeline, and daily to-dos — all in one place
           </p>
           <p className="text-sm font-medium opacity-90 mb-8 animate-slide-up" style={{ color: 'var(--landing-text)', animationDelay: '0.3s' }}>
-            Pick a date, add schedule items, and use the tabs below to explore.
+            Click a goal to see details • Use AI to generate to-dos (mock) • Add gratitude
           </p>
-          <div
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up"
-            style={{ animationDelay: '0.4s' }}
-          >
-            <div className="flex items-center gap-2">
-              <Label htmlFor="dashboard-date" className="text-sm font-semibold sr-only sm:not-sr-only" style={{ color: 'var(--landing-text)' }}>Date</Label>
-              <Input
-                id="dashboard-date"
-                type="date"
-                value={selectedIso}
-                onChange={(e) => setSelectedDate(new Date(e.target.value + 'T12:00:00'))}
-                className="max-w-[180px] bg-white/95 border border-[var(--landing-border)] text-[var(--landing-primary)] font-semibold rounded-xl h-11"
-              />
-            </div>
-            <Button onClick={openNewSchedule} size="lg" className="hero-cta-primary rounded-xl">
-              <Plus className="h-5 w-5 mr-2" />
-              New schedule
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: '0.4s' }}>
+            <Button size="lg" variant="default" className="hero-cta-primary" onClick={() => setOnboardingOpen(true)}>
+              <Sparkles className="h-5 w-5 mr-2" />
+              Start guided setup
+            </Button>
+            <Button size="lg" variant="outline" onClick={() => document.getElementById('dashboard-content')?.scrollIntoView({ behavior: 'smooth' })} className="hero-cta-outline">
+              Go to my goals
             </Button>
           </div>
         </div>
       </section>
+
+      <DemoOnboardingModals
+        open={onboardingOpen}
+        onClose={() => setOnboardingOpen(false)}
+        onCompleteWithOwnPlan={() => {
+          localStorage.setItem('goals_app_dashboard_onboarding_done', '1');
+          setOnboardingOpen(false);
+        }}
+        onCompleteWithRecommended={handleOnboardingRecommended}
+      />
 
       {/* Stats Bar — same as Demo */}
       <section className="py-8 px-4 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
@@ -377,548 +415,189 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Main content — Demo-style section wrapper */}
-      <section id="dashboard-content" className="py-12 px-4 border-t scroll-mt-24" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
-      <div className="max-w-6xl mx-auto space-y-8">
-        <TrialBanner />
-        <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 h-auto p-2 rounded-2xl border w-full feature-card-shadow"
-            style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}
-          >
-            <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow data-[state=active]:text-[var(--landing-primary)] py-3">
-              <CalendarClock className="h-4 w-4 mr-2 hidden sm:inline" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="goals" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow data-[state=active]:text-[var(--landing-primary)] py-3">
-              <Target className="h-4 w-4 mr-2 hidden sm:inline" />
-              Goals
-            </TabsTrigger>
-            <TabsTrigger value="tasks" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow data-[state=active]:text-[var(--landing-primary)] py-3">
-              <ListTodo className="h-4 w-4 mr-2 hidden sm:inline" />
-              Tasks
-            </TabsTrigger>
-            <TabsTrigger value="gratitude" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow data-[state=active]:text-[var(--landing-primary)] py-3">
-              <Heart className="h-4 w-4 mr-2 hidden sm:inline" />
-              Gratitude
-            </TabsTrigger>
-            <TabsTrigger value="journals" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow data-[state=active]:text-[var(--landing-primary)] py-3">
-              <BookOpen className="h-4 w-4 mr-2 hidden sm:inline" />
-              Journals
-            </TabsTrigger>
-            <TabsTrigger value="feedback" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow data-[state=active]:text-[var(--landing-primary)] py-3">
-              <Sparkles className="h-4 w-4 mr-2 hidden sm:inline" />
-              Feedback
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Overview: Demo-style — Goals grid, Tasks + Gratitude, Calendar + Written Plan */}
-          <TabsContent value="overview" className="space-y-12">
-            {/* Goals Grid */}
-            <div>
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <Target className="h-8 w-8" style={{ color: 'var(--landing-primary)' }} />
-                  <h2 className="text-3xl font-bold" style={{ color: 'var(--landing-text)' }}>Your Goals (0-10 Scale)</h2>
-                </div>
-                <Button className="hero-cta-primary rounded-xl" onClick={() => navigate('/goals')}>
-                  <Plus className="h-5 w-5 mr-2" />
-                  Add Goal
-                </Button>
+      {/* Main content — Demo-style: Goals grid + To-Do by day + Gratitude */}
+      <section id="dashboard-content" className="py-12 px-4 sm:px-6 border-t scroll-mt-24" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
+        <div className="max-w-6xl mx-auto space-y-12">
+          {/* Goals Grid — Demo card style */}
+          <div>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <Target className="h-8 w-8" style={{ color: 'var(--landing-primary)' }} />
+                <h2 className="text-3xl font-bold" style={{ color: 'var(--landing-text)' }}>Your Goals (0-10 Scale)</h2>
               </div>
-              {goals.length === 0 ? (
-                <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-                  <CardContent className="p-8 text-center">
-                    <Target className="h-10 w-10 mx-auto mb-3 opacity-50" style={{ color: 'var(--landing-primary)' }} />
-                    <p className="font-medium" style={{ color: 'var(--landing-text)' }}>No goals yet</p>
-                    <p className="text-sm mt-1" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>Add goals from the Goals page to see them here.</p>
-                    <Button onClick={() => navigate('/goals')} className="mt-4 rounded-xl" size="sm">Go to Goals</Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {goals.map((goal) => (
-                    <Card
-                      key={goal.id}
-                      className="overflow-hidden shadow-lg hover:shadow-xl transition-all feature-card-shadow cursor-pointer"
-                      style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}
-                      onClick={() => navigate('/goals')}
-                    >
-                      {goal.imageUrl && (
-                        <div className="w-full h-40 overflow-hidden">
-                          <img src={goal.imageUrl} alt={goal.title} className="w-full h-full object-cover" />
+              <Button className="hero-cta-primary rounded-xl" onClick={() => navigate('/goals')}>
+                <Plus className="h-5 w-5 mr-2" />
+                Add Goal
+              </Button>
+            </div>
+            {goals.length === 0 ? (
+              <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+                <CardContent className="p-8 text-center">
+                  <Target className="h-10 w-10 mx-auto mb-3 opacity-50" style={{ color: 'var(--landing-primary)' }} />
+                  <p className="font-medium" style={{ color: 'var(--landing-text)' }}>No goals yet</p>
+                  <p className="text-sm mt-1" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>Start guided setup above or add goals from the Goals page.</p>
+                  <Button onClick={() => setOnboardingOpen(true)} className="mt-4 rounded-xl" size="sm">Start guided setup</Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {goals.map((goal) => (
+                  <Card
+                    key={goal.id}
+                    className="overflow-hidden shadow-lg hover:shadow-xl transition-all cursor-pointer feature-card-shadow"
+                    style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}
+                    onClick={() => setSelectedGoalId(goal.id)}
+                  >
+                    {goal.imageUrl && (
+                      <div className="w-full h-40 overflow-hidden">
+                        <img src={goal.imageUrl} alt={goal.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-lg font-semibold" style={{ color: 'var(--landing-text)' }}>{goal.title}</h3>
+                        <span className="text-2xl font-bold" style={{ color: 'var(--landing-primary)' }}>{goal.progress}/10</span>
+                      </div>
+                      <p className="text-sm mb-3 opacity-90" style={{ color: 'var(--landing-text)' }}>{goal.description}</p>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <Badge variant="outline" style={{ borderColor: 'var(--landing-primary)', color: 'var(--landing-primary)' }}>{timelineLabels[goal.timeline] ?? goal.timeline}</Badge>
+                        <Badge style={{ backgroundColor: goal.priority === 'high' ? 'rgba(220,38,38,0.12)' : 'var(--landing-accent)', color: goal.priority === 'high' ? '#dc2626' : 'var(--landing-primary)' }}>{goal.priority}</Badge>
+                      </div>
+                      {(goal.budget != null && goal.budget > 0) && (
+                        <div className="flex flex-wrap gap-4 mb-3 text-sm" style={{ color: 'var(--landing-text)' }}>
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" style={{ color: 'var(--landing-primary)' }} />
+                            <span><strong>Budget:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.budget)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" style={{ color: 'var(--landing-primary)' }} />
+                            <span><strong>Spent:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.spent ?? 0)}</span>
+                          </div>
                         </div>
                       )}
-                      <CardContent className="p-6" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-lg font-semibold" style={{ color: 'var(--landing-text)' }}>{goal.title}</h3>
-                          <span className="text-2xl font-bold" style={{ color: 'var(--landing-primary)' }}>{goal.progress}/10</span>
+                      <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                        <Slider value={[goal.progress]} onValueChange={(v) => updateGoalProgress(goal.id, v[0])} max={10} step={1} className="w-full" />
+                        <Progress value={goal.progress * 10} className="h-2" style={{ backgroundColor: 'var(--landing-accent)' }} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Two Column: To-Do by day + Gratitude — Demo style */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* To-Do List by day — Demo style with Today/Tomorrow, time slot, AI generate (mock) */}
+            <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
+                    <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>To-Do List</h3>
+                    <Badge style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>By day · +5 pts each</Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => handleAIGenerateTodos('today')} className="text-xs">
+                      <SparklesIcon className="h-3 w-3 mr-1" /> AI: Today
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => handleAIGenerateTodos('tomorrow')} className="text-xs">
+                      <SparklesIcon className="h-3 w-3 mr-1" /> AI: Tomorrow
+                    </Button>
+                  </div>
+                </div>
+                <Tabs defaultValue="today" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                    <TabsTrigger value="today">Today</TabsTrigger>
+                    <TabsTrigger value="tomorrow">Tomorrow</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="today" className="space-y-3 mt-0">
+                    {todosToday.map((task) => (
+                      <div
+                        key={task.id}
+                        className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`}
+                        style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}
+                      >
+                        <button type="button" onClick={() => toggleTodo(task.id)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
+                          {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
+                        </button>
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                          {task.timeSlot && <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}><Clock className="h-3 w-3" /> {task.timeSlot}</span>}
+                          <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
                         </div>
-                        {goal.description && (
-                          <p className="text-sm mb-3 opacity-90" style={{ color: 'var(--landing-text)' }}>{goal.description}</p>
-                        )}
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          <Badge variant="outline" style={{ borderColor: 'var(--landing-primary)', color: 'var(--landing-primary)' }}>{timelineLabels[goal.timeline] ?? goal.timeline}</Badge>
-                          <Badge style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>{goal.priority}</Badge>
+                      </div>
+                    ))}
+                  </TabsContent>
+                  <TabsContent value="tomorrow" className="space-y-3 mt-0">
+                    {todosTomorrow.map((task) => (
+                      <div
+                        key={task.id}
+                        className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`}
+                        style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}
+                      >
+                        <button type="button" onClick={() => toggleTodo(task.id)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
+                          {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
+                        </button>
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                          {task.timeSlot && <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}><Clock className="h-3 w-3" /> {task.timeSlot}</span>}
+                          <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
                         </div>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[goal.progress]}
-                            onValueChange={(v) => updateGoalProgress(goal.id, v[0])}
-                            onClick={(e) => e.stopPropagation()}
-                            max={10}
-                            step={1}
-                            className="w-full"
-                          />
-                          <Progress value={goal.progress * 10} className="h-2" style={{ backgroundColor: 'var(--landing-accent)' }} />
-                        </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    ))}
+                  </TabsContent>
+                </Tabs>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const title = newTaskTitle.trim();
+                    if (title) {
+                      const iso = newTaskDay === 'today' ? todayIso : tomorrowIso;
+                      addTodo({ title, completed: false, points: 5, scheduledDate: iso, timeSlot: newTaskTimeSlot.trim() || undefined });
+                      setNewTaskTitle('');
+                      setNewTaskTimeSlot('');
+                      toast({ title: 'Added', description: `Task added for ${newTaskDay}.` });
+                    }
+                  }}
+                  className="space-y-2 mt-4"
+                >
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <Input placeholder="Add a task..." value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} className="flex-1 min-w-[140px]" style={{ borderColor: 'var(--landing-border)' }} />
+                    <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
+                      <SelectTrigger className="w-[110px]" style={{ borderColor: 'var(--landing-border)' }}><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="today">Today</SelectItem><SelectItem value="tomorrow">Tomorrow</SelectItem></SelectContent>
+                    </Select>
+                    <Input placeholder="Time (e.g. 09:00)" value={newTaskTimeSlot} onChange={(e) => setNewTaskTimeSlot(e.target.value)} className="w-[100px]" style={{ borderColor: 'var(--landing-border)' }} />
+                    <Button type="submit" size="sm" className="hero-cta-primary" disabled={!newTaskTitle.trim()}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Gratitude — Demo style */}
+            <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <Heart className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
+                  <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>Gratitude Journal</h3>
+                </div>
+                <div className="space-y-4 mb-4">
+                  {gratitudeEntries.slice(0, 5).map((entry) => (
+                    <div key={entry.id} className="p-4 rounded-xl border" style={{ backgroundColor: 'white', borderColor: 'var(--landing-border)' }}>
+                      <p style={{ color: 'var(--landing-text)' }}>{entry.content}</p>
+                      <p className="text-xs mt-2 opacity-70" style={{ color: 'var(--landing-text)' }}>{new Date(entry.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+                    </div>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* Two Column: To-Do by day (Demo style) + Gratitude */}
-            <div className="grid lg:grid-cols-2 gap-8">
-              <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
-                      <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>To-Do List</h3>
-                      <Badge style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>By day · +5 pts each</Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleAIGenerateTodos('today')}
-                        disabled={aiGenerateLoading !== null}
-                        className="text-xs"
-                      >
-                        {aiGenerateLoading === 'today' ? <span className="animate-pulse">...</span> : <SparklesIcon className="h-3 w-3 mr-1" />}
-                        AI: Today
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleAIGenerateTodos('tomorrow')}
-                        disabled={aiGenerateLoading !== null}
-                        className="text-xs"
-                      >
-                        {aiGenerateLoading === 'tomorrow' ? <span className="animate-pulse">...</span> : <SparklesIcon className="h-3 w-3 mr-1" />}
-                        AI: Tomorrow
-                      </Button>
-                    </div>
-                  </div>
-                  <Tabs defaultValue="today" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 mb-4" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                      <TabsTrigger value="today">Today</TabsTrigger>
-                      <TabsTrigger value="tomorrow">Tomorrow</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="today" className="space-y-3 mt-0">
-                      {todosToday.map((task) => (
-                        <div
-                          key={task.id}
-                          className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`}
-                          style={{
-                            backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)',
-                            borderColor: task.completed ? 'var(--landing-primary)' : 'transparent',
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => toggleTodo(task.id)}
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`}
-                            style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}
-                          >
-                            {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
-                          </button>
-                          <span className={`flex-1 ${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
-                        </div>
-                      ))}
-                    </TabsContent>
-                    <TabsContent value="tomorrow" className="space-y-3 mt-0">
-                      {todosTomorrow.map((task) => (
-                        <div
-                          key={task.id}
-                          className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`}
-                          style={{
-                            backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)',
-                            borderColor: task.completed ? 'var(--landing-primary)' : 'transparent',
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => toggleTodo(task.id)}
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`}
-                            style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}
-                          >
-                            {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
-                          </button>
-                          <span className={`flex-1 ${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
-                        </div>
-                      ))}
-                    </TabsContent>
-                  </Tabs>
-                  <form
-                    className="space-y-2 mt-4"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const title = overviewNewTaskTitle.trim();
-                      if (title) {
-                        const targetIso = newTaskDay === 'today' ? todayIso : tomorrowIso;
-                        addTodo({ title, completed: false, points: 5, scheduledDate: targetIso });
-                        setOverviewNewTaskTitle('');
-                        toast({ title: 'Added', description: `Task added for ${newTaskDay}.` });
-                      }
-                    }}
-                  >
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <Input
-                        placeholder="Add a task..."
-                        value={overviewNewTaskTitle}
-                        onChange={(e) => setOverviewNewTaskTitle(e.target.value)}
-                        className="flex-1 min-w-[140px] rounded-xl"
-                        style={{ borderColor: 'var(--landing-border)' }}
-                      />
-                      <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
-                        <SelectTrigger className="w-[110px] rounded-xl" style={{ borderColor: 'var(--landing-border)' }}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="today">Today</SelectItem>
-                          <SelectItem value="tomorrow">Tomorrow</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button type="submit" size="sm" className="hero-cta-primary rounded-xl" disabled={!overviewNewTaskTitle.trim()}>
-                        <Plus className="h-4 w-4 mr-1" /> Add
-                      </Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Heart className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
-                    <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>Gratitude Journal</h3>
-                  </div>
-                  <div className="space-y-4 mb-4">
-                    {gratitudeForDate ? (
-                      <div className="p-4 rounded-xl border" style={{ backgroundColor: 'white', borderColor: 'var(--landing-border)' }}>
-                        <p style={{ color: 'var(--landing-text)' }}>{gratitudeForDate.content}</p>
-                        <p className="text-xs mt-2 opacity-70" style={{ color: 'var(--landing-text)' }}>{new Date(gratitudeForDate.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-                        <Button variant="ghost" size="sm" className="mt-2 rounded-lg" onClick={() => setGratitudeDialogOpen(true)}>Edit</Button>
-                      </div>
-                    ) : (
-                      gratitudeEntries.slice(0, 3).map((entry) => (
-                        <div key={entry.id} className="p-4 rounded-xl border" style={{ backgroundColor: 'white', borderColor: 'var(--landing-border)' }}>
-                          <p className="text-sm" style={{ color: 'var(--landing-text)' }}>{entry.content}</p>
-                          <p className="text-xs mt-2 opacity-70" style={{ color: 'var(--landing-text)' }}>{new Date(entry.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  <form
-                    className="flex gap-2"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const content = overviewNewGratitude.trim();
-                      if (content) {
-                        addGratitudeForDate(selectedIso, content);
-                        setOverviewNewGratitude('');
-                        setGratitudeDialogOpen(false);
-                        toast({ title: 'Saved', description: 'Gratitude saved for this day.' });
-                      }
-                    }}
-                  >
-                    <Input
-                      placeholder="What are you grateful for today?"
-                      value={overviewNewGratitude}
-                      onChange={(e) => setOverviewNewGratitude(e.target.value)}
-                      className="flex-1 rounded-xl"
-                      style={{ borderColor: 'var(--landing-border)' }}
-                    />
-                    <Button type="submit" size="sm" className="hero-cta-primary rounded-xl" disabled={!overviewNewGratitude.trim()}>
-                      <PenLine className="h-4 w-4 mr-1" /> Add
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Calendar & Written Plan Row */}
-            <div className="grid lg:grid-cols-2 gap-8">
-              <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <CalendarIcon className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
-                    <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>Calendar</h3>
-                  </div>
-                  <p className="text-sm opacity-90 mb-4" style={{ color: 'var(--landing-text)' }}>
-                    Schedule for {dateLabel}. Goals are attached to your calendar with reminders.
-                  </p>
-                  <div className="p-4 rounded-xl border space-y-2" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
-                    {eventsOnDate.length === 0 ? (
-                      <p className="text-sm" style={{ color: 'var(--landing-text)', opacity: 0.8 }}>No events this day. Click &quot;New schedule&quot; above to add.</p>
-                    ) : (
-                      eventsOnDate.map((ev) => (
-                        <div key={ev.id} className="flex gap-3 text-sm">
-                          <span className="font-semibold shrink-0" style={{ color: 'var(--landing-primary)' }}>
-                            {ev.startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                          </span>
-                          <span style={{ color: 'var(--landing-text)' }}>{ev.title}</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  <Button variant="outline" size="sm" className="mt-4 rounded-xl w-full" onClick={openNewSchedule}>
-                    <Plus className="h-4 w-4 mr-2" /> New schedule
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <BookOpen className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
-                    <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>Written Plan</h3>
-                  </div>
-                  <p className="text-sm opacity-90 mb-4" style={{ color: 'var(--landing-text)' }}>
-                    Each goal has a written development plan. Add and edit goals on the Goals page.
-                  </p>
-                  <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
-                    {goals.length === 0 ? (
-                      <p className="text-sm italic opacity-90" style={{ color: 'var(--landing-text)' }}>No goals yet. Create goals to see your plan here.</p>
-                    ) : (
-                      <p className="text-sm opacity-90" style={{ color: 'var(--landing-text)' }}>
-                        {goals[0].description || `Your first goal: ${goals[0].title}. Add more on the Goals page.`}
-                      </p>
-                    )}
-                  </div>
-                  <Button variant="outline" size="sm" className="mt-4 rounded-xl w-full" onClick={() => navigate('/goals')}>
-                    Go to Goals
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Goals tab: schedule for selected date, CRUD with goal select */}
-          <TabsContent value="goals" className="space-y-6">
-            <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-              <CardHeader className="flex flex-row items-center justify-between" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                <CardTitle className="text-xl font-semibold" style={{ color: 'var(--landing-text)' }}>Schedule for {dateLabel}</CardTitle>
-                <Button onClick={openNewSchedule} size="sm" className="rounded-xl">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New schedule
-                </Button>
-              </CardHeader>
-              <CardContent className="p-4">
-                {eventsOnDate.length === 0 ? (
-                  <p className="text-sm py-6 text-center" style={{ color: 'var(--landing-text)', opacity: 0.8 }}>
-                    No schedule for this day. Add a commitment linked to a goal.
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {eventsOnDate.map((ev) => (
-                      <li
-                        key={ev.id}
-                        className="flex items-center justify-between gap-2 p-3 rounded-xl border"
-                        style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-bg)' }}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate" style={{ color: 'var(--landing-text)' }}>
-                            {ev.title}
-                          </p>
-                          <p className="text-xs mt-0.5" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>
-                            {ev.startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} –{' '}
-                            {ev.endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                            {ev.goalId && goals.find((g) => g.id === ev.goalId) && (
-                              <> · {goals.find((g) => g.id === ev.goalId)?.title}</>
-                            )}
-                          </p>
-                        </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-lg"
-                            onClick={() => {
-                              setEditingEvent(ev);
-                              setEventDialogOpen(true);
-                            }}
-                          >
-                            <PenLine className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-lg text-red-600"
-                            onClick={async () => {
-                              await deleteEvent(ev.id);
-                              toast({ title: 'Removed', description: 'Schedule removed.' });
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); const content = newGratitude.trim(); if (content) { addGratitudeForDate(todayIso, content); setNewGratitude(''); toast({ title: 'Saved', description: 'Gratitude saved.' }); } }}>
+                  <Input placeholder="What are you grateful for today?" value={newGratitude} onChange={(e) => setNewGratitude(e.target.value)} style={{ borderColor: 'var(--landing-border)' }} className="flex-1 rounded-xl" />
+                  <Button type="submit" size="sm" className="hero-cta-primary rounded-xl" disabled={!newGratitude.trim()}><PenLine className="h-4 w-4 mr-1" /> Add</Button>
+                </form>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Tasks tab: CRUD To-Do for selected date */}
-          <TabsContent value="tasks" className="space-y-4">
-            <TasksTab
-              selectedIso={selectedIso}
-              todosOnDate={todosOnDate}
-              addTodo={addTodo}
-              toggleTodo={toggleTodo}
-              deleteTodo={deleteTodo}
-              toast={toast}
-            />
-          </TabsContent>
-
-          {/* Gratitude tab: max 1 for selected date */}
-          <TabsContent value="gratitude" className="space-y-6">
-            <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
-              <CardHeader className="flex flex-row items-center justify-between" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                <CardTitle className="text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--landing-text)' }}><Heart className="h-6 w-6" style={{ color: 'var(--landing-primary)' }} />Gratitude for {dateLabel}</CardTitle>
-                <Button
-                  size="sm"
-                  className="rounded-xl"
-                  onClick={() => setGratitudeDialogOpen(true)}
-                >
-                  {gratitudeForDate ? 'Edit' : 'Add'}
-                </Button>
-              </CardHeader>
-              <CardContent className="p-4">
-                {gratitudeForDate ? (
-                  <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--landing-text)' }}>
-                    {gratitudeForDate.content}
-                  </p>
-                ) : (
-                  <p className="text-sm" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>
-                    One gratitude per day. Set yours for this date.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Journals tab: max 1 for selected date */}
-          <TabsContent value="journals" className="space-y-6">
-            <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-              <CardHeader className="flex flex-row items-center justify-between" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                <CardTitle className="text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--landing-text)' }}><BookOpen className="h-6 w-6" style={{ color: 'var(--landing-primary)' }} />Journal for {dateLabel}</CardTitle>
-                <Button size="sm" className="rounded-xl" onClick={() => setJournalDialogOpen(true)}>
-                  {journalForDate ? 'Edit' : 'Add'}
-                </Button>
-              </CardHeader>
-              <CardContent className="p-4">
-                {journalForDate ? (
-                  <div>
-                    {journalForDate.title && (
-                      <p className="font-medium text-sm mb-1" style={{ color: 'var(--landing-text)' }}>
-                        {journalForDate.title}
-                      </p>
-                    )}
-                    <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--landing-text)' }}>
-                      {journalForDate.content}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>
-                    One journal entry per day. Write for this date.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Feedback tab */}
-          <TabsContent value="feedback" className="space-y-6">
-            <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-              <CardContent className="p-8 text-center">
-                <div
-                  className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
-                  style={{ backgroundColor: 'var(--landing-accent)' }}
-                >
-                  <Sparkles className="h-8 w-8" style={{ color: 'var(--landing-primary)' }} />
-                </div>
-                <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--landing-text)' }}>
-                  AI Feedback
-                </h3>
-                <p className="text-sm max-w-md mx-auto" style={{ color: 'var(--landing-text)', opacity: 0.8 }}>
-                  Get insights on your goals, check-ins, and patterns. Feedback will appear here once you have enough activity.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        <EventDialog
-          open={eventDialogOpen}
-          onOpenChange={(open) => {
-            setEventDialogOpen(open);
-            if (!open) {
-              setEditingEvent(undefined);
-              setSlotClickTime(undefined);
-            }
-          }}
-          onSave={handleSaveEvent}
-          event={editingEvent}
-          selectedDate={selectedDate}
-          selectedTime={editingEvent ? undefined : slotClickTime}
-          goals={goals}
-        />
-
-        <GratitudeDialog
-          open={gratitudeDialogOpen}
-          onOpenChange={setGratitudeDialogOpen}
-          selectedIso={selectedIso}
-          existing={gratitudeForDate}
-          onSave={async (content) => {
-            if (gratitudeForDate) await updateGratitude(gratitudeForDate.id, content);
-            else await addGratitudeForDate(selectedIso, content);
-            setGratitudeDialogOpen(false);
-            toast({ title: gratitudeForDate ? 'Updated' : 'Saved', description: 'Gratitude saved.' });
-          }}
-          onDelete={gratitudeForDate ? async () => {
-            await deleteGratitude(gratitudeForDate.id);
-            setGratitudeDialogOpen(false);
-            toast({ title: 'Removed', description: 'Gratitude removed.' });
-          } : undefined}
-        />
-
-        <JournalDialog
-          open={journalDialogOpen}
-          onOpenChange={setJournalDialogOpen}
-          selectedIso={selectedIso}
-          existing={journalForDate}
-          onSave={async (entry) => {
-            if (journalForDate) await updateJournalEntry(journalForDate.id, entry);
-            else await addJournalEntry({ ...entry, date: selectedIso });
-            setJournalDialogOpen(false);
-            toast({ title: journalForDate ? 'Updated' : 'Saved', description: 'Journal saved.' });
-          }}
-          onDelete={journalForDate ? async () => {
-            await deleteJournalEntry(journalForDate.id);
-            setJournalDialogOpen(false);
-            toast({ title: 'Removed', description: 'Journal removed.' });
-          } : undefined}
-        />
-      </div>
+          </div>
+        </div>
       </section>
+
       <Dialog open={heroEditOpen} onOpenChange={setHeroEditOpen}>
         <DialogContent className="rounded-2xl max-w-sm" style={{ borderColor: 'var(--landing-border)' }}>
           <DialogHeader>

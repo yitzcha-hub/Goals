@@ -68,7 +68,7 @@ export default function About() {
             Goals and Development is a private space to dream, plan, and achieve—without the noise of social feeds or the pressure to perform for anyone but yourself.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: "0.4s" }}>
-            <AuthModal trigger={<Button size="lg" variant="default" className="hero-cta-primary">Start 7-day free trial</Button>} defaultMode="signup" />
+            <AuthModal trigger={<Button size="lg" variant="default" className="trial-cta">Start 7-day free trial</Button>} defaultMode="signup" />
             <Button size="lg" variant="outline" onClick={() => navigate("/features")} className="hero-cta-outline">
               See how it works
             </Button>

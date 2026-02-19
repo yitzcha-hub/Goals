@@ -308,7 +308,7 @@ const FAQ: React.FC = () => {
             </Button>
             <AuthModal
               trigger={
-                <Button size="lg" className="text-white" style={{ backgroundColor: 'var(--landing-primary)' }}>
+                <Button size="lg" variant="default" className="trial-cta">
                   Start free trial
                 </Button>
               }

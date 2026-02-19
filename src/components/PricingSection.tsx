@@ -291,7 +291,7 @@ const PricingSection: React.FC = () => {
                       <Button
                         onClick={() => handleStartTrial('premium')}
                         disabled={trialLoading}
-                        className="w-full bg-gradient-to-r from-green-600 to-lime-500 hover:from-green-700 hover:to-lime-600"
+                        className="w-full trial-cta"
                       >
                         {trialLoading ? (
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -321,13 +321,7 @@ const PricingSection: React.FC = () => {
                 ) : (
                   <AuthModal
                     trigger={
-                      <Button 
-                        className={`w-full ${
-                          plan.popular 
-                            ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600' 
-                            : 'bg-gradient-to-r from-green-600 to-lime-500 hover:from-green-700 hover:to-lime-600'
-                        }`}
-                      >
+                      <Button className="w-full trial-cta">
                         <Flame className="h-4 w-4 mr-2" />
                         Start 7 Day Free Trial
                       </Button>

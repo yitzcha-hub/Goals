@@ -33,7 +33,13 @@ function setDemoPhotos(goalId: string, list: ProgressPhoto[]) {
   } catch {}
 }
 
-export function useProgressPhotos(goalId: string) {
+export interface UseProgressPhotosOptions {
+  /** When true, goalId is a manifestation_goals.id; use manifestation_goal_id column */
+  forManifestationGoal?: boolean;
+}
+
+export function useProgressPhotos(goalId: string, options: UseProgressPhotosOptions = {}) {
+  const { forManifestationGoal } = options;
   const { user } = useAuth();
   const { isDemoMode } = useStorageMode();
   const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
@@ -54,18 +60,20 @@ export function useProgressPhotos(goalId: string) {
     }
     setPhotos([]);
     setLoading(false);
-  }, [user, goalId, useLocalStorageOnly]);
+  }, [user, goalId, useLocalStorageOnly, forManifestationGoal]);
 
   const loadPhotos = async () => {
     if (!user || !goalId) return;
     setLoading(true);
     try {
-      const { data: rows, error } = await supabase
+      const q = supabase
         .from('progress_photos')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('goal_id', goalId)
-        .order('created_at', { ascending: false });
+        .eq('user_id', user.id);
+      const { data: rows, error } = await (forManifestationGoal
+        ? q.eq('manifestation_goal_id', goalId)
+        : q.eq('goal_id', goalId)
+      ).order('created_at', { ascending: false });
 
       if (error) throw error;
       const list: ProgressPhoto[] = [];
@@ -107,12 +115,14 @@ export function useProgressPhotos(goalId: string) {
     const filePath = `${user.id}/${goalId}/${crypto.randomUUID()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from(BUCKET).upload(filePath, file, { upsert: false });
     if (uploadError) throw uploadError;
-    const { data: row, error } = await supabase.from('progress_photos').insert({
+    const insertPayload: { user_id: string; file_path: string; caption: string; goal_id?: string; manifestation_goal_id?: string } = {
       user_id: user.id,
-      goal_id: goalId,
       file_path: filePath,
-      caption
-    }).select('id,created_at').single();
+      caption,
+    };
+    if (forManifestationGoal) insertPayload.manifestation_goal_id = goalId;
+    else insertPayload.goal_id = goalId;
+    const { data: row, error } = await supabase.from('progress_photos').insert(insertPayload).select('id,created_at').single();
     if (error) throw error;
     const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
     setPhotos(prev => [{ id: row.id, url: urlData.publicUrl, caption, timestamp: new Date(row.created_at).getTime() }, ...prev]);

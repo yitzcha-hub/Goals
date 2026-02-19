@@ -400,7 +400,7 @@ export const LandingContent: React.FC = () => {
           >
             <AuthModal
               trigger={
-                <Button size="lg" variant="default" className="hero-cta-primary">
+                <Button size="lg" variant="default" className="trial-cta">
                   Start 7-day free trial
                 </Button>
               }
@@ -817,12 +817,7 @@ export const LandingContent: React.FC = () => {
           >
             <AuthModal
               trigger={
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="bg-white hover:bg-white/90 shadow-lg"
-                  style={{ color: 'var(--landing-primary)' }}
-                >
+                <Button size="lg" variant="default" className="trial-cta">
                   Start 7-day free trial
                 </Button>
               }
