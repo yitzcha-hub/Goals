@@ -23,6 +23,7 @@ import {
   Image as ImageIcon,
   DollarSign,
   SparklesIcon,
+  Loader2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -42,8 +43,9 @@ import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 import { useToast } from '@/hooks/use-toast';
 import GoalDetailView from '@/components/GoalDetailView';
 import { DemoOnboardingModals } from '@/components/DemoOnboardingModals';
-import { getMockTodosForDay } from '@/data/demoOnboardingMockData';
 import type { DemoGoalGenerated } from '@/data/demoOnboardingMockData';
+import { getDefaultImageForCategory } from '@/data/demoOnboardingMockData';
+import { generateGoalsWithOpenAI, generateTodosWithOpenAI, getActiveProvider } from '@/lib/openaiProgressAnalysis';
 import demoHeroBg from '@/assets/images/Demo-bg.png';
 
 function toISODate(d: Date): string {
@@ -151,19 +153,71 @@ export default function Dashboard() {
     toast({ title: 'Goals added', description: `${generated.length} recommended goals added to your dashboard.` });
   };
 
-  const handleAIGenerateTodos = (day: 'today' | 'tomorrow') => {
-    const iso = day === 'today' ? todayIso : tomorrowIso;
-    const mock = getMockTodosForDay(day, goals);
-    mock.forEach((m) => {
-      addTodo({
-        title: m.title,
+  const handleRecommendRequest = async (
+    occupation: string,
+    aspiration: string,
+    description: string,
+  ): Promise<DemoGoalGenerated[]> => {
+    const result = await generateGoalsWithOpenAI(occupation, aspiration, description);
+    if (!result || result.length === 0) return [];
+    const id = () => `ai-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    return result.map((g) => ({
+      id: id(),
+      title: g.title,
+      description: g.description,
+      progress: 0,
+      timeline: g.timeline,
+      priority: g.priority,
+      category: g.category,
+      targetDate: g.targetDate,
+      image: getDefaultImageForCategory(g.category),
+      budget: g.budget,
+      spent: 0,
+      steps: (g.steps ?? []).map((s, i) => ({
+        id: `s${i}-${id()}`,
+        title: s.title,
         completed: false,
-        points: 5,
-        scheduledDate: iso,
-        timeSlot: m.timeSlot ?? undefined,
-      });
-    });
-    toast({ title: 'To-dos added', description: `Generated ${mock.length} tasks for ${day}.` });
+        predictDate: s.predictDate,
+        predictPrice: s.predictPrice,
+      })),
+    }));
+  };
+
+  const [aiTodosLoading, setAiTodosLoading] = useState<'today' | 'tomorrow' | null>(null);
+
+  const handleAIGenerateTodos = async (day: 'today' | 'tomorrow') => {
+    if (!getActiveProvider()) {
+      toast({ title: 'AI not configured', description: 'Set VITE_OPENAI_API_KEY in .env to generate to-dos.', variant: 'destructive' });
+      return;
+    }
+    setAiTodosLoading(day);
+    try {
+      const previousTodos = todos.map((t) => ({ title: t.title, completed: t.completed }));
+      const generated = await generateTodosWithOpenAI(
+        day,
+        goals.map((g) => ({ title: g.title, progress: g.progress })),
+        previousTodos,
+      );
+      if (generated && generated.length > 0) {
+        const iso = day === 'today' ? todayIso : tomorrowIso;
+        for (const item of generated) {
+          addTodo({
+            title: item.title,
+            completed: false,
+            points: 5,
+            scheduledDate: iso,
+            timeSlot: item.timeSlot ?? undefined,
+          });
+        }
+        toast({ title: 'To-dos added', description: `Generated ${generated.length} tasks for ${day}.` });
+      } else {
+        toast({ title: 'No suggestions', description: 'Could not generate to-dos. Try again.', variant: 'destructive' });
+      }
+    } catch (e) {
+      toast({ title: 'Failed', description: e instanceof Error ? e.message : 'Could not generate to-dos.', variant: 'destructive' });
+    } finally {
+      setAiTodosLoading(null);
+    }
   };
 
   const todosToday = useMemo(() => todos.filter((t) => t.scheduledDate === todayIso), [todos, todayIso]);
@@ -326,7 +380,6 @@ export default function Dashboard() {
         goal={selectedGoal}
         onBack={() => setSelectedGoalId(null)}
         updateGoal={updateGoal}
-        useMockInsightsOnly
       />
     );
   }
@@ -391,6 +444,7 @@ export default function Dashboard() {
           setOnboardingOpen(false);
         }}
         onCompleteWithRecommended={handleOnboardingRecommended}
+        onRecommendRequest={handleRecommendRequest}
       />
 
       {/* Stats Bar — same as Demo */}
@@ -498,11 +552,11 @@ export default function Dashboard() {
                     <Badge style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>By day · +5 pts each</Badge>
                   </div>
                   <div className="flex gap-2">
-                    <Button type="button" size="sm" variant="outline" onClick={() => handleAIGenerateTodos('today')} className="text-xs">
-                      <SparklesIcon className="h-3 w-3 mr-1" /> AI: Today
+                    <Button type="button" size="sm" variant="outline" onClick={() => handleAIGenerateTodos('today')} className="text-xs" disabled={aiTodosLoading !== null}>
+                      {aiTodosLoading === 'today' ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <SparklesIcon className="h-3 w-3 mr-1" />} AI: Today
                     </Button>
-                    <Button type="button" size="sm" variant="outline" onClick={() => handleAIGenerateTodos('tomorrow')} className="text-xs">
-                      <SparklesIcon className="h-3 w-3 mr-1" /> AI: Tomorrow
+                    <Button type="button" size="sm" variant="outline" onClick={() => handleAIGenerateTodos('tomorrow')} className="text-xs" disabled={aiTodosLoading !== null}>
+                      {aiTodosLoading === 'tomorrow' ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <SparklesIcon className="h-3 w-3 mr-1" />} AI: Tomorrow
                     </Button>
                   </div>
                 </div>

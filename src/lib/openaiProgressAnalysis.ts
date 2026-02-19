@@ -599,3 +599,104 @@ Respond in JSON: { "message": "2-3 sentence advice", "nextSteps": ["step 1", "st
   if (!raw) return null;
   return parseJsonResponse<{ message: string; nextSteps: string[] }>(raw);
 }
+
+/* ------------------------------------------------------------------ */
+/*  generateGoalsWithOpenAI (dashboard onboarding)                     */
+/* ------------------------------------------------------------------ */
+
+export interface AIGeneratedGoalStep {
+  title: string;
+  predictDate: string; // YYYY-MM-DD
+  predictPrice?: number;
+}
+
+export interface AIGeneratedGoal {
+  title: string;
+  description: string;
+  timeline: '30' | '60' | '90' | '1year' | '5year';
+  priority: 'high' | 'medium' | 'low';
+  category: string;
+  targetDate: string; // YYYY-MM-DD
+  budget: number;
+  steps: AIGeneratedGoalStep[];
+}
+
+export async function generateGoalsWithOpenAI(
+  occupation: string,
+  aspiration: string,
+  description: string,
+): Promise<AIGeneratedGoal[] | null> {
+  const prompt = `You are a personal development coach. Based on the user's current occupation and aspiration, generate 1-3 concrete, achievable goals with steps.
+
+User context:
+- Occupation: ${occupation}
+- Aspiration / what they want to become or do: ${aspiration}
+${description ? `- Description of intended actions: ${description}` : ''}
+
+For each goal, provide:
+- title: clear, specific goal title
+- description: 1-2 sentences
+- timeline: one of "30", "60", "90", "1year", "5year"
+- priority: "high", "medium", or "low"
+- category: e.g. Career, Health, Finance, Education, Personal, Business
+- targetDate: ISO date YYYY-MM-DD (realistic deadline)
+- budget: total estimated cost in USD (number, 0 if free)
+- steps: array of 3-5 steps, each with title, predictDate (YYYY-MM-DD), predictPrice (number, optional)
+
+Respond with a JSON array only, no markdown. Example:
+[
+  {
+    "title": "Land My Dream Job",
+    "description": "Prepare and secure a role that aligns with my skills.",
+    "timeline": "90",
+    "priority": "high",
+    "category": "Career",
+    "targetDate": "2026-05-15",
+    "budget": 500,
+    "steps": [
+      { "title": "Polish resume and LinkedIn", "predictDate": "2026-02-28", "predictPrice": 0 },
+      { "title": "Apply to 20 target companies", "predictDate": "2026-04-15", "predictPrice": 0 }
+    ]
+  }
+]`;
+
+  const raw = await chatCompletion(prompt, { maxTokens: 1200, temperature: 0.7 });
+  if (!raw) return null;
+  const parsed = parseJsonResponse<AIGeneratedGoal[]>(raw);
+  return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+}
+
+/* ------------------------------------------------------------------ */
+/*  generateTodosWithOpenAI (dashboard: AI Today / AI Tomorrow)       */
+/* ------------------------------------------------------------------ */
+
+export interface AIGeneratedTodo {
+  title: string;
+  timeSlot?: string; // e.g. "09:00"
+}
+
+export async function generateTodosWithOpenAI(
+  day: 'today' | 'tomorrow',
+  goals: { title: string; progress: number }[],
+  previousTodos: { title: string; completed: boolean }[],
+): Promise<AIGeneratedTodo[] | null> {
+  const prompt = `You are a personal development coach. Generate a short to-do list for ${day} to help the user make progress on their goals.
+
+Current goals (title, progress out of 10):
+${goals.length ? goals.map((g) => `- "${g.title}" (${g.progress}/10)`).join('\n') : '(No goals yet)'}
+
+Recent to-dos (completed or not):
+${previousTodos.length ? previousTodos.slice(-15).map((t) => `- ${t.completed ? '[done]' : '[ ]'} ${t.title}`).join('\n') : '(None)'}
+
+Return 2-4 concrete, actionable tasks for ${day}. Each can optionally have a timeSlot in 24h format like "09:00" or "14:00".
+Respond with a JSON array only, no markdown. Example:
+[
+  { "title": "Review weekly goals and pick one priority action", "timeSlot": "09:00" },
+  { "title": "Work on [goal name] for 15 minutes", "timeSlot": "14:00" }
+]`;
+
+  const raw = await chatCompletion(prompt, { maxTokens: 500, temperature: 0.7 });
+  if (!raw) return null;
+  const parsed = parseJsonResponse<AIGeneratedTodo[]>(raw);
+  return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+}

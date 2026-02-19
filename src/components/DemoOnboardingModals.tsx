@@ -40,6 +40,8 @@ interface DemoOnboardingModalsProps {
   onClose: () => void;
   onCompleteWithOwnPlan: () => void;
   onCompleteWithRecommended: (goals: DemoGoalGenerated[]) => void;
+  /** When provided (e.g. Dashboard), use OpenAI to generate goals instead of mock. */
+  onRecommendRequest?: (occupation: string, aspiration: string, description: string) => Promise<DemoGoalGenerated[]>;
 }
 
 export function DemoOnboardingModals({
@@ -55,6 +57,7 @@ export function DemoOnboardingModals({
   const [description, setDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedGoals, setGeneratedGoals] = useState<DemoGoalGenerated[]>([]);
+  const [recommendError, setRecommendError] = useState<string | null>(null);
 
   const aspirationOptions = useMemo(
     () => (occupation ? ASPIRATION_PRESETS[occupation] ?? ASPIRATION_PRESETS.other : []),
@@ -70,17 +73,27 @@ export function DemoOnboardingModals({
     if (asp) setStep('plan-choice');
   };
 
-  const handleRecommend = () => {
+  const handleRecommend = async () => {
     const asp = aspiration || aspirationCustom.trim();
     if (!asp) return;
     setIsGenerating(true);
+    setRecommendError(null);
     setStep('recommended-result');
-    // Simulate analysis delay (no API)
-    setTimeout(() => {
-      const goals = generateRecommendedGoals(occupation || 'other', asp, description);
-      setGeneratedGoals(goals);
+    try {
+      if (onRecommendRequest) {
+        const goals = await onRecommendRequest(occupation || 'other', asp, description);
+        setGeneratedGoals(goals ?? []);
+      } else {
+        const goals = generateRecommendedGoals(occupation || 'other', asp, description);
+        setGeneratedGoals(goals);
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Failed to generate goals. Check your API key and try again.';
+      setRecommendError(message);
+      setGeneratedGoals([]);
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
   };
 
   const handleOwnPlan = () => {
@@ -237,6 +250,11 @@ export function DemoOnboardingModals({
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">Analyzing your input and generating goals...</p>
+          </div>
+        ) : recommendError ? (
+          <div className="py-6 text-center">
+            <p className="text-sm text-destructive font-medium">{recommendError}</p>
+            <p className="text-xs text-muted-foreground mt-2">Set VITE_OPENAI_API_KEY in .env to use AI recommendations.</p>
           </div>
         ) : (
           <div className="space-y-6 py-2">

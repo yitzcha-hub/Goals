@@ -74,7 +74,8 @@ export interface DemoGoalGenerated {
   steps: DemoStep[];
 }
 
-const MOCK_IMAGES: Record<string, string> = {
+/** Default image URL per category (for demo and for mapping AI-generated goals). */
+export const MOCK_IMAGES: Record<string, string> = {
   Business: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312841255_ba6990ea.webp',
   Health: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312839241_43f789a1.webp',
   Personal: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760312839994_d53dd0af.webp',
@@ -82,6 +83,10 @@ const MOCK_IMAGES: Record<string, string> = {
   Finance: 'https://d64gsuwffb70l.cloudfront.net/692dfc7e4cdd91a34e5e367b_1768963852567_f1acdb0c.jpg',
   Career: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313364420_116e655c.webp',
 };
+
+export function getDefaultImageForCategory(category: string): string {
+  return MOCK_IMAGES[category] ?? MOCK_IMAGES['Personal'] ?? '';
+}
 
 function addDays(iso: string, days: number): string {
   const d = new Date(iso);
@@ -103,6 +108,7 @@ export function generateRecommendedGoals(
   const id = () => `rec-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
   const goals: DemoGoalGenerated[] = [];
+  const imageFor = (cat: string) => MOCK_IMAGES[cat] ?? MOCK_IMAGES['Personal'] ?? '';
 
   // Goal 1 — primary (based on aspiration)
   const primaryTemplates: Record<string, Partial<DemoGoalGenerated> & { steps: { title: string; predictDateOffset: number; predictPrice: number }[] }> = {
