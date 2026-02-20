@@ -79,10 +79,10 @@
 :root {
   --chatbot-panel-bg: #ffffff;
   --chatbot-panel-border: #e2e8f0;
-  --chatbot-header-bg: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
-  --chatbot-trigger-bg: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%);
+  --chatbot-header-bg: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+  --chatbot-trigger-bg: var(--landing-orange);
   --chatbot-trigger-text: #ffffff;
-  --chatbot-trigger-shadow: 0 10px 40px rgba(5, 150, 105, 0.35);
+  --chatbot-trigger-shadow: 0 10px 40px rgba(249, 115, 22, 0.35);
   --chatbot-user-bubble: linear-gradient(135deg, #059669 0%, #047857 100%);
   --chatbot-user-text: #ffffff;
   --chatbot-bot-bubble: #f0fdf4;
@@ -102,10 +102,10 @@
 .dark {
   --chatbot-panel-bg: #0f172a;
   --chatbot-panel-border: #334155;
-  --chatbot-header-bg: linear-gradient(180deg, #052e16 0%, #064e3b 100%);
-  --chatbot-trigger-bg: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  --chatbot-header-bg: linear-gradient(180deg, #431407 0%, #7c2d12 100%);
+  --chatbot-trigger-bg: var(--landing-orange);
   --chatbot-trigger-text: #ffffff;
-  --chatbot-trigger-shadow: 0 10px 40px rgba(16, 185, 129, 0.4);
+  --chatbot-trigger-shadow: 0 10px 40px rgba(249, 115, 22, 0.4);
   --chatbot-user-bubble: linear-gradient(135deg, #059669 0%, #047857 100%);
   --chatbot-user-text: #ffffff;
   --chatbot-bot-bubble: #064e3b;
