@@ -40,6 +40,8 @@ export interface ManifestationTodo {
   completedAt?: string | null;
   /** Optional time e.g. "09:00" for by-day layout */
   timeSlot?: string | null;
+  /** Optional group name e.g. "Grocery Store", "Hardware Store" */
+  groupName?: string | null;
 }
 
 export interface ManifestationGratitude {
@@ -47,6 +49,10 @@ export interface ManifestationGratitude {
   content: string;
   date: string;
   createdAt?: string;
+  /** Default section key (e.g. 'good-health') or 'custom-{uuid}' for custom sections */
+  sectionKey?: string | null;
+  /** Display label for custom sections */
+  sectionLabel?: string | null;
 }
 
 export interface ManifestationJournalEntry {
@@ -90,8 +96,8 @@ export function useManifestationDatabase() {
         supabase.from('manifestation_stats').select('*').eq('user_id', user.id).maybeSingle()
       ]);
       if (goalsRes.data) setGoals(goalsRes.data.map((r: any) => ({ id: r.id, title: r.title, description: r.description ?? '', timeline: r.timeline, progress: r.progress, imageUrl: r.image_url, priority: r.priority, createdAt: r.created_at, recommendations: (r.recommendations ?? []) as string[], targetDate: r.target_date ?? null, steps: (r.steps ?? []) as GoalStep[], budget: r.budget ?? 0, spent: r.spent ?? 0 })));
-      if (todosRes.data) setTodos(todosRes.data.map((r: any) => ({ id: r.id, title: r.title, completed: r.completed, points: r.points, createdAt: r.created_at, scheduledDate: r.scheduled_date ?? null, completedAt: r.completed_at ?? null, timeSlot: r.time_slot ?? null })));
-      if (gratitudeRes.data) setGratitudeEntries(gratitudeRes.data.map((r: any) => ({ id: r.id, content: r.content, date: r.date, createdAt: r.created_at })));
+      if (todosRes.data) setTodos(todosRes.data.map((r: any) => ({ id: r.id, title: r.title, completed: r.completed, points: r.points, createdAt: r.created_at, scheduledDate: r.scheduled_date ?? null, completedAt: r.completed_at ?? null, timeSlot: r.time_slot ?? null, groupName: r.group_name ?? null })));
+      if (gratitudeRes.data) setGratitudeEntries(gratitudeRes.data.map((r: any) => ({ id: r.id, content: r.content ?? '', date: r.date, createdAt: r.created_at, sectionKey: r.section_key ?? undefined, sectionLabel: r.section_label ?? undefined })));
       if (journalRes.data) setJournalEntries(journalRes.data.map((r: any) => ({ id: r.id, title: r.title ?? '', content: r.content, imageUrl: r.image_url, mood: r.mood, date: r.date, createdAt: r.created_at })));
       if (statsRes.data) {
         setTotalPoints(statsRes.data.total_points ?? 0);
@@ -275,9 +281,10 @@ export function useManifestationDatabase() {
     };
     if (todo.scheduledDate) payload.scheduled_date = todo.scheduledDate;
     if (todo.timeSlot) payload.time_slot = todo.timeSlot;
-    const { data, error } = await supabase.from('manifestation_todos').insert(payload).select('id,created_at,scheduled_date,completed_at,time_slot').single();
+    if (todo.groupName) payload.group_name = todo.groupName;
+    const { data, error } = await supabase.from('manifestation_todos').insert(payload).select('id,created_at,scheduled_date,completed_at,time_slot,group_name').single();
     if (error) throw error;
-    setTodos(prev => [{ ...todo, id: data.id, createdAt: data.created_at, scheduledDate: data.scheduled_date ?? null, completedAt: data.completed_at ?? null, timeSlot: data.time_slot ?? null }, ...prev]);
+    setTodos(prev => [{ ...todo, id: data.id, createdAt: data.created_at, scheduledDate: data.scheduled_date ?? null, completedAt: data.completed_at ?? null, timeSlot: data.time_slot ?? null, groupName: data.group_name ?? null }, ...prev]);
   };
 
   const toggleTodo = async (todoId: string) => {
@@ -319,10 +326,14 @@ export function useManifestationDatabase() {
   };
 
   const addGratitudeForDate = async (date: string, content: string) => {
-    const existing = gratitudeEntries.find((e) => e.date === date);
+    return upsertGratitudeSection(date, 'general', null, content);
+  };
+
+  const upsertGratitudeSection = async (date: string, sectionKey: string, sectionLabel: string | null, content: string) => {
+    const existing = gratitudeEntries.find((e) => e.date === date && (e.sectionKey ?? 'general') === sectionKey);
     if (existing) return updateGratitude(existing.id, content);
     if (useLocalStorageOnly) {
-      const data: ManifestationGratitude = { id: crypto.randomUUID(), content, date };
+      const data: ManifestationGratitude = { id: crypto.randomUUID(), content, date, sectionKey, sectionLabel: sectionLabel ?? undefined };
       setGratitudeEntries(prev => {
         const next = [data, ...prev];
         persistDemo({ goals, todos, gratitudeEntries: next, journalEntries, totalPoints: totalPoints + 5, streak: streak + 1 });
@@ -336,11 +347,19 @@ export function useManifestationDatabase() {
     const { data, error } = await supabase.from('manifestation_gratitude_entries').insert({
       user_id: user.id,
       content,
-      date
-    }).select('id,date').single();
+      date,
+      section_key: sectionKey,
+      section_label: sectionLabel,
+    }).select('id,date,section_key,section_label').single();
     if (error) throw error;
-    setGratitudeEntries(prev => [{ id: data.id, content, date: data.date }, ...prev]);
+    setGratitudeEntries(prev => [{ id: data.id, content, date: data.date, sectionKey: data.section_key ?? undefined, sectionLabel: data.section_label ?? undefined }, ...prev]);
     await updateStats(5, 1);
+  };
+
+  const updateGratitudeSectionByKey = async (date: string, sectionKey: string, sectionLabel: string | null, content: string) => {
+    const existing = gratitudeEntries.find((e) => e.date === date && (e.sectionKey ?? '') === sectionKey);
+    if (existing) return updateGratitude(existing.id, content);
+    return upsertGratitudeSection(date, sectionKey, sectionLabel, content);
   };
 
   const updateGratitude = async (id: string, content: string) => {
@@ -369,6 +388,12 @@ export function useManifestationDatabase() {
     if (!user) return;
     await supabase.from('manifestation_gratitude_entries').delete().eq('id', id);
     setGratitudeEntries(prev => prev.filter((e) => e.id !== id));
+  };
+
+  const deleteGratitudeBySection = async (date: string, sectionKey: string) => {
+    const existing = gratitudeEntries.find((e) => e.date === date && (e.sectionKey ?? '') === sectionKey);
+    if (!existing) return;
+    return deleteGratitude(existing.id);
   };
 
   const addJournalEntry = async (entry: Omit<ManifestationJournalEntry, 'id'>) => {
@@ -450,8 +475,11 @@ export function useManifestationDatabase() {
     deleteTodo,
     addGratitude,
     addGratitudeForDate,
+    updateGratitudeSectionByKey,
+    upsertGratitudeSection,
     updateGratitude,
     deleteGratitude,
+    deleteGratitudeBySection,
     addJournalEntry,
     updateJournalEntry,
     deleteJournalEntry,

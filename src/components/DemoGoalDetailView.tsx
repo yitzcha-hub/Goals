@@ -135,7 +135,7 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
   const goalImage = currentGoal.image || currentGoal.images?.[0] || taggedImages[0]?.url || '';
 
   return (
-    <div className="min-h-screen landing overflow-x-hidden" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+    <div className="min-h-screen landing w-full max-w-[100vw] overflow-x-hidden box-border" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
       {/* Back: minimal floating */}
       <div className="fixed top-4 left-4 z-20">
         <Button

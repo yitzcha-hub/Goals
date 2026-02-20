@@ -17,7 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import type { TaggedImage } from './VisualProgressTimeline';
-import { useGoalNotes } from '@/hooks/useGoalNotes';
+import { useGoalNotes, type GoalNotePhase } from '@/hooks/useGoalNotes';
 import { useProgressPhotos } from '@/hooks/useProgressPhotos';
 import { useProgressAnalysis } from '@/hooks/useProgressAnalysis';
 import { getMockGoalInsights } from '@/data/demoOnboardingMockData';
@@ -33,12 +33,13 @@ interface GoalDetailViewProps {
 }
 
 type TimelineEntry =
-  | { type: 'note'; id: string; date: string; content: string }
+  | { type: 'note'; id: string; date: string; content: string; phase?: GoalNotePhase }
   | { type: 'image'; id: string; date: string; url: string; label?: string; progress: number };
 
 export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsightsOnly = false }: GoalDetailViewProps) {
   const [currentGoal, setCurrentGoal] = useState(goal);
   const [newNote, setNewNote] = useState('');
+  const [newNotePhase, setNewNotePhase] = useState<GoalNotePhase>(1);
   const [aiInsights, setAiInsights] = useState<{
     status: string;
     improvements: string[];
@@ -132,14 +133,14 @@ export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsigh
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
     const date = new Date().toISOString().split('T')[0];
-    await addNote(newNote.trim(), date);
+    await addNote(newNote.trim(), date, newNotePhase);
     setNewNote('');
   };
 
   const timelineEntries: TimelineEntry[] = useMemo(
     () =>
       [
-        ...notes.map((n) => ({ type: 'note' as const, id: n.id, date: n.date, content: n.content })),
+        ...notes.map((n) => ({ type: 'note' as const, id: n.id, date: n.date, content: n.content, phase: n.phase })),
         ...taggedImages.map((img) => ({
           type: 'image' as const,
           id: img.id,
@@ -151,6 +152,14 @@ export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsigh
       ].sort((a, b) => b.date.localeCompare(a.date)),
     [notes, taggedImages]
   );
+
+  const notesByPhase = useMemo(() => {
+    const map: Record<GoalNotePhase, typeof notes> = { 1: [], 2: [], 3: [], 4: [] };
+    notes.forEach((n) => {
+      if (n.phase >= 1 && n.phase <= 4) map[n.phase].push(n);
+    });
+    return map;
+  }, [notes]);
 
   const displayInsights = aiInsights ?? getMockGoalInsights(currentGoal.title, currentGoal.progress);
   const progressPct = currentGoal.progress * 10;
@@ -419,8 +428,9 @@ export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsigh
                   className="shrink-0 w-[280px] rounded-2xl overflow-hidden border transition-shadow hover:shadow-lg"
                   style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}
                 >
-                  <div className="p-4 border-b text-xs font-semibold" style={{ borderColor: 'var(--landing-border)', color: 'var(--landing-primary)' }}>
-                    {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  <div className="p-4 border-b flex items-center justify-between gap-2 text-xs font-semibold" style={{ borderColor: 'var(--landing-border)', color: 'var(--landing-primary)' }}>
+                    <span>{new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    {entry.type === 'note' && entry.phase != null && <span className="opacity-80">Phase {entry.phase}</span>}
                   </div>
                   {entry.type === 'note' ? (
                     <p className="p-4 text-sm leading-relaxed" style={{ color: 'var(--landing-text)' }}>{entry.content}</p>
@@ -440,6 +450,20 @@ export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsigh
 
           <div className="mt-8 rounded-2xl p-6 border" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
             <p className="text-sm font-semibold mb-3" style={{ color: 'var(--landing-text)' }}>Add a note</p>
+            <div className="mb-3">
+              <label className="text-xs font-medium block mb-1.5 opacity-80" style={{ color: 'var(--landing-text)' }}>Phase</label>
+              <select
+                value={newNotePhase}
+                onChange={(e) => setNewNotePhase(Number(e.target.value) as GoalNotePhase)}
+                className="w-full max-w-[140px] px-3 py-2 rounded-xl border-2 text-sm"
+                style={{ borderColor: 'var(--landing-border)' }}
+              >
+                <option value={1}>Phase 1</option>
+                <option value={2}>Phase 2</option>
+                <option value={3}>Phase 3</option>
+                <option value={4}>Phase 4</option>
+              </select>
+            </div>
             <Textarea
               placeholder="What happened? How do you feel about your progress?"
               value={newNote}
@@ -458,6 +482,32 @@ export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsigh
               Add note
             </Button>
           </div>
+
+          {(notesByPhase[1].length > 0 || notesByPhase[2].length > 0 || notesByPhase[3].length > 0 || notesByPhase[4].length > 0) && (
+            <div className="mt-10">
+              <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--landing-text)' }}>Notes by phase</h3>
+              <p className="text-sm opacity-80 mb-6" style={{ color: 'var(--landing-text)' }}>Organize notes by project phase so you can work in multiple phases at once.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {([1, 2, 3, 4] as const).map((phase) => (
+                  <div key={phase} className="rounded-2xl border p-4" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
+                    <p className="text-sm font-semibold mb-3" style={{ color: 'var(--landing-primary)' }}>Phase {phase}</p>
+                    <div className="space-y-3">
+                      {notesByPhase[phase].length === 0 ? (
+                        <p className="text-xs opacity-70" style={{ color: 'var(--landing-text)' }}>No notes yet</p>
+                      ) : (
+                        notesByPhase[phase].map((n) => (
+                          <div key={n.id} className="rounded-xl p-3 border text-sm" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+                            <p style={{ color: 'var(--landing-text)' }}>{n.content}</p>
+                            <p className="text-xs mt-1.5 opacity-70" style={{ color: 'var(--landing-text)' }}>{new Date(n.date).toLocaleDateString('en-US')}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="mt-6">
             <ProgressPhotosBlock goalId={currentGoal.id} />

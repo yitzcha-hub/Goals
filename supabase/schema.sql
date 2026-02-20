@@ -1,8 +1,13 @@
 -- =============================================================================
--- Goals App - Supabase (PostgreSQL) Schema (combined)
+-- Goals App - Supabase (PostgreSQL) Schema (single file)
 -- =============================================================================
--- This file is the single source of truth: full schema plus all migrations
--- (calendar_events, manifestation_todos.scheduled_date, manifestation_todos.completed_at).
+-- This file is the only SQL file: full schema plus all migrations in one place.
+-- (Previously separate files: apply_manifestation_schema.sql, migrations/*.sql
+--  have been consolidated here and removed.)
+--
+-- Contents: core tables, forum, subscriptions, manifestation goals/todos,
+-- goal_notes (with phase), invite_codes, admins, calendar_events, progress_photos,
+-- and idempotent ALTERs for existing databases.
 --
 -- How to run:
 --   1. Open your Supabase project → SQL Editor.
@@ -16,6 +21,8 @@
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- For admin user seed: password hashing (crypt / gen_salt)
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- =============================================================================
 -- 1. CORE USER DATA (goals, habits, journal)
@@ -132,7 +139,10 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_subscription_id ON public.su
 CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_customer_id ON public.subscriptions(stripe_customer_id) WHERE stripe_customer_id IS NOT NULL;
 
 -- =============================================================================
--- 3b. INVITE CODES (lifetime codes for influencers – never expire)
+-- 3b. INVITE CODES (single-use or multi-use; redeem for lifetime access)
+-- =============================================================================
+-- Codes are created by admins (see public.admins). uses_remaining = 1 for
+-- single-use; once used, the code is invalid. created_by set when generated.
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.invite_codes (
@@ -159,6 +169,103 @@ CREATE TABLE IF NOT EXISTS public.invite_code_redemptions (
 CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON public.invite_codes(code);
 CREATE INDEX IF NOT EXISTS idx_invite_codes_assigned_to ON public.invite_codes(assigned_to) WHERE assigned_to IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_invite_code_redemptions_invite_code_id ON public.invite_code_redemptions(invite_code_id);
+
+-- =============================================================================
+-- 3c. ADMINS (who can access /admin and create invite codes)
+-- =============================================================================
+-- Admin list is in public.admins; the login account is seeded below in auth.users.
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS public.admins (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email text NOT NULL UNIQUE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admins_email ON public.admins(email);
+
+-- Seed default admin email (who can access /admin)
+INSERT INTO public.admins (email) VALUES ('admin@gad.com')
+ON CONFLICT (email) DO NOTHING;
+
+-- Seed admin auth user (admin@gad.com / PaulandLucas) so admin can log in without creating in Dashboard.
+-- Only runs if no user with this email exists. Requires pgcrypto (enabled above).
+DO $$
+DECLARE
+  v_user_id uuid;
+  v_encrypted_pw text;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'admin@gad.com') THEN
+    v_user_id := gen_random_uuid();
+    v_encrypted_pw := crypt('PaulandLucas', gen_salt('bf'));
+
+    INSERT INTO auth.users (
+      id,
+      instance_id,
+      aud,
+      role,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      confirmation_token,
+      recovery_token,
+      email_change_token_new,
+      email_change,
+      raw_app_meta_data,
+      raw_user_meta_data,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      v_user_id,
+      '00000000-0000-0000-0000-000000000000',
+      'authenticated',
+      'authenticated',
+      'admin@gad.com',
+      v_encrypted_pw,
+      now(),
+      '',
+      '',
+      '',
+      '',
+      '{"provider":"email","providers":["email"]}',
+      '{}',
+      now(),
+      now()
+    );
+
+    INSERT INTO auth.identities (
+      id,
+      user_id,
+      identity_data,
+      provider,
+      provider_id,
+      last_sign_in_at,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      v_user_id,
+      v_user_id,
+      format('{"sub": "%s", "email": "admin@gad.com"}', v_user_id)::jsonb,
+      'email',
+      v_user_id::text,
+      now(),
+      now(),
+      now()
+    );
+  END IF;
+END $$;
+
+-- Fix existing auth.users rows with NULL token columns (avoids 500 on signInWithPassword)
+UPDATE auth.users
+SET
+  confirmation_token = COALESCE(confirmation_token, ''),
+  recovery_token = COALESCE(recovery_token, ''),
+  email_change_token_new = COALESCE(email_change_token_new, ''),
+  email_change = COALESCE(email_change, '')
+WHERE email = 'admin@gad.com'
+  AND (confirmation_token IS NULL OR recovery_token IS NULL OR email_change_token_new IS NULL OR email_change IS NULL);
 
 -- =============================================================================
 -- 4. REMINDERS
@@ -485,10 +592,14 @@ CREATE TABLE IF NOT EXISTS public.manifestation_todos (
 CREATE TABLE IF NOT EXISTS public.manifestation_gratitude_entries (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  content text NOT NULL,
+  content text NOT NULL DEFAULT '',
   date date NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  section_key text,
+  section_label text
 );
+CREATE INDEX IF NOT EXISTS idx_manifestation_gratitude_user_date_section
+  ON public.manifestation_gratitude_entries(user_id, date, section_key);
 
 CREATE TABLE IF NOT EXISTS public.manifestation_journal_entries (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -659,6 +770,7 @@ ALTER TABLE public.calendar_events ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.invite_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invite_code_redemptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 
 -- Forum categories: read-only for all authenticated
 ALTER TABLE public.forum_categories ENABLE ROW LEVEL SECURITY;
@@ -926,6 +1038,13 @@ CREATE POLICY "Users can read own invite_code_redemptions"
   ON public.invite_code_redemptions FOR SELECT
   USING (user_id = auth.uid());
 
+-- Admins: authenticated users can only check if their own email is in the table (for /admin access)
+DROP POLICY IF EXISTS "Users can check if they are admin" ON public.admins;
+CREATE POLICY "Users can check if they are admin"
+  ON public.admins FOR SELECT
+  TO authenticated
+  USING (lower(email) = lower((auth.jwt() ->> 'email')));
+
 -- =============================================================================
 -- TRIGGER: updated_at for goals, habits, journal_entries
 -- =============================================================================
@@ -960,26 +1079,30 @@ END
 $$;
 
 -- =============================================================================
--- GRANTS (required for Supabase API: anon + authenticated can access public)
--- RLS policies above restrict which rows each role can see.
+-- GRANTS (required for Supabase API: anon, authenticated, service_role)
+-- RLS policies restrict which rows anon/authenticated see; service_role bypasses RLS.
 -- =============================================================================
 
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT USAGE ON SCHEMA public TO service_role;
 
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
 
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
 
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 
 -- Future tables/sequences/functions get the same privileges
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated, service_role;
 
 -- =============================================================================
 -- STRIPE MIGRATION (run if subscriptions table already existed with old schema)
@@ -1013,16 +1136,18 @@ ALTER TABLE public.manifestation_goals
   ADD COLUMN IF NOT EXISTS spent integer NOT NULL DEFAULT 0;
 
 ALTER TABLE public.manifestation_todos
-  ADD COLUMN IF NOT EXISTS time_slot text;
+  ADD COLUMN IF NOT EXISTS time_slot text,
+  ADD COLUMN IF NOT EXISTS group_name text;
 
--- Goal notes (for Detail page: notes per goal with date)
+-- Goal notes (for Detail page: notes per goal with date; phase 1–4 for organizing by project phase)
 CREATE TABLE IF NOT EXISTS public.goal_notes (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   goal_id uuid NOT NULL REFERENCES public.manifestation_goals(id) ON DELETE CASCADE,
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   content text NOT NULL,
   date date NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  phase smallint NOT NULL DEFAULT 1 CHECK (phase >= 1 AND phase <= 4)
 );
 CREATE INDEX IF NOT EXISTS idx_goal_notes_goal_id ON public.goal_notes(goal_id);
 CREATE INDEX IF NOT EXISTS idx_goal_notes_user_id ON public.goal_notes(user_id);
@@ -1032,6 +1157,16 @@ CREATE POLICY "Users can CRUD own goal_notes"
   ON public.goal_notes FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+
+-- Add phase to goal_notes if table existed before phases (1–4) were added
+ALTER TABLE public.goal_notes ADD COLUMN IF NOT EXISTS phase smallint NOT NULL DEFAULT 1;
+
+-- Gratitude journal sections (10 default + custom)
+ALTER TABLE public.manifestation_gratitude_entries ADD COLUMN IF NOT EXISTS section_key text;
+ALTER TABLE public.manifestation_gratitude_entries ADD COLUMN IF NOT EXISTS section_label text;
+ALTER TABLE public.manifestation_gratitude_entries ALTER COLUMN content SET DEFAULT '';
+CREATE INDEX IF NOT EXISTS idx_manifestation_gratitude_user_date_section
+  ON public.manifestation_gratitude_entries(user_id, date, section_key);
 
 -- Progress photos: allow linking to manifestation_goals (goal_id stays for legacy goals)
 ALTER TABLE public.progress_photos

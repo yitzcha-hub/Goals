@@ -110,13 +110,6 @@ export const DemoAnalyticsSection: React.FC<DemoAnalyticsSectionProps> = ({ goal
             </div>
           </CardContent>
         </Card>
-
-        <Card style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-          <CardContent className="p-6">
-            <h4 className="font-semibold mb-4" style={{ color: 'var(--landing-text)' }}>Tasks by Priority</h4>
-            <ProductivityMetrics tasks={tasksWithPriority} />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

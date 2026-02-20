@@ -43,6 +43,7 @@ import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 import { useToast } from '@/hooks/use-toast';
 import GoalDetailView from '@/components/GoalDetailView';
 import { DemoOnboardingModals } from '@/components/DemoOnboardingModals';
+import { GratitudeJournalSections } from '@/components/GratitudeJournalSections';
 import type { DemoGoalGenerated } from '@/data/demoOnboardingMockData';
 import { getDefaultImageForCategory } from '@/data/demoOnboardingMockData';
 import { generateGoalsWithOpenAI, recommendImagesForGoals, generateTodosWithOpenAI, getActiveProvider } from '@/lib/openaiProgressAnalysis';
@@ -97,6 +98,8 @@ export default function Dashboard() {
     toggleTodo,
     deleteTodo,
     addGratitudeForDate,
+    updateGratitudeSectionByKey,
+    deleteGratitudeBySection,
     updateGratitude,
     deleteGratitude,
     addJournalEntry,
@@ -111,7 +114,7 @@ export default function Dashboard() {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDay, setNewTaskDay] = useState<'today' | 'tomorrow'>('today');
   const [newTaskTimeSlot, setNewTaskTimeSlot] = useState('');
-  const [newGratitude, setNewGratitude] = useState('');
+  const [newTaskGroup, setNewTaskGroup] = useState('');
 
   const todayIso = toISODate(new Date());
   const tomorrowIso = (() => {
@@ -165,7 +168,7 @@ export default function Dashboard() {
   ): Promise<DemoGoalGenerated[]> => {
     const result = await generateGoalsWithOpenAI(occupation, aspiration, description);
     if (!result || result.length === 0) return [];
-    const images = await recommendImagesForGoals(result);
+    const images = await recommendImagesForGoals(result, aspiration);
     const id = () => `ai-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     return result.map((g, i) => ({
       id: id(),
@@ -453,6 +456,11 @@ export default function Dashboard() {
         onRecommendRequest={handleRecommendRequest}
       />
 
+      {/* Banner section (same as Goals page) */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8" style={{ backgroundColor: 'var(--landing-bg)' }}>
+        <TrialBanner />
+      </div>
+
       {/* Stats Bar */}
       <section className="py-8 px-4 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
@@ -572,38 +580,58 @@ export default function Dashboard() {
                     <TabsTrigger value="tomorrow">Tomorrow</TabsTrigger>
                   </TabsList>
                   <TabsContent value="today" className="space-y-3 mt-0">
-                    {todosToday.map((task) => (
-                      <div
-                        key={task.id}
-                        className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`}
-                        style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}
-                      >
-                        <button type="button" onClick={() => toggleTodo(task.id)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
-                          {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
-                        </button>
-                        <div className="flex-1 min-w-0 flex items-center gap-2">
-                          {task.timeSlot && <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}><Clock className="h-3 w-3" /> {task.timeSlot}</span>}
-                          <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
+                    {(() => {
+                      const byGroup = todosToday.reduce<Record<string, typeof todosToday>>((acc, task) => {
+                        const g = task.groupName?.trim() || '\u200bNo group';
+                        if (!acc[g]) acc[g] = [];
+                        acc[g].push(task);
+                        return acc;
+                      }, {});
+                      const order = Object.keys(byGroup).sort((a, b) => (a === '\u200bNo group' ? 1 : 0) - (b === '\u200bNo group' ? 1 : 0));
+                      return order.map((groupLabel) => (
+                        <div key={groupLabel} className="space-y-2">
+                          {groupLabel !== '\u200bNo group' && <p className="text-xs font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--landing-primary)' }}>{groupLabel}</p>}
+                          {byGroup[groupLabel].map((task) => (
+                            <div key={task.id} className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`} style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}>
+                              <button type="button" onClick={() => toggleTodo(task.id)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
+                                {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
+                              </button>
+                              <div className="flex-1 min-w-0 flex items-center gap-2">
+                                {task.timeSlot && <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}><Clock className="h-3 w-3" /> {task.timeSlot}</span>}
+                                <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
+                      ));
+                    })()}
                   </TabsContent>
                   <TabsContent value="tomorrow" className="space-y-3 mt-0">
-                    {todosTomorrow.map((task) => (
-                      <div
-                        key={task.id}
-                        className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`}
-                        style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}
-                      >
-                        <button type="button" onClick={() => toggleTodo(task.id)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
-                          {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
-                        </button>
-                        <div className="flex-1 min-w-0 flex items-center gap-2">
-                          {task.timeSlot && <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}><Clock className="h-3 w-3" /> {task.timeSlot}</span>}
-                          <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
+                    {(() => {
+                      const byGroup = todosTomorrow.reduce<Record<string, typeof todosTomorrow>>((acc, task) => {
+                        const g = task.groupName?.trim() || '\u200bNo group';
+                        if (!acc[g]) acc[g] = [];
+                        acc[g].push(task);
+                        return acc;
+                      }, {});
+                      const order = Object.keys(byGroup).sort((a, b) => (a === '\u200bNo group' ? 1 : 0) - (b === '\u200bNo group' ? 1 : 0));
+                      return order.map((groupLabel) => (
+                        <div key={groupLabel} className="space-y-2">
+                          {groupLabel !== '\u200bNo group' && <p className="text-xs font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--landing-primary)' }}>{groupLabel}</p>}
+                          {byGroup[groupLabel].map((task) => (
+                            <div key={task.id} className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`} style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}>
+                              <button type="button" onClick={() => toggleTodo(task.id)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
+                                {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
+                              </button>
+                              <div className="flex-1 min-w-0 flex items-center gap-2">
+                                {task.timeSlot && <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}><Clock className="h-3 w-3" /> {task.timeSlot}</span>}
+                                <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
+                      ));
+                    })()}
                   </TabsContent>
                 </Tabs>
                 <form
@@ -612,9 +640,10 @@ export default function Dashboard() {
                     const title = newTaskTitle.trim();
                     if (title) {
                       const iso = newTaskDay === 'today' ? todayIso : tomorrowIso;
-                      addTodo({ title, completed: false, points: 5, scheduledDate: iso, timeSlot: newTaskTimeSlot.trim() || undefined });
+                      addTodo({ title, completed: false, points: 5, scheduledDate: iso, timeSlot: newTaskTimeSlot.trim() || undefined, groupName: newTaskGroup.trim() || undefined });
                       setNewTaskTitle('');
                       setNewTaskTimeSlot('');
+                      setNewTaskGroup('');
                       toast({ title: 'Added', description: `Task added for ${newTaskDay}.` });
                     }
                   }}
@@ -622,6 +651,7 @@ export default function Dashboard() {
                 >
                   <div className="flex flex-wrap gap-2 items-center">
                     <Input placeholder="Add a task..." value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} className="flex-1 min-w-[140px]" style={{ borderColor: 'var(--landing-border)' }} />
+                    <Input placeholder="Group (e.g. Grocery Store)" value={newTaskGroup} onChange={(e) => setNewTaskGroup(e.target.value)} className="w-[140px]" style={{ borderColor: 'var(--landing-border)' }} title="Optional group name" />
                     <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
                       <SelectTrigger className="w-[110px]" style={{ borderColor: 'var(--landing-border)' }}><SelectValue /></SelectTrigger>
                       <SelectContent><SelectItem value="today">Today</SelectItem><SelectItem value="tomorrow">Tomorrow</SelectItem></SelectContent>
@@ -633,27 +663,18 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Gratitude — Demo style */}
-            <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <Heart className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
-                  <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>Gratitude Journal</h3>
-                </div>
-                <div className="space-y-4 mb-4">
-                  {gratitudeEntries.slice(0, 5).map((entry) => (
-                    <div key={entry.id} className="p-4 rounded-xl border" style={{ backgroundColor: 'white', borderColor: 'var(--landing-border)' }}>
-                      <p style={{ color: 'var(--landing-text)' }}>{entry.content}</p>
-                      <p className="text-xs mt-2 opacity-70" style={{ color: 'var(--landing-text)' }}>{new Date(entry.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-                    </div>
-                  ))}
-                </div>
-                <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); const content = newGratitude.trim(); if (content) { addGratitudeForDate(todayIso, content); setNewGratitude(''); toast({ title: 'Saved', description: 'Gratitude saved.' }); } }}>
-                  <Input placeholder="What are you grateful for today?" value={newGratitude} onChange={(e) => setNewGratitude(e.target.value)} style={{ borderColor: 'var(--landing-border)' }} className="flex-1 rounded-xl" />
-                  <Button type="submit" size="sm" className="hero-cta-primary rounded-xl" disabled={!newGratitude.trim()}><PenLine className="h-4 w-4 mr-1" /> Add</Button>
-                </form>
-              </CardContent>
-            </Card>
+            {/* Gratitude Journal — 10 sections + custom, works on computer, tablet, phone */}
+            <GratitudeJournalSections
+              date={todayIso}
+              entries={gratitudeEntries}
+              onSaveSection={(date, sectionKey, sectionLabel, content) => {
+                updateGratitudeSectionByKey(date, sectionKey, sectionLabel, content).then(() => {
+                  if (content) toast({ title: 'Saved', description: 'Gratitude saved.' });
+                });
+              }}
+              onRemoveCustomSection={(date, sectionKey) => deleteGratitudeBySection(date, sectionKey)}
+              useLandingStyles
+            />
           </div>
         </div>
       </section>
@@ -784,6 +805,7 @@ function TasksTab({
   toast: ReturnType<typeof useToast>['toast'];
 }) {
   const [title, setTitle] = useState('');
+  const [groupName, setGroupName] = useState('');
   const today = toISODate(new Date());
 
   const handleAdd = () => {
@@ -797,8 +819,10 @@ function TasksTab({
       completed: false,
       points: 5,
       scheduledDate: selectedIso,
+      groupName: groupName.trim() || undefined,
     });
     setTitle('');
+    setGroupName('');
     toast({ title: 'Added', description: 'To-Do added for this day.' });
   };
 
@@ -814,57 +838,67 @@ function TasksTab({
         </div>
       </CardHeader>
       <CardContent className="p-6 space-y-4">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Input
             placeholder="Add a task..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            className="rounded-xl border-[var(--landing-border)]"
+            className="rounded-xl border-[var(--landing-border)] flex-1 min-w-[140px]"
+          />
+          <Input
+            placeholder="Group (optional)"
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            className="rounded-xl border-[var(--landing-border)] w-[130px]"
+            title="e.g. Grocery Store, Hardware Store"
           />
           <Button onClick={handleAdd} className="rounded-xl" disabled={!title.trim()}>
             <Plus className="h-4 w-4 mr-2" />
             Add
           </Button>
         </div>
-        <ul className="space-y-2">
-          {todosOnDate.map((t) => (
-            <li
-              key={t.id}
-              className="flex items-center gap-3 p-3 rounded-xl border"
-              style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-bg)' }}
-            >
-              <button
-                type="button"
-                onClick={() => toggleTodo(t.id)}
-                className="flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors"
-                style={{
-                  borderColor: t.completed ? 'var(--landing-primary)' : 'var(--landing-border)',
-                  backgroundColor: t.completed ? 'var(--landing-primary)' : 'transparent',
-                }}
-              >
-                {t.completed && <Check className="h-3.5 w-3.5 text-white" />}
-              </button>
-              <span
-                className={`flex-1 ${t.completed ? 'line-through opacity-70' : ''}`}
-                style={{ color: 'var(--landing-text)' }}
-              >
-                {t.title}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-lg text-red-600"
-                onClick={async () => {
-                  await deleteTodo(t.id);
-                  toast({ title: 'Removed', description: 'To-Do removed.' });
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </li>
-          ))}
-        </ul>
+        {(() => {
+          const byGroup = todosOnDate.reduce<Record<string, typeof todosOnDate>>((acc, t) => {
+            const g = t.groupName?.trim() || '\u200bNo group';
+            if (!acc[g]) acc[g] = [];
+            acc[g].push(t);
+            return acc;
+          }, {});
+          const order = Object.keys(byGroup).sort((a, b) => (a === '\u200bNo group' ? 1 : 0) - (b === '\u200bNo group' ? 1 : 0));
+          return (
+            <ul className="space-y-4">
+              {order.map((groupLabel) => (
+                <li key={groupLabel} className="space-y-2">
+                  {groupLabel !== '\u200bNo group' && <p className="text-xs font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--landing-primary)' }}>{groupLabel}</p>}
+                  {byGroup[groupLabel].map((t) => (
+                    <li
+                      key={t.id}
+                      className="flex items-center gap-3 p-3 rounded-xl border list-none"
+                      style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-bg)' }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleTodo(t.id)}
+                        className="flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors"
+                        style={{
+                          borderColor: t.completed ? 'var(--landing-primary)' : 'var(--landing-border)',
+                          backgroundColor: t.completed ? 'var(--landing-primary)' : 'transparent',
+                        }}
+                      >
+                        {t.completed && <Check className="h-3.5 w-3.5 text-white" />}
+                      </button>
+                      <span className={`flex-1 ${t.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{t.title}</span>
+                      <Button variant="ghost" size="icon" className="rounded-lg text-red-600" onClick={async () => { await deleteTodo(t.id); toast({ title: 'Removed', description: 'To-Do removed.' }); }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </li>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          );
+        })()}
         {todosOnDate.length === 0 && (
           <p className="text-sm py-4 text-center" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>
             No To-Do for this day. Add one above.

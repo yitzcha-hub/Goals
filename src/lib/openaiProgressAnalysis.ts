@@ -1,30 +1,20 @@
 /**
  * AI integration for progress analysis and coaching.
  *
- * Provider priority:
- *   1. OpenAI  — if VITE_OPENAI_API_KEY is set (paid)
- *   2. Gemini  — if VITE_GEMINI_API_KEY is set (free tier: 15 RPM)
- *   3. null    — no AI features available
- *
+ * Uses only OpenAI when VITE_OPENAI_API_KEY is set. No other providers.
  * Includes: response caching, request deduplication, client-side rate
  * limiting, and exponential-backoff retry on 429 responses.
  */
 
 /* ------------------------------------------------------------------ */
-/*  Provider detection                                                 */
+/*  Provider detection (OpenAI only)                                   */
 /* ------------------------------------------------------------------ */
 
-type Provider =
-  | { type: 'openai'; key: string }
-  | { type: 'gemini'; key: string };
+type Provider = { type: 'openai'; key: string };
 
 function getProvider(): Provider | null {
   const openaiKey = import.meta.env.VITE_OPENAI_API_KEY as string | undefined;
-  if (openaiKey) return { type: 'openai', key: openaiKey };
-
-  const geminiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-  if (geminiKey) return { type: 'gemini', key: geminiKey };
-
+  if (openaiKey?.trim()) return { type: 'openai', key: openaiKey.trim() };
   return null;
 }
 
@@ -148,11 +138,6 @@ async function sleep(ms: number): Promise<void> {
 /* ------------------------------------------------------------------ */
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
-const GEMINI_MODEL = 'gemini-2.0-flash';
-
-function geminiUrl(key: string): string {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
-}
 
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 2_000; // 2 s → 4 s → 8 s
@@ -192,11 +177,7 @@ async function chatCompletion(
   // --- Rate limit ---
   if (!canMakeRequest()) {
     console.warn('[AI] client-side rate limit reached — try again in a moment');
-    throw new Error(
-      provider.type === 'openai'
-        ? 'Too many AI requests. Please wait a moment before trying again.'
-        : 'Too many AI requests. Please wait a moment before trying again.',
-    );
+    throw new Error('Too many AI requests. Please wait a moment before trying again.');
   }
 
   // --- Build the actual request (with retry) ---
@@ -205,83 +186,44 @@ async function chatCompletion(
       try {
         recordRequest();
 
-        if (provider.type === 'openai') {
-          const res = await fetch(OPENAI_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${provider.key}`,
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              messages: [{ role: 'user', content: prompt }],
-              temperature,
-              max_tokens: maxTokens,
-            }),
-          });
-
-          if (res.status === 429) {
-            // Parse Retry-After header if present, otherwise exponential backoff
-            const retryAfter = res.headers.get('Retry-After');
-            const delayMs = retryAfter
-              ? parseInt(retryAfter, 10) * 1000
-              : BASE_DELAY_MS * Math.pow(2, attempt);
-
-            if (attempt < MAX_RETRIES) {
-              console.warn(`[AI] 429 from OpenAI — retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
-              await sleep(delayMs);
-              continue;
-            }
-            throw new Error('OpenAI rate limit exceeded. Please wait a minute and try again, or check your plan at platform.openai.com.');
-          }
-
-          if (!res.ok) {
-            if (res.status === 401)
-              throw new Error('Invalid OpenAI API key. Please check your key in Settings.');
-            const err = await res.text();
-            console.error('OpenAI API error:', res.status, err);
-            return null;
-          }
-
-          const data = await res.json();
-          const text = data.choices?.[0]?.message?.content ?? null;
-          if (text) setCache(cacheKey, text);
-          return text;
-        }
-
-        /* ---------- Gemini ---------- */
-        const res = await fetch(geminiUrl(provider.key), {
+        const res = await fetch(OPENAI_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${provider.key}`,
+          },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature,
-              maxOutputTokens: maxTokens,
-            },
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature,
+            max_tokens: maxTokens,
           }),
         });
 
         if (res.status === 429) {
-          const delayMs = BASE_DELAY_MS * Math.pow(2, attempt);
+          const retryAfter = res.headers.get('Retry-After');
+          const delayMs = retryAfter
+            ? parseInt(retryAfter, 10) * 1000
+            : BASE_DELAY_MS * Math.pow(2, attempt);
+
           if (attempt < MAX_RETRIES) {
-            console.warn(`[AI] 429 from Gemini — retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+            console.warn(`[AI] 429 from OpenAI — retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
             await sleep(delayMs);
             continue;
           }
-          throw new Error('Gemini rate limit reached. Free tier allows 15 requests/min — please wait a moment.');
+          throw new Error('OpenAI rate limit exceeded. Please wait a minute and try again, or check your plan at platform.openai.com.');
         }
 
         if (!res.ok) {
-          if (res.status === 400 || res.status === 403)
-            throw new Error('Invalid Gemini API key. Get a free key at aistudio.google.com/apikey');
+          if (res.status === 401)
+            throw new Error('Invalid OpenAI API key. Please check your key in Settings.');
           const err = await res.text();
-          console.error('Gemini API error:', res.status, err);
+          console.error('OpenAI API error:', res.status, err);
           return null;
         }
 
         const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+        const text = data.choices?.[0]?.message?.content ?? null;
         if (text) setCache(cacheKey, text);
         return text;
       } catch (e) {
@@ -340,81 +282,42 @@ export async function chatCompletionWithMessages(
       try {
         recordRequest();
 
-        if (provider.type === 'openai') {
-          const res = await fetch(OPENAI_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${provider.key}`,
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              messages: messages.map((m) => ({ role: m.role, content: m.content })),
-              temperature,
-              max_tokens: maxTokens,
-            }),
-          });
-
-          if (res.status === 429) {
-            const retryAfter = res.headers.get('Retry-After');
-            const delayMs = retryAfter
-              ? parseInt(retryAfter, 10) * 1000
-              : BASE_DELAY_MS * Math.pow(2, attempt);
-            if (attempt < MAX_RETRIES) {
-              await sleep(delayMs);
-              continue;
-            }
-            throw new Error('OpenAI rate limit exceeded. Please wait a minute and try again.');
-          }
-
-          if (!res.ok) {
-            if (res.status === 401)
-              throw new Error('Invalid OpenAI API key. Please check your key in Settings.');
-            const err = await res.text();
-            console.error('OpenAI API error:', res.status, err);
-            return null;
-          }
-
-          const data = await res.json();
-          return data.choices?.[0]?.message?.content ?? null;
-        }
-
-        /* ---------- Gemini: map messages to contents ---------- */
-        const contents = messages.map((m) => ({
-          role: m.role === 'user' ? 'user' : 'model',
-          parts: [{ text: m.content }],
-        }));
-        const res = await fetch(geminiUrl(provider.key), {
+        const res = await fetch(OPENAI_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${provider.key}`,
+          },
           body: JSON.stringify({
-            contents,
-            generationConfig: {
-              temperature,
-              maxOutputTokens: maxTokens,
-            },
+            model: 'gpt-4o-mini',
+            messages: messages.map((m) => ({ role: m.role, content: m.content })),
+            temperature,
+            max_tokens: maxTokens,
           }),
         });
 
         if (res.status === 429) {
-          const delayMs = BASE_DELAY_MS * Math.pow(2, attempt);
+          const retryAfter = res.headers.get('Retry-After');
+          const delayMs = retryAfter
+            ? parseInt(retryAfter, 10) * 1000
+            : BASE_DELAY_MS * Math.pow(2, attempt);
           if (attempt < MAX_RETRIES) {
             await sleep(delayMs);
             continue;
           }
-          throw new Error('Gemini rate limit reached. Please wait a moment.');
+          throw new Error('OpenAI rate limit exceeded. Please wait a minute and try again.');
         }
 
         if (!res.ok) {
-          if (res.status === 400 || res.status === 403)
-            throw new Error('Invalid Gemini API key. Get a free key at aistudio.google.com/apikey');
+          if (res.status === 401)
+            throw new Error('Invalid OpenAI API key. Please check your key in Settings.');
           const err = await res.text();
-          console.error('Gemini API error:', res.status, err);
+          console.error('OpenAI API error:', res.status, err);
           return null;
         }
 
         const data = await res.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+        return data.choices?.[0]?.message?.content ?? null;
       } catch (e) {
         if (
           e instanceof Error &&
@@ -694,54 +597,58 @@ export const GOAL_IMAGE_POOL: { url: string; keywords: string[] }[] = [
   { url: `${CDN_BASE}692dfc7e4cdd91a34e5e367b_1768963852567_f1acdb0c.jpg`, keywords: ['finance', 'savings', 'emergency fund', 'money'] },
 ];
 
+const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY as string | undefined;
+
+/** Fetch one high-quality image URL from Unsplash for a search query. Returns null if no key or no result. */
+async function fetchOneImageFromUnsplash(query: string): Promise<string | null> {
+  if (!UNSPLASH_ACCESS_KEY?.trim() || !query?.trim()) return null;
+  try {
+    const encoded = encodeURIComponent(query.trim().slice(0, 100));
+    const res = await fetch(
+      `https://api.unsplash.com/search/photos?query=${encoded}&client_id=${UNSPLASH_ACCESS_KEY.trim()}&per_page=1&orientation=landscape`,
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const url = data.results?.[0]?.urls?.regular ?? data.results?.[0]?.urls?.small ?? null;
+    return url;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Use AI to recommend one image per goal. Uses only images NOT already registered in mock/demo data,
- * and picks the best-matching image for each goal. No duplicate images across goals.
+ * Recommend one online image per goal by searching the web (Unsplash).
+ * Uses each goal's imageSearchQuery (from OpenAI) or builds a query from title, category, and aspiration.
+ * No database or curated pool — only online search. If Unsplash is not configured or returns no result,
+ * returns empty string for that goal so the UI can use a default (e.g. getDefaultImageForCategory).
  */
-export async function recommendImagesForGoals(goals: AIGeneratedGoal[]): Promise<string[]> {
+export async function recommendImagesForGoals(
+  goals: AIGeneratedGoal[],
+  aspiration?: string,
+): Promise<string[]> {
   if (goals.length === 0) return [];
-  const poolToUse = GOAL_IMAGE_POOL.filter((img) => !DEMO_REGISTERED_IMAGE_URLS.has(img.url));
-  if (poolToUse.length === 0) return goals.map(() => GOAL_IMAGE_POOL[0]?.url ?? '');
-  const imageList = poolToUse
-    .map((img, i) => `  ${i}: ${img.keywords.join(', ')}`)
-    .join('\n');
 
-  const goalsDesc = goals
-    .map(
-      (g, i) =>
-        `Goal ${i}: title="${g.title}" description="${g.description}" category=${g.category} steps=[${(g.steps ?? []).map((s) => s.title).join('; ')}]`,
-    )
-    .join('\n');
+  const aspirationPart = aspiration?.trim() ? ` ${aspiration}` : '';
+  const results: string[] = [];
 
-  const prompt = `You are matching goals to the best-suited image. We have ${poolToUse.length} images (index 0 to ${poolToUse.length - 1}) with these themes. Pick the image that best fits each goal.
-${imageList}
+  for (const g of goals) {
+    // Primary: use AI-generated imageSearchQuery; else build query from title + category + aspiration
+    const primaryQuery = (g.imageSearchQuery ?? `${g.title} ${g.category}${aspirationPart}`).trim();
+    let url = await fetchOneImageFromUnsplash(primaryQuery);
 
-Goals to match (one image index per goal; use each image at most once):
-${goalsDesc}
+    // Fallback: try category + title only if primary returns nothing
+    if (!url && primaryQuery !== `${g.category} ${g.title}`.trim()) {
+      url = await fetchOneImageFromUnsplash(`${g.category} ${g.title}`.trim());
+    }
+    // Last resort: category only
+    if (!url) {
+      url = await fetchOneImageFromUnsplash(g.category.trim() || 'goal achievement');
+    }
 
-Return a JSON array of ${goals.length} integers: the image index for goal 0, then goal 1, etc. Use only indices 0-${poolToUse.length - 1}. Prefer no duplicate indices when possible; if there are more goals than images, reuse the best-matching index. Choose the image that best suits each goal. Example: [0, 1, 2, 3]`;
-
-  const raw = await chatCompletion(prompt, { maxTokens: 150, temperature: 0.3 });
-  if (!raw) {
-    const used = new Set<number>();
-    return goals.map((g) => {
-      const match = poolToUse.findIndex((img, i) => !used.has(i) && img.keywords.some((k) => g.category.toLowerCase().includes(k) || g.title.toLowerCase().includes(k)));
-      const firstUnused = poolToUse.findIndex((_, i) => !used.has(i));
-      const idx = match >= 0 ? match : (firstUnused >= 0 ? firstUnused : 0);
-      used.add(idx);
-      return poolToUse[idx]?.url ?? poolToUse[0]?.url ?? GOAL_IMAGE_POOL[0].url;
-    });
+    results.push(url ?? '');
   }
 
-  const indices = parseJsonResponse<number[]>(raw);
-  if (!Array.isArray(indices) || indices.length !== goals.length) {
-    return goals.map((_, i) => poolToUse[i % poolToUse.length]?.url ?? poolToUse[0]?.url ?? GOAL_IMAGE_POOL[0].url);
-  }
-
-  return indices.map((idx) => {
-    const n = Math.max(0, Math.min(poolToUse.length - 1, Math.floor(Number(idx))));
-    return poolToUse[n]?.url ?? poolToUse[0]?.url ?? GOAL_IMAGE_POOL[0].url;
-  });
+  return results;
 }
 
 /* ------------------------------------------------------------------ */
@@ -763,14 +670,26 @@ export interface AIGeneratedGoal {
   targetDate: string; // YYYY-MM-DD
   budget: number;
   steps: AIGeneratedGoalStep[];
+  /** Short phrase (2-6 words) to find a matching stock photo, e.g. "marathon runner finish line" */
+  imageSearchQuery?: string;
 }
+
+const toISODate = (d: Date) => d.toISOString().split('T')[0];
 
 export async function generateGoalsWithOpenAI(
   occupation: string,
   aspiration: string,
   description: string,
 ): Promise<AIGeneratedGoal[] | null> {
+  const today = toISODate(new Date());
+
   const prompt = `You are a personal development coach. Based on the user's current occupation and aspiration, generate 1-3 concrete, achievable goals with steps.
+
+IMPORTANT - Dates:
+- Today's date is ${today}. You MUST use this as the reference.
+- All targetDate and every step's predictDate MUST be on or after ${today}. Never use past dates.
+- For timeline "30": targetDate about 30 days from today; for "60" about 60 days; "90" about 90 days; "1year" about 1 year from today; "5year" about 5 years from today.
+- Each step's predictDate must be between today and the goal's targetDate, in a logical order.
 
 User context:
 - Occupation: ${occupation}
@@ -783,31 +702,33 @@ For each goal, provide:
 - timeline: one of "30", "60", "90", "1year", "5year"
 - priority: "high", "medium", or "low"
 - category: e.g. Career, Health, Finance, Education, Personal, Business
-- targetDate: ISO date YYYY-MM-DD (realistic deadline)
+- targetDate: ISO date YYYY-MM-DD (realistic future deadline, on or after ${today})
 - budget: total estimated cost in USD (number, 0 if free)
-- steps: array of 3-5 steps, each with title, predictDate (YYYY-MM-DD), predictPrice (number, optional)
+- steps: array of 3-5 steps, each with title, predictDate (YYYY-MM-DD, must be >= ${today} and <= targetDate), predictPrice (number, optional)
+- imageSearchQuery: a short phrase (2-6 words in English) to find a stock photo that matches this goal and the user's aspiration. Examples: "marathon runner finish line", "business team meeting", "person meditating nature", "graduation cap diploma"
 
-Respond with a JSON array only, no markdown. Example:
-[
-  {
-    "title": "Land My Dream Job",
-    "description": "Prepare and secure a role that aligns with my skills.",
-    "timeline": "90",
-    "priority": "high",
-    "category": "Career",
-    "targetDate": "2026-05-15",
-    "budget": 500,
-    "steps": [
-      { "title": "Polish resume and LinkedIn", "predictDate": "2026-02-28", "predictPrice": 0 },
-      { "title": "Apply to 20 target companies", "predictDate": "2026-04-15", "predictPrice": 0 }
-    ]
-  }
-]`;
+Respond with a JSON array only, no markdown. Use real YYYY-MM-DD dates for targetDate and each step predictDate, all on or after ${today}.`;
 
-  const raw = await chatCompletion(prompt, { maxTokens: 1200, temperature: 0.7 });
+  const raw = await chatCompletion(prompt, { maxTokens: 1400, temperature: 0.7 });
   if (!raw) return null;
   const parsed = parseJsonResponse<AIGeneratedGoal[]>(raw);
-  return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+  if (!Array.isArray(parsed) || parsed.length === 0) return null;
+
+  // Enforce future dates: clamp any past date to today or later
+  const clampToTodayOrFuture = (dateStr: string) => {
+    if (!dateStr || dateStr.length < 10) return today;
+    const d = dateStr.slice(0, 10);
+    return d < today ? today : d;
+  };
+
+  return parsed.map((g) => ({
+    ...g,
+    targetDate: clampToTodayOrFuture(g.targetDate),
+    steps: (g.steps ?? []).map((s) => ({
+      ...s,
+      predictDate: clampToTodayOrFuture(s.predictDate),
+    })),
+  }));
 }
 
 /* ------------------------------------------------------------------ */

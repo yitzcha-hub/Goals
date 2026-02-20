@@ -63,6 +63,7 @@ export function DemoOnboardingModals({
 }: DemoOnboardingModalsProps) {
   const [step, setStep] = useState<OnboardingStep>('occupation');
   const [occupation, setOccupation] = useState('');
+  const [whatYouDo, setWhatYouDo] = useState('');
   const [aspiration, setAspiration] = useState('');
   const [aspirationCustom, setAspirationCustom] = useState('');
   const [description, setDescription] = useState('');
@@ -99,15 +100,16 @@ export function DemoOnboardingModals({
   const handleRecommend = async () => {
     const asp = aspiration || aspirationCustom.trim();
     if (!asp) return;
+    const fullDescription = [description, whatYouDo].filter(Boolean).join('. ');
     setIsGenerating(true);
     setRecommendError(null);
     setStep('recommended-result');
     try {
       if (onRecommendRequest) {
-        const goals = await onRecommendRequest(occupation || 'other', asp, description);
+        const goals = await onRecommendRequest(occupation || 'other', asp, fullDescription);
         setGeneratedGoals(goals ?? []);
       } else {
-        const goals = generateRecommendedGoals(occupation || 'other', asp, description);
+        const goals = generateRecommendedGoals(occupation || 'other', asp, fullDescription);
         setGeneratedGoals(goals);
       }
     } catch (e: unknown) {
@@ -132,6 +134,7 @@ export function DemoOnboardingModals({
   const handleClose = () => {
     setStep('occupation');
     setOccupation('');
+    setWhatYouDo('');
     setAspiration('');
     setAspirationCustom('');
     setDescription('');
@@ -150,18 +153,29 @@ export function DemoOnboardingModals({
             <DialogTitle>What is your current occupation?</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <Select value={occupation} onValueChange={setOccupation}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select occupation" />
-              </SelectTrigger>
-              <SelectContent>
-                {OCCUPATIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label>Select occupation</Label>
+              <Select value={occupation} onValueChange={setOccupation}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select occupation" />
+                </SelectTrigger>
+                <SelectContent>
+                  {OCCUPATIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>What you do (optional)</Label>
+              <Input
+                placeholder="e.g. Software engineer, ICU nurse, Field sales"
+                value={whatYouDo}
+                onChange={(e) => setWhatYouDo(e.target.value)}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleClose}>Cancel</Button>

@@ -19,10 +19,10 @@ import DemoProgressTimeline from '@/components/DemoProgressTimeline';
 import PricingSection from '@/components/PricingSection';
 import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 import { DemoOnboardingModals } from '@/components/DemoOnboardingModals';
-import { getMockTodosForDay, getDefaultImageForCategory, type DemoGoalGenerated } from '@/data/demoOnboardingMockData';
-import { generateGoalsWithOpenAI, recommendImagesForGoals } from '@/lib/openaiProgressAnalysis';
+import { getMockTodosForDay, type DemoGoalGenerated } from '@/data/demoOnboardingMockData';
+import { GratitudeJournalSections } from '@/components/GratitudeJournalSections';
 import demoHeroBg from '@/assets/images/Demo-bg.png';
-import { BookOpen, PenLine } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 const DEMO_STORAGE_GOALS = 'goals_app_demo_layout_goals';
 const DEMO_STORAGE_TASKS = 'goals_app_demo_layout_tasks';
@@ -241,12 +241,11 @@ const DemoLayout: React.FC = () => {
   };
 
 
-  const [gratitudeEntries, setGratitudeEntries] = useState([
-    { id: '1', content: "I'm grateful for my supportive family who believes in my dreams", date: '2026-01-18' },
-    { id: '2', content: "Thankful for my health and the ability to pursue my goals", date: '2026-01-17' },
-    { id: '3', content: "Grateful for this beautiful morning and a fresh start", date: '2026-01-16' }
+  const [gratitudeEntries, setGratitudeEntries] = useState<{ id: string; content: string; date: string; sectionKey?: string; sectionLabel?: string }[]>([
+    { id: '1', content: "I'm grateful for my supportive family who believes in my dreams", date: '2026-01-18', sectionKey: 'family-friends-loved-ones' },
+    { id: '2', content: "Thankful for my health and the ability to pursue my goals", date: '2026-01-17', sectionKey: 'good-health' },
+    { id: '3', content: "Grateful for this beautiful morning and a fresh start", date: '2026-01-16', sectionKey: 'moments-of-joy' }
   ]);
-  const [newGratitude, setNewGratitude] = useState('');
 
   const handleAddGoal = (newGoal: any) => {
     setDemoGoals(prev => [...prev, {
@@ -278,37 +277,6 @@ const DemoLayout: React.FC = () => {
     ]);
     setOnboardingOpen(false);
     document.getElementById('demo-dashboard')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleRecommendRequest = async (
-    occupation: string,
-    aspiration: string,
-    description: string,
-  ): Promise<DemoGoalGenerated[]> => {
-    const result = await generateGoalsWithOpenAI(occupation, aspiration, description);
-    if (!result || result.length === 0) return [];
-    const images = await recommendImagesForGoals(result);
-    const id = () => `ai-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    return result.map((g, i) => ({
-      id: id(),
-      title: g.title,
-      description: g.description,
-      progress: 0,
-      timeline: g.timeline,
-      priority: g.priority,
-      category: g.category,
-      targetDate: g.targetDate,
-      image: images[i] ?? getDefaultImageForCategory(g.category),
-      budget: g.budget,
-      spent: 0,
-      steps: (g.steps ?? []).map((s, j) => ({
-        id: `s${j}-${id()}`,
-        title: s.title,
-        completed: false,
-        predictDate: s.predictDate,
-        predictPrice: s.predictPrice,
-      })),
-    }));
   };
 
   const handleAIGenerateTodos = (day: 'today' | 'tomorrow') => {
@@ -347,22 +315,24 @@ const DemoLayout: React.FC = () => {
 
   if (selectedGoal) {
     return (
-      <DemoGoalDetailView 
-        goal={selectedGoal} 
-        onBack={() => setSelectedGoal(null)}
-        onUpdateGoal={handleUpdateGoal}
-      />
+      <div className="w-full max-w-[100vw] overflow-x-hidden box-border">
+        <DemoGoalDetailView 
+          goal={selectedGoal} 
+          onBack={() => setSelectedGoal(null)}
+          onUpdateGoal={handleUpdateGoal}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+    <div className="min-h-screen landing w-full max-w-[100vw] overflow-x-hidden box-border" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
       {/* Demo Banner */}
-      <div className="py-3 px-4 text-center text-white flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4" style={{ backgroundColor: 'var(--landing-primary)' }}>
-        <p className="font-semibold flex items-center justify-center gap-2">
-          <Flame className="h-5 w-5" />
-          Interactive Demo — Try the app with sample goals and tasks
-          <Sparkles className="h-4 w-4 ml-1" />
+      <div className="py-3 px-4 text-center text-white flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 flex-wrap" style={{ backgroundColor: 'var(--landing-primary)' }}>
+        <p className="font-semibold flex items-center justify-center gap-2 min-w-0 flex-1 basis-full sm:basis-auto">
+          <Flame className="h-5 w-5 shrink-0" />
+          <span className="break-words">Interactive Demo — Try the app with sample goals and tasks</span>
+          <Sparkles className="h-4 w-4 ml-1 shrink-0" />
         </p>
         <Button
           variant="secondary"
@@ -372,9 +342,9 @@ const DemoLayout: React.FC = () => {
             setDemoGoals(DEFAULT_DEMO_GOALS);
             setDemoTasks(DEFAULT_DEMO_TASKS as DemoTask[]);
             setGratitudeEntries([
-              { id: '1', content: "I'm grateful for my supportive family who believes in my dreams", date: '2026-01-18' },
-              { id: '2', content: "Thankful for my health and the ability to pursue my goals", date: '2026-01-17' },
-              { id: '3', content: "Grateful for this beautiful morning and a fresh start", date: '2026-01-16' }
+              { id: '1', content: "I'm grateful for my supportive family who believes in my dreams", date: '2026-01-18', sectionKey: 'family-friends-loved-ones' },
+              { id: '2', content: "Thankful for my health and the ability to pursue my goals", date: '2026-01-17', sectionKey: 'good-health' },
+              { id: '3', content: "Grateful for this beautiful morning and a fresh start", date: '2026-01-16', sectionKey: 'moments-of-joy' }
             ]);
           }}
         >
@@ -386,7 +356,7 @@ const DemoLayout: React.FC = () => {
       {/* Hero Section — matches Features/Pricing/About pattern */}
       <section
         id="hero"
-        className="relative py-20 sm:py-28 px-4 min-h-[28rem] flex items-center justify-center overflow-hidden"
+        className="relative py-20 sm:py-28 px-4 min-h-[28rem] flex items-center justify-center overflow-hidden w-full max-w-[100vw]"
       >
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -395,9 +365,9 @@ const DemoLayout: React.FC = () => {
         />
         <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.85 }} aria-hidden />
         <HeroFloatingCircles />
-        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
+        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6 w-full min-w-0">
           <h1
-            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up"
+            className="text-3xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up break-words"
             style={{
               backgroundImage: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)',
               WebkitBackgroundClip: 'text',
@@ -462,7 +432,6 @@ const DemoLayout: React.FC = () => {
         onClose={() => setOnboardingOpen(false)}
         onCompleteWithOwnPlan={() => setOnboardingOpen(false)}
         onCompleteWithRecommended={handleOnboardingRecommended}
-        onRecommendRequest={handleRecommendRequest}
         acceptButtonLabel="Add these to my demo"
       />
 
@@ -471,8 +440,8 @@ const DemoLayout: React.FC = () => {
 
 
       {/* Stats Bar */}
-      <section className="py-8 px-4 sm:px-6 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      <section className="py-8 px-4 sm:px-6 border-t overflow-x-hidden" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-center min-w-0">
           <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
             <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{demoGoals.length}</div>
             <div className="text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Active Goals</div>
@@ -493,14 +462,14 @@ const DemoLayout: React.FC = () => {
       </section>
 
       {/* Demo Dashboard */}
-      <section id="demo-dashboard" className="py-12 px-4 sm:px-6 border-t scroll-mt-24" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
-        <div className="max-w-6xl mx-auto space-y-12">
+      <section id="demo-dashboard" className="py-12 px-4 sm:px-6 border-t scroll-mt-24 overflow-x-hidden" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
+        <div className="max-w-6xl mx-auto space-y-12 min-w-0">
           {/* Goals Grid */}
-          <div>
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <Target className="h-8 w-8" style={{ color: 'var(--landing-primary)' }} />
-                <h2 className="text-3xl font-bold" style={{ color: 'var(--landing-text)' }}>Your Goals (0-10 Scale)</h2>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
+              <div className="flex items-center gap-3 min-w-0">
+                <Target className="h-8 w-8 shrink-0" style={{ color: 'var(--landing-primary)' }} />
+                <h2 className="text-2xl sm:text-3xl font-bold truncate min-w-0" style={{ color: 'var(--landing-text)' }}>Your Goals (0-10 Scale)</h2>
               </div>
               <DemoGoalDialog
                 trigger={
@@ -578,15 +547,15 @@ const DemoLayout: React.FC = () => {
           {/* Two Column Layout */}
           <div className="grid lg:grid-cols-2 gap-8">
             {/* To-Do List by day */}
-            <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
-                    <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>To-Do List</h3>
-                    <Badge style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>By day · +5 pts each</Badge>
+            <Card className="shadow-lg feature-card-shadow min-w-0 overflow-hidden" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+              <CardContent className="p-6 min-w-0">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3 min-w-0 flex-wrap">
+                    <CheckCircle2 className="h-7 w-7 shrink-0" style={{ color: 'var(--landing-primary)' }} />
+                    <h3 className="text-xl sm:text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>To-Do List</h3>
+                    <Badge className="shrink-0" style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>By day · +5 pts each</Badge>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       size="sm"
@@ -708,11 +677,11 @@ const DemoLayout: React.FC = () => {
                       placeholder="Add a task..."
                       value={newTaskTitle}
                       onChange={(e) => setNewTaskTitle(e.target.value)}
-                      className="flex-1 min-w-[140px]"
+                      className="flex-1 min-w-0 w-full sm:w-auto sm:min-w-[120px] max-w-full"
                       style={{ borderColor: 'var(--landing-border)' }}
                     />
                     <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
-                      <SelectTrigger className="w-[110px]" style={{ borderColor: 'var(--landing-border)' }}>
+                      <SelectTrigger className="w-full sm:w-[110px] shrink-0" style={{ borderColor: 'var(--landing-border)' }}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -724,10 +693,10 @@ const DemoLayout: React.FC = () => {
                       placeholder="Time (e.g. 09:00)"
                       value={newTaskTimeSlot}
                       onChange={(e) => setNewTaskTimeSlot(e.target.value)}
-                      className="w-[100px]"
+                      className="w-full sm:w-[100px] min-w-0 max-w-[120px] sm:max-w-none"
                       style={{ borderColor: 'var(--landing-border)' }}
                     />
-                    <Button type="submit" size="sm" className="hero-cta-primary" disabled={!newTaskTitle.trim()}>
+                    <Button type="submit" size="sm" className="hero-cta-primary shrink-0 w-full sm:w-auto" disabled={!newTaskTitle.trim()}>
                       <Plus className="h-4 w-4 mr-1" />
                       Add
                     </Button>
@@ -736,46 +705,25 @@ const DemoLayout: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Gratitude Section */}
-            <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <Heart className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
-                  <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>Gratitude Journal</h3>
-                </div>
-                <div className="space-y-4 mb-4">
-                  {gratitudeEntries.map(entry => (
-                    <div key={entry.id} className="p-4 rounded-xl border" style={{ backgroundColor: 'white', borderColor: 'var(--landing-border)' }}>
-                      <p style={{ color: 'var(--landing-text)' }}>{entry.content}</p>
-                      <p className="text-xs mt-2 opacity-70" style={{ color: 'var(--landing-text)' }}>{new Date(entry.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-                    </div>
-                  ))}
-                </div>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const content = newGratitude.trim();
-                    if (content) {
-                      setGratitudeEntries([...gratitudeEntries, { id: Date.now().toString(), content, date: new Date().toISOString().slice(0, 10) }]);
-                      setNewGratitude('');
-                    }
-                  }}
-                  className="flex gap-2"
-                >
-                  <Input
-                    placeholder="What are you grateful for today?"
-                    value={newGratitude}
-                    onChange={(e) => setNewGratitude(e.target.value)}
-                    style={{ borderColor: 'var(--landing-border)' }}
-                    className="flex-1"
-                  />
-                  <Button type="submit" size="sm" className="hero-cta-primary" disabled={!newGratitude.trim()}>
-                    <PenLine className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            {/* Gratitude Journal — 10 sections + custom, works on computer, tablet, phone */}
+            <GratitudeJournalSections
+              date={todayIso()}
+              entries={gratitudeEntries}
+              onSaveSection={(date, sectionKey, sectionLabel, content) => {
+                setGratitudeEntries(prev => {
+                  const existing = prev.find(e => e.date === date && (e.sectionKey ?? '') === sectionKey);
+                  if (existing) {
+                    return prev.map(e => e.id === existing.id ? { ...e, content } : e);
+                  }
+                  if (!content.trim()) return prev;
+                  return [{ id: crypto.randomUUID(), content, date, sectionKey, sectionLabel: sectionLabel ?? undefined }, ...prev];
+                });
+              }}
+              onRemoveCustomSection={(date, sectionKey) => {
+                setGratitudeEntries(prev => prev.filter(e => !(e.date === date && e.sectionKey === sectionKey)));
+              }}
+              useLandingStyles
+            />
           </div>
 
           {/* Calendar & Written Plan Row */}
@@ -789,15 +737,15 @@ const DemoLayout: React.FC = () => {
                 <p className="text-sm opacity-90 mb-4" style={{ color: 'var(--landing-text)' }}>
                   In the full app, goals are attached to your calendar with reminders—so you revisit them when it matters.
                 </p>
-                <div className="p-4 rounded-xl border space-y-2" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+                <div className="p-4 rounded-xl border space-y-2 min-w-0 overflow-hidden" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
                   {[
                     { date: 'Feb 18', goal: 'Run a Marathon — 90-day check-in' },
                     { date: 'Feb 20', goal: 'Build Deeper Connections — Family time' },
                     { date: 'Mar 15', goal: 'Launch Business — First client milestone' }
                   ].map((item, i) => (
-                    <div key={i} className="flex gap-3 text-sm">
+                    <div key={i} className="flex gap-3 text-sm min-w-0">
                       <span className="font-semibold shrink-0" style={{ color: 'var(--landing-primary)' }}>{item.date}</span>
-                      <span style={{ color: 'var(--landing-text)' }}>{item.goal}</span>
+                      <span className="min-w-0 break-words" style={{ color: 'var(--landing-text)' }}>{item.goal}</span>
                     </div>
                   ))}
                 </div>
@@ -836,9 +784,9 @@ const DemoLayout: React.FC = () => {
           <DemoTestimonials />
 
           {/* Feature Highlights */}
-          <div className="rounded-2xl p-8 shadow-lg border" style={{ backgroundColor: 'white', borderColor: 'var(--landing-border)' }}>
-            <h3 className="text-2xl font-bold mb-6 text-center" style={{ color: 'var(--landing-text)' }}>Why Goals and Development?</h3>
-            <div className="grid md:grid-cols-4 gap-6">
+          <div className="rounded-2xl p-6 sm:p-8 shadow-lg border min-w-0 overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--landing-border)' }}>
+            <h3 className="text-xl sm:text-2xl font-bold mb-6 text-center" style={{ color: 'var(--landing-text)' }}>Why Goals and Development?</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 min-w-0">
               <div className="text-center p-6 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
                 <Calendar className="h-10 w-10 mx-auto mb-3" style={{ color: 'var(--landing-primary)' }} />
                 <h4 className="font-semibold text-lg mb-2" style={{ color: 'var(--landing-text)' }}>Goal Timelines</h4>
@@ -868,8 +816,8 @@ const DemoLayout: React.FC = () => {
           </div>
 
           {/* CTA Section — matches About/Features/Pricing pattern */}
-          <section className="py-20 px-4">
-            <div className="max-w-6xl mx-auto text-center rounded-3xl p-10 sm:p-14 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)' }}>
+          <section className="py-20 px-4 overflow-x-hidden">
+            <div className="max-w-6xl mx-auto text-center rounded-3xl p-6 sm:p-10 md:p-14 relative overflow-hidden min-w-0" style={{ background: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)' }}>
               <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: 'white' }} aria-hidden />
               <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: 'white' }} aria-hidden />
               <div className="relative z-10">

@@ -176,7 +176,60 @@ const PricingSection: React.FC = () => {
   return (
     <section className="py-16 px-4 sm:px-6 bg-gradient-to-br from-green-50 via-lime-50 to-emerald-50">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
+        <section id="invite-code" className="max-w-md mx-auto mb-10 scroll-mt-24">
+          <Card className="border border-green-200 bg-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Gift className="h-5 w-5 text-green-600" />
+                Redeem invite code
+              </CardTitle>
+              <CardDescription>Influencer or partner code? Enter it here for lifetime access.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {!user ? (
+                <AuthModal
+                  trigger={<Button variant="outline" className="w-full bg-green-50 border-green-200 text-green-800 hover:bg-green-100">Sign in to redeem your code</Button>}
+                  defaultMode="login"
+                />
+              ) : redeemSuccess ? (
+                <p className="text-sm font-medium text-green-700">Lifetime membership activated. You’re all set!</p>
+              ) : (
+                <>
+                  <Input
+                    placeholder="Enter code"
+                    value={inviteCode}
+                    onChange={(e) => { setInviteCode(e.target.value); setRedeemError(null); }}
+                    className="uppercase"
+                  />
+                  {redeemError && <p className="text-sm text-red-600">{redeemError}</p>}
+                  <Button
+                    onClick={handleRedeemCode}
+                    disabled={redeemLoading || !inviteCode.trim()}
+                    className="w-full"
+                    variant="secondary"
+                  >
+                    {redeemLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Redeem code
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        <p className="text-center text-sm text-gray-500 mb-6">
+          Have an invite code?{' '}
+          <a href="/#invite-code" className="text-green-600 font-medium hover:underline">
+            Redeem it here
+          </a>
+          .{' '}
+          <a href="/invite-codes" className="text-green-600 font-medium hover:underline">
+            Access invite codes
+          </a>
+          .
+        </p>
+
+        <div className="text-center mb-6">
           <Badge className="mb-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0">
             <Flame className="h-3 w-3 mr-1" />
             7 Day FREE Trial
@@ -375,59 +428,6 @@ const PricingSection: React.FC = () => {
 
         <p className="text-center text-sm text-gray-500 mt-8">
           All plans include a 7-day free trial. Cancel anytime. No credit card required to start.
-        </p>
-
-        <section id="invite-code" className="max-w-md mx-auto mt-10 scroll-mt-24">
-          <Card className="border border-green-200 bg-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Gift className="h-5 w-5 text-green-600" />
-                Redeem invite code
-              </CardTitle>
-              <CardDescription>Influencer or partner code? Enter it here for lifetime access.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {!user ? (
-                <AuthModal
-                  trigger={<Button variant="outline" className="w-full">Sign in to redeem your code</Button>}
-                  defaultMode="signup"
-                />
-              ) : redeemSuccess ? (
-                <p className="text-sm font-medium text-green-700">Lifetime membership activated. You’re all set!</p>
-              ) : (
-                <>
-                  <Input
-                    placeholder="Enter code"
-                    value={inviteCode}
-                    onChange={(e) => { setInviteCode(e.target.value); setRedeemError(null); }}
-                    className="uppercase"
-                  />
-                  {redeemError && <p className="text-sm text-red-600">{redeemError}</p>}
-                  <Button
-                    onClick={handleRedeemCode}
-                    disabled={redeemLoading || !inviteCode.trim()}
-                    className="w-full"
-                    variant="secondary"
-                  >
-                    {redeemLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                    Redeem code
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </section>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Have an invite code?{' '}
-          <a href="/#invite-code" className="text-green-600 font-medium hover:underline">
-            Redeem it here
-          </a>
-          .{' '}
-          <a href="/invite-codes" className="text-green-600 font-medium hover:underline">
-            Access invite codes
-          </a>
-          .
         </p>
 
       </div>

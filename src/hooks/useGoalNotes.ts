@@ -2,11 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
+export type GoalNotePhase = 1 | 2 | 3 | 4;
+
 export interface GoalNote {
   id: string;
   content: string;
   date: string;
   createdAt: string;
+  phase: GoalNotePhase;
 }
 
 export function useGoalNotes(goalId: string | null) {
@@ -24,17 +27,18 @@ export function useGoalNotes(goalId: string | null) {
     try {
       const { data, error } = await supabase
         .from('goal_notes')
-        .select('id, content, date, created_at')
+        .select('id, content, date, created_at, phase')
         .eq('goal_id', goalId)
         .eq('user_id', user.id)
         .order('date', { ascending: false });
       if (error) throw error;
       setNotes(
-        (data ?? []).map((r: { id: string; content: string; date: string; created_at: string }) => ({
+        (data ?? []).map((r: { id: string; content: string; date: string; created_at: string; phase?: number }) => ({
           id: r.id,
           content: r.content,
           date: r.date,
           createdAt: r.created_at,
+          phase: (r.phase >= 1 && r.phase <= 4 ? r.phase : 1) as GoalNotePhase,
         }))
       );
     } catch (e) {
@@ -50,16 +54,17 @@ export function useGoalNotes(goalId: string | null) {
   }, [load]);
 
   const addNote = useCallback(
-    async (content: string, date: string) => {
+    async (content: string, date: string, phase: GoalNotePhase = 1) => {
       if (!user || !goalId) return;
       const { data, error } = await supabase
         .from('goal_notes')
-        .insert({ goal_id: goalId, user_id: user.id, content, date })
-        .select('id, content, date, created_at')
+        .insert({ goal_id: goalId, user_id: user.id, content, date, phase })
+        .select('id, content, date, created_at, phase')
         .single();
       if (error) throw error;
+      const p = (data.phase >= 1 && data.phase <= 4 ? data.phase : 1) as GoalNotePhase;
       setNotes((prev) => [
-        { id: data.id, content: data.content, date: data.date, createdAt: data.created_at },
+        { id: data.id, content: data.content, date: data.date, createdAt: data.created_at, phase: p },
         ...prev,
       ]);
     },

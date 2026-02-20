@@ -75,7 +75,7 @@ const App = () => (
               <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
               <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+              <Route path="/admin" element={<Admin />} />
               <Route path="/invite-codes" element={<ProtectedRoute><InviteCodes /></ProtectedRoute>} />
 
 

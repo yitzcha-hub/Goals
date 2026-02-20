@@ -1,14 +1,36 @@
 import { createClient } from '@supabase/supabase-js';
 
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'admin@example.com').split(',').map((e) => e.trim().toLowerCase());
+function normalizeEmail(email: string | undefined): string {
+  if (!email || typeof email !== 'string') return '';
+  return email.trim().toLowerCase();
+}
 
-function isAdmin(email: string | undefined): boolean {
-  if (!email) return false;
-  return ADMIN_EMAILS.includes(email.toLowerCase()) || email.toLowerCase().includes('admin');
+async function isAdmin(
+  supabaseService: ReturnType<typeof createClient>,
+  email: string | undefined
+): Promise<boolean> {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return false;
+  const { data: rows, error } = await supabaseService
+    .from('admins')
+    .select('id, email');
+  if (error) {
+    console.error('Admins lookup error:', error);
+    return false;
+  }
+  const list = (rows ?? []) as { id: string; email: string }[];
+  return list.some((row) => normalizeEmail(row.email) === normalized);
+}
+
+/** Generate a random 10-digit numeric string (no leading zero for clarity). */
+function random10DigitCode(): string {
+  const first = Math.floor(Math.random() * 9) + 1;
+  const rest = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10)).join('');
+  return first + rest;
 }
 
 export default async function handler(
-  req: { method?: string; headers?: Record<string, string | string[] | undefined>; body?: { code?: string; label?: string; assigned_to?: string; uses_remaining?: number } },
+  req: { method?: string; headers?: Record<string, string | string[] | undefined>; body?: { code?: string; label?: string; assigned_to?: string; uses_remaining?: number; count?: number } },
   res: { status: (n: number) => { json: (o: unknown) => void }; setHeader: (k: string, v: string) => void }
 ) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -42,12 +64,23 @@ export default async function handler(
 
   const anonClient = createClient(supabaseUrl, supabaseAnonKey);
   const { data: { user }, error: userError } = await anonClient.auth.getUser(token);
-  if (userError || !user || !isAdmin(user.email)) {
-    res.status(403).json({ error: 'Admin access required' });
+  if (userError || !user) {
+    res.status(401).json({ error: 'Invalid or missing token' });
     return;
   }
 
+  const emailToCheck = (user.email ?? (user.user_metadata?.email as string | undefined) ?? '').trim() || undefined;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const adminOk = await isAdmin(supabase, emailToCheck);
+  if (!adminOk) {
+    res.status(403).json({
+      error: 'Admin access required',
+      hint: emailToCheck
+        ? `Add this email to public.admins in Supabase: ${emailToCheck}`
+        : 'Your account has no email; add your admin email to public.admins.',
+    });
+    return;
+  }
 
   if (req.method === 'GET') {
     const { data, error } = await supabase
@@ -64,11 +97,59 @@ export default async function handler(
     return;
   }
 
-  // POST: create invite code
+  const count = typeof req.body?.count === 'number' ? Math.min(Math.max(1, Math.floor(req.body.count)), 100) : null;
+
+  if (count != null && count > 0) {
+    // Generate N random 10-digit single-use codes (no duplicates with existing)
+    const { data: existingRows } = await supabase.from('invite_codes').select('code');
+    const existingSet = new Set((existingRows ?? []).map((r: { code: string }) => r.code));
+
+    const toInsert: string[] = [];
+    let attempts = 0;
+    const maxAttempts = count * 50;
+    while (toInsert.length < count && attempts < maxAttempts) {
+      attempts++;
+      const c = random10DigitCode();
+      if (!existingSet.has(c) && !toInsert.includes(c)) {
+        toInsert.push(c);
+        existingSet.add(c);
+      }
+    }
+
+    if (toInsert.length === 0) {
+      res.status(500).json({ error: 'Could not generate unique codes; try a smaller count' });
+      return;
+    }
+
+    const rows = toInsert.map((code) => ({
+      code,
+      label: null,
+      assigned_to: null,
+      is_lifetime: true,
+      uses_remaining: 1,
+      created_by: user.id,
+    }));
+
+    const { data: inserted, error } = await supabase
+      .from('invite_codes')
+      .insert(rows)
+      .select('id, code, created_at');
+
+    if (error) {
+      console.error('Invite codes bulk create error:', error);
+      res.status(500).json({ error: 'Failed to create invite codes' });
+      return;
+    }
+
+    res.status(200).json({ codes: inserted ?? [], created: (inserted ?? []).length });
+    return;
+  }
+
+  // POST: create single invite code (manual)
   const code = typeof req.body?.code === 'string' ? req.body.code.trim().toUpperCase() : '';
   const label = typeof req.body?.label === 'string' ? req.body.label.trim() : '';
   const assignedTo = typeof req.body?.assigned_to === 'string' ? req.body.assigned_to.trim() || null : null;
-  const usesRemaining = typeof req.body?.uses_remaining === 'number' ? req.body.uses_remaining : null;
+  const usesRemaining = typeof req.body?.uses_remaining === 'number' ? req.body.uses_remaining : 1;
 
   if (!code || code.length < 4) {
     res.status(400).json({ error: 'Code must be at least 4 characters' });

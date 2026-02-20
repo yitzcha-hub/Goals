@@ -22,18 +22,17 @@ export default function InviteCodes() {
   const [codes, setCodes] = useState<InviteCodeRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isAdmin = user?.email?.toLowerCase().includes('admin') ?? false;
-
   useEffect(() => {
     if (!user) {
       setLoading(false);
       return;
     }
-    if (isAdmin) {
-      navigate('/admin#invite-codes', { replace: true });
-      return;
-    }
     (async () => {
+      const { data: adminRow } = await supabase.from('admins').select('id').maybeSingle();
+      if (adminRow) {
+        navigate('/admin#invite-codes', { replace: true });
+        return;
+      }
       const { data, error } = await supabase
         .from('invite_codes')
         .select('id, code, label, used_count, uses_remaining, created_at')
@@ -41,7 +40,7 @@ export default function InviteCodes() {
       if (!error) setCodes(data ?? []);
       setLoading(false);
     })();
-  }, [user, isAdmin, navigate]);
+  }, [user, navigate]);
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);

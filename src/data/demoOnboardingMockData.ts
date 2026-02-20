@@ -4,44 +4,58 @@
  */
 
 export const OCCUPATIONS = [
-  { value: 'student', label: 'Student' },
-  { value: 'entrepreneur', label: 'Entrepreneur' },
-  { value: 'employee', label: 'Employee' },
-  { value: 'freelancer', label: 'Freelancer' },
-  { value: 'homemaker', label: 'Homemaker' },
+  { value: 'engineer', label: 'Engineer' },
+  { value: 'process-tech', label: 'Process Tech' },
+  { value: 'production-worker', label: 'Production worker' },
+  { value: 'office-job', label: 'Office Job' },
+  { value: 'sales-marketing', label: 'Sales/Marketing' },
+  { value: 'doctor', label: 'Doctor' },
+  { value: 'nurse', label: 'Nurse' },
   { value: 'other', label: 'Other' },
 ] as const;
 
 export const ASPIRATION_PRESETS: Record<string, { value: string; label: string }[]> = {
-  student: [
+  engineer: [
     { value: 'land-dream-job', label: 'Land my dream job' },
-    { value: 'graduate-with-honors', label: 'Graduate with honors' },
-    { value: 'start-side-business', label: 'Start a side business' },
-    { value: 'learn-skill', label: 'Master a new skill' },
-  ],
-  entrepreneur: [
-    { value: 'scale-business', label: 'Scale my business' },
-    { value: 'launch-product', label: 'Launch a new product' },
-    { value: 'hire-team', label: 'Build a small team' },
-    { value: 'reach-revenue', label: 'Hit revenue milestone' },
-  ],
-  employee: [
     { value: 'get-promotion', label: 'Get promoted' },
+    { value: 'learn-leadership', label: 'Develop leadership skills' },
     { value: 'switch-career', label: 'Switch career path' },
+  ],
+  'process-tech': [
+    { value: 'get-promotion', label: 'Get promoted' },
+    { value: 'learn-skill', label: 'Master a new skill' },
+    { value: 'personal-growth', label: 'Personal growth' },
+    { value: 'work-remote', label: 'Move to remote work' },
+  ],
+  'production-worker': [
+    { value: 'get-promotion', label: 'Get promoted' },
+    { value: 'learn-skill', label: 'Master a new skill' },
+    { value: 'personal-growth', label: 'Personal growth' },
+    { value: 'switch-career', label: 'Switch career path' },
+  ],
+  'office-job': [
+    { value: 'get-promotion', label: 'Get promoted' },
     { value: 'work-remote', label: 'Move to remote work' },
     { value: 'learn-leadership', label: 'Develop leadership skills' },
+    { value: 'personal-growth', label: 'Personal growth' },
   ],
-  freelancer: [
-    { value: 'double-clients', label: 'Double my client base' },
-    { value: 'raise-rates', label: 'Raise my rates' },
-    { value: 'create-product', label: 'Create a digital product' },
+  'sales-marketing': [
+    { value: 'reach-revenue', label: 'Hit revenue milestone' },
+    { value: 'scale-business', label: 'Scale my business' },
+    { value: 'double-clients', label: 'Grow client base' },
+    { value: 'get-promotion', label: 'Get promoted' },
+  ],
+  doctor: [
+    { value: 'get-promotion', label: 'Advance in my specialty' },
+    { value: 'personal-growth', label: 'Personal growth' },
     { value: 'work-life-balance', label: 'Better work-life balance' },
+    { value: 'health-goal', label: 'Health goal' },
   ],
-  homemaker: [
-    { value: 'return-to-work', label: 'Return to work' },
-    { value: 'start-business', label: 'Start a home business' },
-    { value: 'learn-new-skill', label: 'Learn a new skill' },
-    { value: 'fitness-goal', label: 'Reach a fitness goal' },
+  nurse: [
+    { value: 'get-promotion', label: 'Advance my nursing career' },
+    { value: 'learn-skill', label: 'Master a new skill' },
+    { value: 'work-life-balance', label: 'Better work-life balance' },
+    { value: 'personal-growth', label: 'Personal growth' },
   ],
   other: [
     { value: 'personal-growth', label: 'Personal growth' },
