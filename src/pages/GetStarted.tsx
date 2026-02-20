@@ -42,7 +42,7 @@ const GetStarted: React.FC = () => {
       recommendations: template.bestPractices || [],
     });
     toast({ title: 'Goal added!', description: `"${template.title}" has been added to your goals.` });
-    navigate('/goals');
+    navigate('/');
   };
 
   return (
@@ -74,7 +74,7 @@ const GetStarted: React.FC = () => {
           <div className="max-w-2xl mx-auto text-center">
             <Button
               size="lg"
-              onClick={() => navigate('/goals')}
+              onClick={() => navigate('/')}
               className="hero-cta-primary font-semibold rounded-xl"
             >
               Go to your goals

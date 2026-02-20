@@ -15,6 +15,8 @@ import {
   Image as ImageIcon,
   PenLine,
   Loader2,
+  Trash2,
+  Plus,
 } from 'lucide-react';
 import type { TaggedImage } from './VisualProgressTimeline';
 import { useGoalNotes, type GoalNotePhase } from '@/hooks/useGoalNotes';
@@ -22,12 +24,17 @@ import { useProgressPhotos } from '@/hooks/useProgressPhotos';
 import { useProgressAnalysis } from '@/hooks/useProgressAnalysis';
 import { getMockGoalInsights } from '@/data/demoOnboardingMockData';
 import type { ManifestationGoal, GoalStep } from '@/hooks/useManifestationDatabase';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { analyzeProgressImage } from '@/lib/aiImageAnalysis';
 
-interface GoalDetailViewProps {
+export interface GoalDetailViewProps {
   goal: ManifestationGoal;
   onBack: () => void;
-  updateGoal: (goalId: string, updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'budget' | 'spent'>>) => Promise<void>;
+  updateGoal: (goalId: string, updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'budget' | 'spent' | 'title' | 'description' | 'timeline' | 'priority'>>) => Promise<void>;
+  onDeleteGoal?: (goalId: string) => void | Promise<void>;
   /** When true, only use mock AI insights (no OpenAI). */
   useMockInsightsOnly?: boolean;
 }
@@ -36,10 +43,17 @@ type TimelineEntry =
   | { type: 'note'; id: string; date: string; content: string; phase?: GoalNotePhase }
   | { type: 'image'; id: string; date: string; url: string; label?: string; progress: number };
 
-export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsightsOnly = false }: GoalDetailViewProps) {
+export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal, useMockInsightsOnly = false }: GoalDetailViewProps) {
   const [currentGoal, setCurrentGoal] = useState(goal);
   const [newNote, setNewNote] = useState('');
   const [newNotePhase, setNewNotePhase] = useState<GoalNotePhase>(1);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState(goal.title);
+  const [editDescription, setEditDescription] = useState(goal.description);
+  const [editTimeline, setEditTimeline] = useState(goal.timeline);
+  const [editPriority, setEditPriority] = useState(goal.priority);
+  const [editSteps, setEditSteps] = useState<GoalStep[]>(goal.steps ?? []);
   const [aiInsights, setAiInsights] = useState<{
     status: string;
     improvements: string[];
@@ -68,6 +82,16 @@ export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsigh
   useEffect(() => {
     setCurrentGoal(goal);
   }, [goal]);
+
+  useEffect(() => {
+    if (editOpen) {
+      setEditTitle(currentGoal.title);
+      setEditDescription(currentGoal.description);
+      setEditTimeline(currentGoal.timeline);
+      setEditPriority(currentGoal.priority);
+      setEditSteps(currentGoal.steps ?? []);
+    }
+  }, [editOpen, currentGoal.title, currentGoal.description, currentGoal.timeline, currentGoal.priority, currentGoal.steps]);
 
   useEffect(() => {
     if (useMockInsightsOnly) {
@@ -165,9 +189,35 @@ export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsigh
   const progressPct = currentGoal.progress * 10;
   const goalImage = currentGoal.imageUrl || '';
 
+  const handleAddStep = async () => {
+    const newStep: GoalStep = { id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, title: 'New step', completed: false };
+    const nextSteps = [...(currentGoal.steps ?? []), newStep];
+    setCurrentGoal((prev) => ({ ...prev, steps: nextSteps }));
+    await updateGoal(currentGoal.id, { steps: nextSteps });
+  };
+
+  const handleRemoveStep = async (stepId: string) => {
+    const nextSteps = (currentGoal.steps ?? []).filter((s) => s.id !== stepId);
+    const completed = nextSteps.filter((s) => s.completed).length;
+    const total = nextSteps.length || 1;
+    const progress = Math.round((completed / total) * 10);
+    setCurrentGoal((prev) => ({ ...prev, steps: nextSteps, progress }));
+    await updateGoal(currentGoal.id, { steps: nextSteps, progress });
+  };
+
+  const handleEditStepTitle = async (stepId: string, title: string) => {
+    const nextSteps = (currentGoal.steps ?? []).map((s) => (s.id === stepId ? { ...s, title } : s));
+    setCurrentGoal((prev) => ({ ...prev, steps: nextSteps }));
+    await updateGoal(currentGoal.id, { steps: nextSteps });
+  };
+
+  const timelineLabels: Record<string, string> = {
+    '30': '30 Days', '60': '60 Days', '90': '90 Days', '1year': '1 Year', '5year': '5 Year Plan',
+  };
+
   return (
     <div className="min-h-screen landing overflow-x-hidden" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
-      <div className="fixed top-4 left-4 z-20">
+      <div className="fixed top-4 left-4 right-4 z-20 flex items-center justify-between gap-2">
         <Button
           onClick={onBack}
           variant="ghost"
@@ -178,7 +228,119 @@ export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsigh
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back
         </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="rounded-full bg-white/90 shadow-lg" onClick={() => setEditOpen((v) => !v)}>
+            <PenLine className="h-4 w-4 mr-1" /> Edit goal
+          </Button>
+          {onDeleteGoal && (
+            <Button variant="ghost" size="sm" className="rounded-full bg-white/90 shadow-lg text-red-600" onClick={() => setDeleteConfirmOpen(true)}>
+              <Trash2 className="h-4 w-4 mr-1" /> Delete goal
+            </Button>
+          )}
+        </div>
       </div>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this goal?</AlertDialogTitle>
+            <AlertDialogDescription>This cannot be undone. All steps and progress will be removed.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={async () => {
+                if (onDeleteGoal) {
+                  await onDeleteGoal(currentGoal.id);
+                  onBack();
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {editOpen && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-4">
+          <div className="rounded-2xl border-2 p-6 space-y-4" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
+            <h3 className="text-lg font-semibold" style={{ color: 'var(--landing-text)' }}>Edit goal</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label style={{ color: 'var(--landing-text)' }}>Title</Label>
+                <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="mt-1.5 rounded-xl" style={{ borderColor: 'var(--landing-border)' }} />
+              </div>
+              <div>
+                <Label style={{ color: 'var(--landing-text)' }}>Timeline</Label>
+                <Select value={editTimeline} onValueChange={(v: typeof editTimeline) => setEditTimeline(v)}>
+                  <SelectTrigger className="mt-1.5 rounded-xl" style={{ borderColor: 'var(--landing-border)' }}><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(timelineLabels).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label style={{ color: 'var(--landing-text)' }}>Description</Label>
+              <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="mt-1.5 rounded-xl" style={{ borderColor: 'var(--landing-border)' }} />
+            </div>
+            <div>
+              <Label style={{ color: 'var(--landing-text)' }}>Priority</Label>
+              <Select value={editPriority} onValueChange={(v: typeof editPriority) => setEditPriority(v)}>
+                <SelectTrigger className="mt-1.5 rounded-xl w-[140px]" style={{ borderColor: 'var(--landing-border)' }}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label style={{ color: 'var(--landing-text)' }}>Steps</Label>
+                <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={() => setEditSteps((s) => [...s, { id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, title: '', completed: false }])}>
+                  <Plus className="h-4 w-4 mr-1" /> Add step
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {editSteps.map((step, i) => (
+                  <div key={step.id} className="flex gap-2 items-center">
+                    <Input
+                      value={step.title}
+                      onChange={(e) => setEditSteps((s) => s.map((x) => (x.id === step.id ? { ...x, title: e.target.value } : x)))}
+                      placeholder={`Step ${i + 1}`}
+                      className="rounded-xl flex-1"
+                      style={{ borderColor: 'var(--landing-border)' }}
+                    />
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0 text-red-600" onClick={() => setEditSteps((s) => s.filter((x) => x.id !== step.id))}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="rounded-xl" onClick={() => setEditOpen(false)}>Cancel</Button>
+              <Button
+                className="rounded-xl"
+                onClick={async () => {
+                  const steps = editSteps.filter((s) => s.title.trim() !== '').map((s) => ({ ...s, title: s.title.trim() }));
+                  await updateGoal(currentGoal.id, { title: editTitle.trim(), description: editDescription.trim(), timeline: editTimeline, priority: editPriority, steps });
+                  setCurrentGoal((prev) => ({ ...prev, title: editTitle.trim(), description: editDescription.trim(), timeline: editTimeline, priority: editPriority, steps }));
+                  setEditOpen(false);
+                }}
+                disabled={!editTitle.trim()}
+              >
+                Save changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="relative min-h-[42vh] flex flex-col justify-end pb-8 pt-16 px-4 sm:px-6">
         {goalImage ? (
@@ -261,7 +423,6 @@ export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsigh
                 <div
                   key={step.id}
                   className="flex items-start gap-3 cursor-pointer group rounded-lg p-3 transition-colors hover:bg-[var(--landing-accent)]/50"
-                  onClick={() => handleStepToggle(step.id)}
                   style={{ backgroundColor: step.completed ? 'var(--landing-accent)' : 'transparent' }}
                 >
                   <Checkbox
@@ -269,7 +430,7 @@ export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsigh
                     onCheckedChange={() => handleStepToggle(step.id)}
                     className="mt-0.5 shrink-0"
                   />
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0" onClick={() => handleStepToggle(step.id)}>
                     <p className={`font-medium ${step.completed ? 'line-through opacity-60' : ''}`} style={{ color: 'var(--landing-text)' }}>
                       {step.title}
                     </p>
@@ -290,8 +451,21 @@ export default function GoalDetailView({ goal, onBack, updateGoal, useMockInsigh
                       </div>
                     )}
                   </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 h-8 w-8 text-red-600 opacity-70 hover:opacity-100"
+                    onClick={(e) => { e.stopPropagation(); handleRemoveStep(step.id); }}
+                    title="Remove step"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
+              <Button type="button" variant="outline" size="sm" className="rounded-xl w-full" onClick={handleAddStep}>
+                <Plus className="h-4 w-4 mr-2" /> Add step
+              </Button>
             </div>
           </div>
 

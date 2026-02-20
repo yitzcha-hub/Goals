@@ -14,7 +14,7 @@ interface ShareGoalDialogProps {
 
 export function ShareGoalDialog({ open, onOpenChange, goalId, goalTitle }: ShareGoalDialogProps) {
   const [copied, setCopied] = useState(false);
-  const shareUrl = `${window.location.origin}/goals/${goalId}`;
+  const shareUrl = `${window.location.origin}/?goal=${goalId}`;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(shareUrl);

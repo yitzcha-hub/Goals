@@ -26,6 +26,7 @@ import { exportToICS, parseICS, downloadICS } from '@/lib/icsUtils';
 import { assignEventLanes } from '@/lib/timelineLanes';
 import { useToast } from '@/hooks/use-toast';
 import type { CalendarEventData } from '@/hooks/useEvents';
+import type { ManifestationGoal, ManifestationTodo } from '@/hooks/useManifestationDatabase';
 
 import calendarImg from '@/assets/images/Attach-goals-to-time.jpg';
 import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
@@ -217,13 +218,22 @@ export default function Calendar() {
   const getDayIso = (day: number) =>
     toISODate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
 
+  /** Goal steps with predictDate on this day (for calendar display) */
+  const getStepsForDayIso = (dayIso: string) =>
+    goals.flatMap((g) =>
+      (g.steps ?? [])
+        .filter((s) => s.predictDate === dayIso)
+        .map((s) => ({ step: s, goalTitle: g.title }))
+    );
+
   const getDayStats = (day: number) => {
     const dayIso = getDayIso(day);
     const dayEvents = getEventsForDate(day);
     const dayTodos = todos.filter((t) => t.scheduledDate === dayIso);
     const gratitude = gratitudeEntries.find((g) => g.date === dayIso);
     const journal = journalEntries.find((j) => j.date === dayIso);
-    return { dayEvents, dayTodos, gratitude, journal };
+    const daySteps = getStepsForDayIso(dayIso);
+    return { dayEvents, dayTodos, gratitude, journal, daySteps };
   };
 
   const getEventsForDay = () =>
@@ -373,7 +383,7 @@ export default function Calendar() {
                 ))}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
-                  const { dayEvents, dayTodos, gratitude, journal } = getDayStats(day);
+                  const { dayEvents, dayTodos, gratitude, journal, daySteps } = getDayStats(day);
                   const today = isToday(day);
 
                   return (
@@ -396,7 +406,7 @@ export default function Calendar() {
                         >
                           {day}
                         </span>
-                        <div className="flex items-center gap-0.5">
+                        <div className="flex items-center gap-0.5 flex-wrap justify-end">
                           {dayEvents.length > 0 && (
                             <span className="text-[10px] font-semibold px-1 rounded" style={{ backgroundColor: 'var(--landing-primary)', color: 'white' }} title="Scheduled">
                               {dayEvents.length}
@@ -405,6 +415,11 @@ export default function Calendar() {
                           {dayTodos.length > 0 && (
                             <span className="text-[10px] font-semibold px-1 rounded bg-amber-100 text-amber-800" title="To-Do">
                               {dayTodos.length}
+                            </span>
+                          )}
+                          {daySteps.length > 0 && (
+                            <span className="text-[10px] font-semibold px-1 rounded bg-emerald-100 text-emerald-800 flex items-center gap-0.5" title="Goal steps due">
+                              <Target className="h-3 w-3" /> {daySteps.length}
                             </span>
                           )}
                           {gratitude && <Heart className="h-3 w-3 text-pink-500" title="Gratitude set" />}
@@ -438,7 +453,7 @@ export default function Calendar() {
               </div>
             </div>
           ) : (
-            /* Day view — timeline */
+            /* Day view — summary (To-Dos, Gratitude, Goal steps) + timeline */
             <div
               className="rounded-2xl overflow-hidden border"
               style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}
@@ -448,6 +463,51 @@ export default function Calendar() {
                   {currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                 </h3>
               </div>
+              {(() => {
+                const dayIso = toISODate(currentDate);
+                const dayTodos = todos.filter((t) => t.scheduledDate === dayIso);
+                const dayGratitude = gratitudeEntries.find((g) => g.date === dayIso);
+                const dayJournal = journalEntries.find((j) => j.date === dayIso);
+                const daySteps = getStepsForDayIso(dayIso);
+                const hasSummary = dayTodos.length > 0 || dayGratitude || dayJournal || daySteps.length > 0;
+                if (!hasSummary) return null;
+                return (
+                  <div className="p-4 border-b space-y-3" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
+                    {dayTodos.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1.5" style={{ color: 'var(--landing-primary)' }}>
+                          <ListTodo className="h-3.5 w-3.5" /> To-Dos ({dayTodos.length})
+                        </h4>
+                        <ul className="text-sm space-y-1" style={{ color: 'var(--landing-text)' }}>
+                          {dayTodos.map((t) => (
+                            <li key={t.id}>{t.title}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {dayGratitude && (
+                      <div>
+                        <h4 className="text-xs font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1.5" style={{ color: 'var(--landing-text)' }}>
+                          <Heart className="h-3.5 w-3.5 text-pink-500" /> Gratitude Journal
+                        </h4>
+                        <p className="text-sm line-clamp-2" style={{ color: 'var(--landing-text)' }}>{dayGratitude.content || '—'}</p>
+                      </div>
+                    )}
+                    {daySteps.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1.5" style={{ color: 'var(--landing-primary)' }}>
+                          <Target className="h-3.5 w-3.5" /> Goal steps due ({daySteps.length})
+                        </h4>
+                        <ul className="text-sm space-y-1" style={{ color: 'var(--landing-text)' }}>
+                          {daySteps.map(({ step, goalTitle }) => (
+                            <li key={step.id}>{step.title} · {goalTitle}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="max-h-[500px] overflow-y-auto">
                 {Array.from({ length: 24 }).map((hour) => {
                   const hourEvents = getEventsForDay().filter((e) => new Date(e.startTime).getHours() === hour);
@@ -533,12 +593,13 @@ export default function Calendar() {
           )}
         </div>
 
-        {/* Day overview modal — like Dashboard Overview tab */}
+        {/* Day overview modal — To-Dos, Gratitude, Journal, Goal steps, Events */}
         {dayModalDate && (
           <DayOverviewModal
             date={dayModalDate}
             events={events}
             todos={todos}
+            goals={goals}
             gratitudeEntries={gratitudeEntries}
             journalEntries={journalEntries}
             onClose={() => setDayModalDate(null)}
@@ -609,6 +670,7 @@ function DayOverviewModal({
   date,
   events,
   todos,
+  goals,
   gratitudeEntries,
   journalEntries,
   onClose,
@@ -617,9 +679,10 @@ function DayOverviewModal({
 }: {
   date: Date;
   events: CalendarEventData[];
-  todos: { id: string; scheduledDate?: string | null }[];
-  gratitudeEntries: { id: string; date: string }[];
-  journalEntries: { id: string; date: string }[];
+  todos: ManifestationTodo[];
+  goals: ManifestationGoal[];
+  gratitudeEntries: { id: string; date: string; content?: string }[];
+  journalEntries: { id: string; date: string; title?: string; content?: string }[];
   onClose: () => void;
   onNewSchedule: () => void;
   onEventClick: (ev: CalendarEventData) => void;
@@ -630,6 +693,15 @@ function DayOverviewModal({
   const todosOnDate = todos.filter((t) => t.scheduledDate === dayIso);
   const gratitude = gratitudeEntries.find((g) => g.date === dayIso);
   const journal = journalEntries.find((j) => j.date === dayIso);
+  const stepsDue = useMemo(
+    () =>
+      goals.flatMap((g) =>
+        (g.steps ?? [])
+          .filter((s) => s.predictDate === dayIso)
+          .map((s) => ({ step: s, goalTitle: g.title }))
+      ),
+    [goals, dayIso]
+  );
   const dateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
   return (
@@ -643,6 +715,50 @@ function DayOverviewModal({
           </Button>
         </DialogHeader>
         <div className="space-y-4 pt-2">
+          {/* To-Dos */}
+          {todosOnDate.length > 0 && (
+            <div className="rounded-xl p-3 border" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
+              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--landing-primary)' }}>
+                <ListTodo className="h-4 w-4" /> To-Dos ({todosOnDate.length})
+              </h4>
+              <ul className="space-y-1.5 text-sm" style={{ color: 'var(--landing-text)' }}>
+                {todosOnDate.map((t) => (
+                  <li key={t.id} className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded border shrink-0" style={{ borderColor: 'var(--landing-border)' }} />
+                    {t.title}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Gratitude Journal */}
+          {gratitude && (
+            <div className="rounded-xl p-3 border" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'rgba(236,72,153,0.08)' }}>
+              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
+                <Heart className="h-4 w-4 text-pink-500" /> Gratitude Journal
+              </h4>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--landing-text)' }}>{gratitude.content || '—'}</p>
+            </div>
+          )}
+
+          {/* Goal steps due this day */}
+          {stepsDue.length > 0 && (
+            <div className="rounded-xl p-3 border" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'rgba(16,185,129,0.08)' }}>
+              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--landing-primary)' }}>
+                <Target className="h-4 w-4" /> Goal steps due ({stepsDue.length})
+              </h4>
+              <ul className="space-y-2 text-sm" style={{ color: 'var(--landing-text)' }}>
+                {stepsDue.map(({ step, goalTitle }) => (
+                  <li key={step.id}>
+                    <span className="font-medium">{step.title}</span>
+                    <span className="opacity-80"> · {goalTitle}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* 24h timeline */}
           <div className="flex border rounded-xl overflow-hidden" style={{ borderColor: 'var(--landing-border)' }}>
             <div className="w-12 flex-shrink-0 py-2 border-r text-xs font-medium" style={{ borderColor: 'var(--landing-border)', color: 'var(--landing-text)', opacity: 0.8 }}>
@@ -689,34 +805,13 @@ function DayOverviewModal({
                   </button>
                 );
               })}
-              {todosOnDate.length > 0 && (
-                <div
-                  className="absolute left-1 right-1 rounded px-2 py-1 text-xs font-medium flex items-center gap-1 top-[4%]"
-                  style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-text)', border: '1px solid var(--landing-border)' }}
-                >
-                  <ListTodo className="h-3.5 w-3.5" style={{ color: 'var(--landing-primary)' }} />
-                  {todosOnDate.length} To-Do{todosOnDate.length !== 1 ? 's' : ''}
-                </div>
-              )}
-              {gratitude && (
-                <div className="absolute left-1 right-1 rounded px-2 py-1 text-xs font-medium flex items-center gap-1 top-[12%]" style={{ backgroundColor: 'rgba(236,72,153,0.2)', color: 'var(--landing-text)' }}>
-                  <Heart className="h-3.5 w-3.5 text-pink-500" /> Gratitude set
-                </div>
-              )}
-              {journal && (
-                <div
-                  className="absolute left-1 right-1 rounded px-2 py-1 text-xs font-medium flex items-center gap-1"
-                  style={{ top: gratitude ? '20%' : '12%', backgroundColor: 'rgba(59,130,246,0.2)', color: 'var(--landing-text)' }}
-                >
-                  <BookOpen className="h-3.5 w-3.5 text-blue-500" /> Journal set
-                </div>
-              )}
             </div>
           </div>
           <div className="flex flex-wrap gap-2 text-sm" style={{ color: 'var(--landing-text)' }}>
             <span className="font-medium">{eventsOnDate.length} scheduled</span>
             <span>·</span>
             <span>{todosOnDate.length} To-Do</span>
+            {stepsDue.length > 0 && <span>· {stepsDue.length} step{stepsDue.length !== 1 ? 's' : ''} due</span>}
             {gratitude && <span>· Gratitude ✓</span>}
             {journal && <span>· Journal ✓</span>}
           </div>

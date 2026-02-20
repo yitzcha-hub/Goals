@@ -320,6 +320,28 @@ export function useManifestationDatabase() {
     setTodos(prev => prev.filter(t => t.id !== todoId));
   };
 
+  const updateTodo = async (
+    todoId: string,
+    updates: Partial<Pick<ManifestationTodo, 'title' | 'scheduledDate' | 'timeSlot' | 'groupName'>>
+  ) => {
+    const todo = todos.find(t => t.id === todoId);
+    if (!todo) return;
+    if (useLocalStorageOnly) {
+      const nextTodos = todos.map(t => (t.id === todoId ? { ...t, ...updates } : t));
+      setTodos(nextTodos);
+      persistDemo({ goals, todos: nextTodos, gratitudeEntries, journalEntries, totalPoints, streak });
+      return;
+    }
+    const payload: Record<string, unknown> = {};
+    if (updates.title !== undefined) payload.title = updates.title;
+    if (updates.scheduledDate !== undefined) payload.scheduled_date = updates.scheduledDate;
+    if (updates.timeSlot !== undefined) payload.time_slot = updates.timeSlot;
+    if (updates.groupName !== undefined) payload.group_name = updates.groupName;
+    if (Object.keys(payload).length === 0) return;
+    await supabase.from('manifestation_todos').update(payload).eq('id', todoId);
+    setTodos(prev => prev.map(t => (t.id === todoId ? { ...t, ...updates } : t)));
+  };
+
   const addGratitude = async (content: string) => {
     const date = new Date().toISOString().split('T')[0];
     return addGratitudeForDate(date, content);
@@ -473,6 +495,7 @@ export function useManifestationDatabase() {
     addTodo,
     toggleTodo,
     deleteTodo,
+    updateTodo,
     addGratitude,
     addGratitudeForDate,
     updateGratitudeSectionByKey,

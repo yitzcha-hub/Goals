@@ -21,10 +21,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
-/** Center nav: Dashboard, Goals, Calendar, Progress */
+/** Center nav: Dashboard, Calendar, Progress */
 const centerNavItems = [
   { label: 'Dashboard', path: '/' },
-  { label: 'Goals', path: '/goals' },
   { label: 'Calendar', path: '/calendar' },
   { label: 'Progress', path: '/progress' },
 ];

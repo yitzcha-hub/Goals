@@ -29,7 +29,6 @@ const UseCase = lazy(() => import("./pages/UseCase"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Progress = lazy(() => import("./pages/Progress"));
-const Goals = lazy(() => import("./pages/Goals"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Admin = lazy(() => import("./pages/Admin"));
 const InviteCodes = lazy(() => import("./pages/InviteCodes"));
@@ -73,7 +72,6 @@ const App = () => (
               <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccessPage /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
-              <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/invite-codes" element={<ProtectedRoute><InviteCodes /></ProtectedRoute>} />

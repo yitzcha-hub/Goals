@@ -42,7 +42,9 @@ import dashboardHeroImg from '@/assets/images/Life-is-in-Time-woman.jpg';
 import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
 import { useToast } from '@/hooks/use-toast';
 import GoalDetailView from '@/components/GoalDetailView';
+import { AddGoalDialog } from '@/components/AddGoalDialog';
 import { DemoOnboardingModals } from '@/components/DemoOnboardingModals';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { GratitudeJournalSections } from '@/components/GratitudeJournalSections';
 import type { DemoGoalGenerated } from '@/data/demoOnboardingMockData';
 import { getDefaultImageForCategory } from '@/data/demoOnboardingMockData';
@@ -64,6 +66,12 @@ const timelineLabels: Record<string, string> = {
   '1year': '1 Year',
   '5year': '5 Year Plan',
 };
+
+function generateRecommendations(timeline: string): string[] {
+  if (timeline === '30') return ['Break into weekly milestones', 'Set daily check-ins'];
+  if (timeline === '5year') return ['Create yearly milestones', 'Identify skills to develop'];
+  return ['Review progress weekly', 'Celebrate small wins'];
+}
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -97,6 +105,7 @@ export default function Dashboard() {
     addTodo,
     toggleTodo,
     deleteTodo,
+    updateTodo,
     addGratitudeForDate,
     updateGratitudeSectionByKey,
     deleteGratitudeBySection,
@@ -109,6 +118,9 @@ export default function Dashboard() {
 
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const selectedGoal = selectedGoalId ? goals.find((g) => g.id === selectedGoalId) : null;
+  const [addGoalOpen, setAddGoalOpen] = useState(false);
+  const [goalToDeleteId, setGoalToDeleteId] = useState<string | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -389,6 +401,7 @@ export default function Dashboard() {
         goal={selectedGoal}
         onBack={() => setSelectedGoalId(null)}
         updateGoal={updateGoal}
+        onDeleteGoal={deleteGoal}
       />
     );
   }
@@ -456,6 +469,59 @@ export default function Dashboard() {
         onRecommendRequest={handleRecommendRequest}
       />
 
+      <AddGoalDialog
+        open={addGoalOpen}
+        onOpenChange={setAddGoalOpen}
+        onAdd={async (g) => {
+          await addGoal({
+            ...g,
+            progress: 0,
+            recommendations: generateRecommendations(g.timeline),
+          });
+          setAddGoalOpen(false);
+          toast({ title: 'Added', description: 'Goal created.' });
+        }}
+      />
+
+      <AlertDialog open={goalToDeleteId != null} onOpenChange={(open) => !open && setGoalToDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete goal?</AlertDialogTitle>
+            <AlertDialogDescription>This cannot be undone. All steps and progress for this goal will be removed.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={async () => {
+                if (goalToDeleteId) {
+                  await deleteGoal(goalToDeleteId);
+                  setGoalToDeleteId(null);
+                  setSelectedGoalId(null);
+                  toast({ title: 'Removed', description: 'Goal deleted.' });
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <EditTaskDialog
+        task={editingTaskId ? todos.find((t) => t.id === editingTaskId) ?? null : null}
+        todayIso={todayIso}
+        tomorrowIso={tomorrowIso}
+        open={editingTaskId != null}
+        onOpenChange={(open) => !open && setEditingTaskId(null)}
+        onSave={async (updates) => {
+          if (!editingTaskId) return;
+          await updateTodo(editingTaskId, updates);
+          setEditingTaskId(null);
+          toast({ title: 'Updated', description: 'Task updated.' });
+        }}
+      />
+
       {/* Banner section (same as Goals page) */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8" style={{ backgroundColor: 'var(--landing-bg)' }}>
         <TrialBanner />
@@ -493,7 +559,7 @@ export default function Dashboard() {
                 <Target className="h-8 w-8" style={{ color: 'var(--landing-primary)' }} />
                 <h2 className="text-3xl font-bold" style={{ color: 'var(--landing-text)' }}>Your Goals (0-10 Scale)</h2>
               </div>
-              <Button className="hero-cta-primary rounded-xl" onClick={() => navigate('/goals')}>
+              <Button className="hero-cta-primary rounded-xl" onClick={() => setAddGoalOpen(true)}>
                 <Plus className="h-5 w-5 mr-2" />
                 Add Goal
               </Button>
@@ -503,7 +569,7 @@ export default function Dashboard() {
                 <CardContent className="p-8 text-center">
                   <Target className="h-10 w-10 mx-auto mb-3 opacity-50" style={{ color: 'var(--landing-primary)' }} />
                   <p className="font-medium" style={{ color: 'var(--landing-text)' }}>No goals yet</p>
-                  <p className="text-sm mt-1" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>Start guided setup above or add goals from the Goals page.</p>
+                  <p className="text-sm mt-1" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>Start guided setup above or add a goal with the button above.</p>
                   <Button onClick={() => setOnboardingOpen(true)} className="mt-4 rounded-xl" size="sm">Start guided setup</Button>
                 </CardContent>
               </Card>
@@ -524,7 +590,12 @@ export default function Dashboard() {
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="text-lg font-semibold" style={{ color: 'var(--landing-text)' }}>{goal.title}</h3>
-                        <span className="text-2xl font-bold" style={{ color: 'var(--landing-primary)' }}>{goal.progress}/10</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-2xl font-bold" style={{ color: 'var(--landing-primary)' }}>{goal.progress}/10</span>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); setGoalToDeleteId(goal.id); }} title="Delete goal">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                       <p className="text-sm mb-3 opacity-90" style={{ color: 'var(--landing-text)' }}>{goal.description}</p>
                       <div className="flex flex-wrap gap-2 mb-3">
@@ -600,6 +671,10 @@ export default function Dashboard() {
                                 {task.timeSlot && <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}><Clock className="h-3 w-3" /> {task.timeSlot}</span>}
                                 <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
                               </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setEditingTaskId(task.id); }} title="Edit task"><PenLine className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={async (e) => { e.stopPropagation(); await deleteTodo(task.id); toast({ title: 'Removed', description: 'Task removed.' }); }} title="Delete task"><Trash2 className="h-4 w-4" /></Button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -626,6 +701,10 @@ export default function Dashboard() {
                               <div className="flex-1 min-w-0 flex items-center gap-2">
                                 {task.timeSlot && <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}><Clock className="h-3 w-3" /> {task.timeSlot}</span>}
                                 <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setEditingTaskId(task.id); }} title="Edit task"><PenLine className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={async (e) => { e.stopPropagation(); await deleteTodo(task.id); toast({ title: 'Removed', description: 'Task removed.' }); }} title="Delete task"><Trash2 className="h-4 w-4" /></Button>
                               </div>
                             </div>
                           ))}
@@ -751,6 +830,83 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function EditTaskDialog({
+  task,
+  todayIso,
+  tomorrowIso,
+  open,
+  onOpenChange,
+  onSave,
+}: {
+  task: ManifestationTodo | null;
+  todayIso: string;
+  tomorrowIso: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (updates: { title: string; scheduledDate: string; timeSlot?: string | null; groupName?: string | null }) => void | Promise<void>;
+}) {
+  const [title, setTitle] = useState('');
+  const [day, setDay] = useState<'today' | 'tomorrow'>('today');
+  const [timeSlot, setTimeSlot] = useState('');
+  const [groupName, setGroupName] = useState('');
+
+  React.useEffect(() => {
+    if (open && task) {
+      setTitle(task.title);
+      setDay(task.scheduledDate === tomorrowIso ? 'tomorrow' : 'today');
+      setTimeSlot(task.timeSlot ?? '');
+      setGroupName(task.groupName ?? '');
+    }
+  }, [open, task, tomorrowIso]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    const scheduledDate = day === 'today' ? todayIso : tomorrowIso;
+    onSave({
+      title: title.trim(),
+      scheduledDate,
+      timeSlot: timeSlot.trim() || null,
+      groupName: groupName.trim() || null,
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="rounded-2xl border-2 max-w-md" style={{ borderColor: 'var(--landing-border)' }}>
+        <DialogHeader>
+          <DialogTitle style={{ color: 'var(--landing-text)' }}>Edit task</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <div>
+            <Label style={{ color: 'var(--landing-text)' }}>Title</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1.5 rounded-xl" style={{ borderColor: 'var(--landing-border)' }} required />
+          </div>
+          <div>
+            <Label style={{ color: 'var(--landing-text)' }}>Day</Label>
+            <Select value={day} onValueChange={(v: 'today' | 'tomorrow') => setDay(v)}>
+              <SelectTrigger className="mt-1.5 rounded-xl" style={{ borderColor: 'var(--landing-border)' }}><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="today">Today</SelectItem><SelectItem value="tomorrow">Tomorrow</SelectItem></SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label style={{ color: 'var(--landing-text)' }}>Time (optional)</Label>
+            <Input value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} placeholder="e.g. 09:00" className="mt-1.5 rounded-xl" style={{ borderColor: 'var(--landing-border)' }} />
+          </div>
+          <div>
+            <Label style={{ color: 'var(--landing-text)' }}>Group (optional)</Label>
+            <Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Grocery Store" className="mt-1.5 rounded-xl" style={{ borderColor: 'var(--landing-border)' }} />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl flex-1">Cancel</Button>
+            <Button type="submit" className="rounded-xl flex-1" disabled={!title.trim()}>Save</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
