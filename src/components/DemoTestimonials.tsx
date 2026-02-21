@@ -6,7 +6,7 @@ const DemoTestimonials: React.FC = () => {
   const testimonials = [
     {
       id: 1,
-      name: 'Sarah Johnson',
+      name: 'Johnson Oyinbo',
       role: 'Entrepreneur',
       image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1759372135118_4c9c2359.webp',
       text: 'Goals and Development helped me launch my business in 6 months. The visual progress tracking kept me motivated every single day!',
@@ -22,7 +22,7 @@ const DemoTestimonials: React.FC = () => {
     },
     {
       id: 3,
-      name: 'Emily Rodriguez',
+      name: 'David Thompson',
       role: 'Home Builder',
       image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1759372139359_be9a5c69.webp',
       text: 'Built my dream home from scratch. The milestone tracking and progress photos kept our family excited throughout the journey.',
@@ -30,7 +30,7 @@ const DemoTestimonials: React.FC = () => {
     },
     {
       id: 4,
-      name: 'David Thompson',
+      name: 'Emily Rodriguez',
       role: 'Career Changer',
       image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1759372142163_71220ea3.webp',
       text: 'Transitioned to my dream career in tech. The goals and development framework gave me the structure I needed to succeed.',
