@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Upload } from 'lucide-react';
 import type { ManifestationGoal, GoalStep } from '@/hooks/useManifestationDatabase';
+
+const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB for data URL
 
 const timelineLabels: Record<string, string> = {
   '30': '30 Days',
@@ -29,6 +31,9 @@ export function AddGoalDialog({ open, onOpenChange, onAdd }: AddGoalDialogProps)
   const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
   const [targetDate, setTargetDate] = useState('');
   const [stepTitles, setStepTitles] = useState<string[]>(['']);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageError, setImageError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -38,12 +43,33 @@ export function AddGoalDialog({ open, onOpenChange, onAdd }: AddGoalDialogProps)
       setPriority('medium');
       setTargetDate('');
       setStepTitles(['']);
+      setImageUrl('');
+      setImageError('');
     }
   }, [open]);
 
   const addStep = () => setStepTitles((s) => [...s, '']);
   const removeStep = (i: number) => setStepTitles((s) => s.filter((_, idx) => idx !== i));
   const setStep = (i: number, v: string) => setStepTitles((s) => { const n = [...s]; n[i] = v; return n; });
+
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setImageError('Please choose an image file (e.g. JPG, PNG).');
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      setImageError('Image must be under 2MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setImageUrl(reader.result as string);
+    reader.onerror = () => setImageError('Could not read file.');
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +82,7 @@ export function AddGoalDialog({ open, onOpenChange, onAdd }: AddGoalDialogProps)
       description: description.trim(),
       timeline,
       priority,
-      imageUrl: '',
+      imageUrl: imageUrl.trim() || undefined,
       targetDate: targetDate.trim() || undefined,
       steps: steps.length ? steps : undefined,
     });
@@ -88,6 +114,40 @@ export function AddGoalDialog({ open, onOpenChange, onAdd }: AddGoalDialogProps)
               rows={2}
               className="mt-1.5 rounded-xl border-[var(--landing-border)]"
             />
+          </div>
+          <div>
+            <Label style={{ color: 'var(--landing-text)' }}>Cover image (optional)</Label>
+            <div className="mt-1.5 flex flex-col gap-2">
+              <Input
+                value={imageUrl.startsWith('data:') ? '' : imageUrl}
+                onChange={(e) => { setImageUrl(e.target.value.trim()); setImageError(''); }}
+                placeholder="Paste image URL"
+                className="rounded-xl border-[var(--landing-border)]"
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageFile}
+                />
+                <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="h-4 w-4 mr-2" /> Upload image
+                </Button>
+                {imageUrl && (
+                  <Button type="button" variant="ghost" size="sm" className="rounded-xl text-red-600" onClick={() => { setImageUrl(''); setImageError(''); }}>
+                    Remove
+                  </Button>
+                )}
+              </div>
+              {imageError && <p className="text-xs text-red-600">{imageError}</p>}
+              {imageUrl && (
+                <div className="rounded-xl overflow-hidden border w-full max-h-32" style={{ borderColor: 'var(--landing-border)' }}>
+                  <img src={imageUrl} alt="Preview" className="w-full h-32 object-cover" onError={() => setImageError('Image failed to load.')} />
+                </div>
+              )}
+            </div>
           </div>
           <div>
             <Label style={{ color: 'var(--landing-text)' }}>Timeline</Label>

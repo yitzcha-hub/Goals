@@ -21,6 +21,7 @@ import {
   Pause,
   Play,
   CheckCircle,
+  Upload,
 } from 'lucide-react';
 import type { TaggedImage } from './VisualProgressTimeline';
 import { useGoalNotes, type GoalNotePhase } from '@/hooks/useGoalNotes';
@@ -37,7 +38,7 @@ import { analyzeProgressImage } from '@/lib/aiImageAnalysis';
 export interface GoalDetailViewProps {
   goal: ManifestationGoal;
   onBack: () => void;
-  updateGoal: (goalId: string, updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'budget' | 'spent' | 'title' | 'description' | 'timeline' | 'priority' | 'status'>>) => Promise<void>;
+  updateGoal: (goalId: string, updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'budget' | 'spent' | 'title' | 'description' | 'timeline' | 'priority' | 'status' | 'imageUrl'>>) => Promise<void>;
   onDeleteGoal?: (goalId: string) => void | Promise<void>;
   /** When true, only use mock AI insights (no OpenAI). */
   useMockInsightsOnly?: boolean;
@@ -59,6 +60,9 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
   const [editTimeline, setEditTimeline] = useState(goal.timeline);
   const [editPriority, setEditPriority] = useState(goal.priority);
   const [editSteps, setEditSteps] = useState<GoalStep[]>(goal.steps ?? []);
+  const [editImageUrl, setEditImageUrl] = useState(goal.imageUrl ?? '');
+  const [imageError, setImageError] = useState('');
+  const editImageFileRef = React.useRef<HTMLInputElement>(null);
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [aiInsights, setAiInsights] = useState<{
     status: string;
@@ -96,8 +100,10 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
       setEditTimeline(currentGoal.timeline);
       setEditPriority(currentGoal.priority);
       setEditSteps(currentGoal.steps ?? []);
+      setEditImageUrl(currentGoal.imageUrl ?? '');
+      setImageError('');
     }
-  }, [editOpen, currentGoal.title, currentGoal.description, currentGoal.timeline, currentGoal.priority, currentGoal.steps]);
+  }, [editOpen, currentGoal.title, currentGoal.description, currentGoal.timeline, currentGoal.priority, currentGoal.steps, currentGoal.imageUrl]);
 
   useEffect(() => {
     if (useMockInsightsOnly) {
@@ -307,6 +313,50 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
               </Select>
             </div>
             <div>
+              <Label style={{ color: 'var(--landing-text)' }}>Cover image</Label>
+              <div className="mt-1.5 flex flex-col gap-2">
+                <Input
+                  value={editImageUrl.startsWith('data:') ? '' : editImageUrl}
+                  onChange={(e) => { setEditImageUrl(e.target.value.trim()); setImageError(''); }}
+                  placeholder="Image URL"
+                  className="rounded-xl"
+                  style={{ borderColor: 'var(--landing-border)' }}
+                />
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={editImageFileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      setImageError('');
+                      const file = e.target.files?.[0];
+                      if (!file || !file.type.startsWith('image/')) return;
+                      if (file.size > 2 * 1024 * 1024) { setImageError('Image must be under 2MB.'); return; }
+                      const reader = new FileReader();
+                      reader.onload = () => setEditImageUrl(reader.result as string);
+                      reader.readAsDataURL(file);
+                      e.target.value = '';
+                    }}
+                  />
+                  <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={() => editImageFileRef.current?.click()}>
+                    <Upload className="h-4 w-4 mr-2" /> Upload
+                  </Button>
+                  {editImageUrl && (
+                    <Button type="button" variant="ghost" size="sm" className="rounded-xl text-red-600" onClick={() => { setEditImageUrl(''); setImageError(''); }}>
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                {imageError && <p className="text-xs text-red-600">{imageError}</p>}
+                {editImageUrl && (
+                  <div className="rounded-xl overflow-hidden border max-h-28 w-full" style={{ borderColor: 'var(--landing-border)' }}>
+                    <img src={editImageUrl} alt="Preview" className="w-full h-28 object-cover" onError={() => setImageError('Image failed to load.')} />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div>
               <div className="flex items-center justify-between mb-2">
                 <Label style={{ color: 'var(--landing-text)' }}>Steps</Label>
                 <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={() => setEditSteps((s) => [...s, { id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, title: '', completed: false }])}>
@@ -336,8 +386,9 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
                 className="rounded-xl"
                 onClick={async () => {
                   const steps = editSteps.filter((s) => s.title.trim() !== '').map((s) => ({ ...s, title: s.title.trim() }));
-                  await updateGoal(currentGoal.id, { title: editTitle.trim(), description: editDescription.trim(), timeline: editTimeline, priority: editPriority, steps });
-                  setCurrentGoal((prev) => ({ ...prev, title: editTitle.trim(), description: editDescription.trim(), timeline: editTimeline, priority: editPriority, steps }));
+                  const newImageUrl = editImageUrl.trim() || undefined;
+                  await updateGoal(currentGoal.id, { title: editTitle.trim(), description: editDescription.trim(), timeline: editTimeline, priority: editPriority, steps, imageUrl: newImageUrl });
+                  setCurrentGoal((prev) => ({ ...prev, title: editTitle.trim(), description: editDescription.trim(), timeline: editTimeline, priority: editPriority, steps, imageUrl: newImageUrl }));
                   setEditOpen(false);
                 }}
                 disabled={!editTitle.trim()}

@@ -223,10 +223,10 @@ export function useManifestationDatabase() {
     if (!wasComplete && isNowComplete) await updateStats(100, 0);
   };
 
-  /** Update goal fields (steps, targetDate, progress, status, budget, spent, etc.). */
+  /** Update goal fields (steps, targetDate, progress, imageUrl, status, budget, spent, etc.). */
   const updateGoal = async (
     goalId: string,
-    updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'title' | 'description' | 'timeline' | 'priority' | 'budget' | 'spent' | 'status'>>
+    updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'title' | 'description' | 'timeline' | 'priority' | 'budget' | 'spent' | 'status' | 'imageUrl'>>
   ) => {
     const goal = goals.find(g => g.id === goalId);
     if (!goal) return;
@@ -249,6 +249,7 @@ export function useManifestationDatabase() {
     if (updates.budget !== undefined) payload.budget = updates.budget;
     if (updates.spent !== undefined) payload.spent = updates.spent;
     if (updates.status !== undefined) payload.status = updates.status;
+    if (updates.imageUrl !== undefined) payload.image_url = updates.imageUrl;
     if (Object.keys(payload).length === 0) return;
     await supabase.from('manifestation_goals').update(payload).eq('id', goalId);
     setGoals(prev => prev.map(g => (g.id === goalId ? { ...g, ...updates } : g)));
