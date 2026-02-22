@@ -57,9 +57,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { GratitudeJournalSections } from '@/components/GratitudeJournalSections';
 import type { DemoGoalGenerated } from '@/data/demoOnboardingMockData';
@@ -262,15 +261,25 @@ export default function Dashboard() {
   const todosToday = useMemo(() => todos.filter((t) => t.scheduledDate === todayIso), [todos, todayIso]);
   const todosTomorrow = useMemo(() => todos.filter((t) => t.scheduledDate === tomorrowIso), [todos, tomorrowIso]);
 
-  /** Unique group names from today + tomorrow todos for "Move to group" (display: "Other" + sorted names) */
-  const todoGroupsForMove = useMemo(() => {
+  /** Groups used on today's tasks only (for Move to group on Today tab) */
+  const todayGroupsForMove = useMemo(() => {
     const names = new Set<string>();
-    todos.filter((t) => t.scheduledDate === todayIso || t.scheduledDate === tomorrowIso).forEach((t) => {
+    todosToday.forEach((t) => {
       const g = t.groupName?.trim();
       if (g) names.add(g);
     });
     return ['Other', ...Array.from(names).sort()];
-  }, [todos, todayIso, tomorrowIso]);
+  }, [todosToday]);
+
+  /** Groups used on tomorrow's tasks only (for Move to group on Tomorrow tab) */
+  const tomorrowGroupsForMove = useMemo(() => {
+    const names = new Set<string>();
+    todosTomorrow.forEach((t) => {
+      const g = t.groupName?.trim();
+      if (g) names.add(g);
+    });
+    return ['Other', ...Array.from(names).sort()];
+  }, [todosTomorrow]);
 
   const { events, addEvent, updateEvent, deleteEvent } = useEvents();
   const { createReminder } = useReminders();
@@ -755,30 +764,25 @@ export default function Dashboard() {
                                     >
                                       <CalendarDays className="h-4 w-4 mr-2" /> Move to Tomorrow
                                     </DropdownMenuItem>
-                                    <DropdownMenuSub>
-                                      <DropdownMenuSubTrigger>
-                                        <FolderInput className="h-4 w-4 mr-2" /> Move to group
-                                      </DropdownMenuSubTrigger>
-                                      <DropdownMenuSubContent>
-                                        {todoGroupsForMove.map((groupLabel) => {
-                                          const isOther = groupLabel === 'Other';
-                                          const currentGroup = task.groupName?.trim() || null;
-                                          const isCurrent = isOther ? !currentGroup : currentGroup === groupLabel;
-                                          return (
-                                            <DropdownMenuItem
-                                              key={groupLabel}
-                                              disabled={isCurrent}
-                                              onClick={async () => {
-                                                await updateTodo(task.id, { groupName: isOther ? null : groupLabel });
-                                                toast({ title: 'Moved', description: `Task moved to ${groupLabel}.` });
-                                              }}
-                                            >
-                                              {groupLabel}
-                                            </DropdownMenuItem>
-                                          );
-                                        })}
-                                      </DropdownMenuSubContent>
-                                    </DropdownMenuSub>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Groups (today)</DropdownMenuLabel>
+                                    {todayGroupsForMove.map((groupLabel) => {
+                                      const isOther = groupLabel === 'Other';
+                                      const currentGroup = task.groupName?.trim() || null;
+                                      const isCurrent = isOther ? !currentGroup : currentGroup === groupLabel;
+                                      return (
+                                        <DropdownMenuItem
+                                          key={groupLabel}
+                                          disabled={isCurrent}
+                                          onClick={async () => {
+                                            await updateTodo(task.id, { groupName: isOther ? null : groupLabel });
+                                            toast({ title: 'Moved', description: `Task moved to ${groupLabel}.` });
+                                          }}
+                                        >
+                                          <FolderInput className="h-4 w-4 mr-2" /> {groupLabel}
+                                        </DropdownMenuItem>
+                                      );
+                                    })}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setEditingTaskId(task.id); }} title="Edit task"><PenLine className="h-4 w-4" /></Button>
@@ -840,30 +844,25 @@ export default function Dashboard() {
                                     >
                                       <CalendarDays className="h-4 w-4 mr-2" /> Move to Tomorrow
                                     </DropdownMenuItem>
-                                    <DropdownMenuSub>
-                                      <DropdownMenuSubTrigger>
-                                        <FolderInput className="h-4 w-4 mr-2" /> Move to group
-                                      </DropdownMenuSubTrigger>
-                                      <DropdownMenuSubContent>
-                                        {todoGroupsForMove.map((groupLabel) => {
-                                          const isOther = groupLabel === 'Other';
-                                          const currentGroup = task.groupName?.trim() || null;
-                                          const isCurrent = isOther ? !currentGroup : currentGroup === groupLabel;
-                                          return (
-                                            <DropdownMenuItem
-                                              key={groupLabel}
-                                              disabled={isCurrent}
-                                              onClick={async () => {
-                                                await updateTodo(task.id, { groupName: isOther ? null : groupLabel });
-                                                toast({ title: 'Moved', description: `Task moved to ${groupLabel}.` });
-                                              }}
-                                            >
-                                              {groupLabel}
-                                            </DropdownMenuItem>
-                                          );
-                                        })}
-                                      </DropdownMenuSubContent>
-                                    </DropdownMenuSub>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Groups (tomorrow)</DropdownMenuLabel>
+                                    {tomorrowGroupsForMove.map((groupLabel) => {
+                                      const isOther = groupLabel === 'Other';
+                                      const currentGroup = task.groupName?.trim() || null;
+                                      const isCurrent = isOther ? !currentGroup : currentGroup === groupLabel;
+                                      return (
+                                        <DropdownMenuItem
+                                          key={groupLabel}
+                                          disabled={isCurrent}
+                                          onClick={async () => {
+                                            await updateTodo(task.id, { groupName: isOther ? null : groupLabel });
+                                            toast({ title: 'Moved', description: `Task moved to ${groupLabel}.` });
+                                          }}
+                                        >
+                                          <FolderInput className="h-4 w-4 mr-2" /> {groupLabel}
+                                        </DropdownMenuItem>
+                                      );
+                                    })}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setEditingTaskId(task.id); }} title="Edit task"><PenLine className="h-4 w-4" /></Button>
