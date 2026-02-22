@@ -1135,6 +1135,9 @@ ALTER TABLE public.manifestation_goals
   ADD COLUMN IF NOT EXISTS budget integer NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS spent integer NOT NULL DEFAULT 0;
 
+-- Goal status: active (default), paused, completed
+ALTER TABLE public.manifestation_goals ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'completed'));
+
 ALTER TABLE public.manifestation_todos
   ADD COLUMN IF NOT EXISTS time_slot text,
   ADD COLUMN IF NOT EXISTS group_name text;

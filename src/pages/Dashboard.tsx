@@ -24,6 +24,13 @@ import {
   DollarSign,
   SparklesIcon,
   Loader2,
+  Pause,
+  Play,
+  CheckCircle,
+  LogIn,
+  ArrowRightLeft,
+  CalendarDays,
+  FolderInput,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +52,15 @@ import GoalDetailView from '@/components/GoalDetailView';
 import { AddGoalDialog } from '@/components/AddGoalDialog';
 import { DemoOnboardingModals } from '@/components/DemoOnboardingModals';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+} from '@/components/ui/dropdown-menu';
 import { GratitudeJournalSections } from '@/components/GratitudeJournalSections';
 import type { DemoGoalGenerated } from '@/data/demoOnboardingMockData';
 import { getDefaultImageForCategory } from '@/data/demoOnboardingMockData';
@@ -118,6 +134,7 @@ export default function Dashboard() {
 
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const selectedGoal = selectedGoalId ? goals.find((g) => g.id === selectedGoalId) : null;
+  const activeGoals = useMemo(() => goals.filter((g) => g.status === 'active' || !g.status), [goals]);
   const [addGoalOpen, setAddGoalOpen] = useState(false);
   const [goalToDeleteId, setGoalToDeleteId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -228,6 +245,7 @@ export default function Dashboard() {
             points: 5,
             scheduledDate: iso,
             timeSlot: item.timeSlot ?? undefined,
+            groupName: item.group?.trim() || undefined,
           });
         }
         toast({ title: 'To-dos added', description: `Generated ${generated.length} tasks for ${day}.` });
@@ -243,6 +261,16 @@ export default function Dashboard() {
 
   const todosToday = useMemo(() => todos.filter((t) => t.scheduledDate === todayIso), [todos, todayIso]);
   const todosTomorrow = useMemo(() => todos.filter((t) => t.scheduledDate === tomorrowIso), [todos, tomorrowIso]);
+
+  /** Unique group names from today + tomorrow todos for "Move to group" (display: "Other" + sorted names) */
+  const todoGroupsForMove = useMemo(() => {
+    const names = new Set<string>();
+    todos.filter((t) => t.scheduledDate === todayIso || t.scheduledDate === tomorrowIso).forEach((t) => {
+      const g = t.groupName?.trim();
+      if (g) names.add(g);
+    });
+    return ['Other', ...Array.from(names).sort()];
+  }, [todos, todayIso, tomorrowIso]);
 
   const { events, addEvent, updateEvent, deleteEvent } = useEvents();
   const { createReminder } = useReminders();
@@ -531,7 +559,7 @@ export default function Dashboard() {
       <section className="py-8 px-4 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
-            <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{goals.length}</div>
+            <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{activeGoals.length}</div>
             <div className="text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Active Goals</div>
           </div>
           <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
@@ -553,29 +581,34 @@ export default function Dashboard() {
       <section id="dashboard-content" className="py-12 px-4 sm:px-6 border-t scroll-mt-24" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
         <div className="max-w-6xl mx-auto space-y-12">
           {/* Goals Grid */}
-          <div>
+          <div id="goals">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <Target className="h-8 w-8" style={{ color: 'var(--landing-primary)' }} />
-                <h2 className="text-3xl font-bold" style={{ color: 'var(--landing-text)' }}>Your Goals (0-10 Scale)</h2>
+                <h2 className="text-3xl font-bold" style={{ color: 'var(--landing-text)' }}>Active Goals</h2>
               </div>
-              <Button className="hero-cta-primary rounded-xl" onClick={() => setAddGoalOpen(true)}>
-                <Plus className="h-5 w-5 mr-2" />
-                Add Goal
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => navigate('/goals')}>
+                  View all goals
+                </Button>
+                <Button className="hero-cta-primary rounded-xl" onClick={() => setAddGoalOpen(true)}>
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add Goal
+                </Button>
+              </div>
             </div>
-            {goals.length === 0 ? (
+            {activeGoals.length === 0 ? (
               <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
                 <CardContent className="p-8 text-center">
                   <Target className="h-10 w-10 mx-auto mb-3 opacity-50" style={{ color: 'var(--landing-primary)' }} />
-                  <p className="font-medium" style={{ color: 'var(--landing-text)' }}>No goals yet</p>
-                  <p className="text-sm mt-1" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>Start guided setup above or add a goal with the button above.</p>
-                  <Button onClick={() => setOnboardingOpen(true)} className="mt-4 rounded-xl" size="sm">Start guided setup</Button>
+                  <p className="font-medium" style={{ color: 'var(--landing-text)' }}>No active goals</p>
+                  <p className="text-sm mt-1" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>Add a goal or resume one from the Goals page.</p>
+                  <Button onClick={() => setAddGoalOpen(true)} className="mt-4 rounded-xl" size="sm">Add goal</Button>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {goals.map((goal) => (
+                {activeGoals.map((goal) => (
                   <Card
                     key={goal.id}
                     className="overflow-hidden shadow-lg hover:shadow-xl transition-all cursor-pointer feature-card-shadow"
@@ -601,6 +634,28 @@ export default function Dashboard() {
                       <div className="flex flex-wrap gap-2 mb-3">
                         <Badge variant="outline" style={{ borderColor: 'var(--landing-primary)', color: 'var(--landing-primary)' }}>{timelineLabels[goal.timeline] ?? goal.timeline}</Badge>
                         <Badge style={{ backgroundColor: goal.priority === 'high' ? 'rgba(220,38,38,0.12)' : 'var(--landing-accent)', color: goal.priority === 'high' ? '#dc2626' : 'var(--landing-primary)' }}>{goal.priority}</Badge>
+                        {goal.status === 'paused' && <Badge variant="outline" className="border-amber-500 text-amber-700">Paused</Badge>}
+                        {goal.status === 'completed' && <Badge className="bg-green-100 text-green-800 border-0">Completed</Badge>}
+                      </div>
+                      <div className="flex flex-wrap gap-1 mb-3" onClick={(e) => e.stopPropagation()}>
+                        <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => setSelectedGoalId(goal.id)} title="Open goal">
+                          <LogIn className="h-3.5 w-3 mr-1" /> Enter
+                        </Button>
+                        {(goal.status === 'active' || !goal.status) && (
+                          <>
+                            <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => updateGoal(goal.id, { status: 'paused' })} title="Pause goal">
+                              <Pause className="h-3.5 w-3 mr-1" /> Pause
+                            </Button>
+                            <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => updateGoal(goal.id, { status: 'completed', progress: 10 })} title="Mark complete">
+                              <CheckCircle className="h-3.5 w-3 mr-1" /> Complete
+                            </Button>
+                          </>
+                        )}
+                        {goal.status === 'paused' && (
+                          <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => updateGoal(goal.id, { status: 'active' })} title="Resume goal">
+                            <Play className="h-3.5 w-3 mr-1" /> Resume
+                          </Button>
+                        )}
                       </div>
                       {(goal.budget != null && goal.budget > 0) && (
                         <div className="flex flex-wrap gap-4 mb-3 text-sm" style={{ color: 'var(--landing-text)' }}>
@@ -652,16 +707,19 @@ export default function Dashboard() {
                   </TabsList>
                   <TabsContent value="today" className="space-y-3 mt-0">
                     {(() => {
+                      const NO_GROUP = '\u200bNo group';
                       const byGroup = todosToday.reduce<Record<string, typeof todosToday>>((acc, task) => {
-                        const g = task.groupName?.trim() || '\u200bNo group';
+                        const g = task.groupName?.trim() || NO_GROUP;
                         if (!acc[g]) acc[g] = [];
                         acc[g].push(task);
                         return acc;
                       }, {});
-                      const order = Object.keys(byGroup).sort((a, b) => (a === '\u200bNo group' ? 1 : 0) - (b === '\u200bNo group' ? 1 : 0));
-                      return order.map((groupLabel) => (
+                      const order = Object.keys(byGroup).sort((a, b) => (a === NO_GROUP ? 1 : 0) - (b === NO_GROUP ? 1 : 0));
+                      return order.map((groupLabel, index) => (
                         <div key={groupLabel} className="space-y-2">
-                          {groupLabel !== '\u200bNo group' && <p className="text-xs font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--landing-primary)' }}>{groupLabel}</p>}
+                          <p className="text-sm font-semibold" style={{ color: 'var(--landing-primary)' }}>
+                            {index + 1}. {groupLabel === NO_GROUP ? 'Other' : groupLabel}
+                          </p>
                           {byGroup[groupLabel].map((task) => (
                             <div key={task.id} className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`} style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}>
                               <button type="button" onClick={() => toggleTodo(task.id)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
@@ -672,6 +730,57 @@ export default function Dashboard() {
                                 <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()} title="Move task">
+                                      <ArrowRightLeft className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                    <DropdownMenuItem
+                                      disabled={task.scheduledDate === todayIso}
+                                      onClick={async () => {
+                                        await updateTodo(task.id, { scheduledDate: todayIso });
+                                        toast({ title: 'Moved', description: 'Task moved to Today.' });
+                                      }}
+                                    >
+                                      <CalendarDays className="h-4 w-4 mr-2" /> Move to Today
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      disabled={task.scheduledDate === tomorrowIso}
+                                      onClick={async () => {
+                                        await updateTodo(task.id, { scheduledDate: tomorrowIso });
+                                        toast({ title: 'Moved', description: 'Task moved to Tomorrow.' });
+                                      }}
+                                    >
+                                      <CalendarDays className="h-4 w-4 mr-2" /> Move to Tomorrow
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSub>
+                                      <DropdownMenuSubTrigger>
+                                        <FolderInput className="h-4 w-4 mr-2" /> Move to group
+                                      </DropdownMenuSubTrigger>
+                                      <DropdownMenuSubContent>
+                                        {todoGroupsForMove.map((groupLabel) => {
+                                          const isOther = groupLabel === 'Other';
+                                          const currentGroup = task.groupName?.trim() || null;
+                                          const isCurrent = isOther ? !currentGroup : currentGroup === groupLabel;
+                                          return (
+                                            <DropdownMenuItem
+                                              key={groupLabel}
+                                              disabled={isCurrent}
+                                              onClick={async () => {
+                                                await updateTodo(task.id, { groupName: isOther ? null : groupLabel });
+                                                toast({ title: 'Moved', description: `Task moved to ${groupLabel}.` });
+                                              }}
+                                            >
+                                              {groupLabel}
+                                            </DropdownMenuItem>
+                                          );
+                                        })}
+                                      </DropdownMenuSubContent>
+                                    </DropdownMenuSub>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setEditingTaskId(task.id); }} title="Edit task"><PenLine className="h-4 w-4" /></Button>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={async (e) => { e.stopPropagation(); await deleteTodo(task.id); toast({ title: 'Removed', description: 'Task removed.' }); }} title="Delete task"><Trash2 className="h-4 w-4" /></Button>
                               </div>
@@ -683,16 +792,19 @@ export default function Dashboard() {
                   </TabsContent>
                   <TabsContent value="tomorrow" className="space-y-3 mt-0">
                     {(() => {
+                      const NO_GROUP = '\u200bNo group';
                       const byGroup = todosTomorrow.reduce<Record<string, typeof todosTomorrow>>((acc, task) => {
-                        const g = task.groupName?.trim() || '\u200bNo group';
+                        const g = task.groupName?.trim() || NO_GROUP;
                         if (!acc[g]) acc[g] = [];
                         acc[g].push(task);
                         return acc;
                       }, {});
-                      const order = Object.keys(byGroup).sort((a, b) => (a === '\u200bNo group' ? 1 : 0) - (b === '\u200bNo group' ? 1 : 0));
-                      return order.map((groupLabel) => (
+                      const order = Object.keys(byGroup).sort((a, b) => (a === NO_GROUP ? 1 : 0) - (b === NO_GROUP ? 1 : 0));
+                      return order.map((groupLabel, index) => (
                         <div key={groupLabel} className="space-y-2">
-                          {groupLabel !== '\u200bNo group' && <p className="text-xs font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--landing-primary)' }}>{groupLabel}</p>}
+                          <p className="text-sm font-semibold" style={{ color: 'var(--landing-primary)' }}>
+                            {index + 1}. {groupLabel === NO_GROUP ? 'Other' : groupLabel}
+                          </p>
                           {byGroup[groupLabel].map((task) => (
                             <div key={task.id} className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`} style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}>
                               <button type="button" onClick={() => toggleTodo(task.id)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
@@ -703,6 +815,57 @@ export default function Dashboard() {
                                 <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()} title="Move task">
+                                      <ArrowRightLeft className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                    <DropdownMenuItem
+                                      disabled={task.scheduledDate === todayIso}
+                                      onClick={async () => {
+                                        await updateTodo(task.id, { scheduledDate: todayIso });
+                                        toast({ title: 'Moved', description: 'Task moved to Today.' });
+                                      }}
+                                    >
+                                      <CalendarDays className="h-4 w-4 mr-2" /> Move to Today
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      disabled={task.scheduledDate === tomorrowIso}
+                                      onClick={async () => {
+                                        await updateTodo(task.id, { scheduledDate: tomorrowIso });
+                                        toast({ title: 'Moved', description: 'Task moved to Tomorrow.' });
+                                      }}
+                                    >
+                                      <CalendarDays className="h-4 w-4 mr-2" /> Move to Tomorrow
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSub>
+                                      <DropdownMenuSubTrigger>
+                                        <FolderInput className="h-4 w-4 mr-2" /> Move to group
+                                      </DropdownMenuSubTrigger>
+                                      <DropdownMenuSubContent>
+                                        {todoGroupsForMove.map((groupLabel) => {
+                                          const isOther = groupLabel === 'Other';
+                                          const currentGroup = task.groupName?.trim() || null;
+                                          const isCurrent = isOther ? !currentGroup : currentGroup === groupLabel;
+                                          return (
+                                            <DropdownMenuItem
+                                              key={groupLabel}
+                                              disabled={isCurrent}
+                                              onClick={async () => {
+                                                await updateTodo(task.id, { groupName: isOther ? null : groupLabel });
+                                                toast({ title: 'Moved', description: `Task moved to ${groupLabel}.` });
+                                              }}
+                                            >
+                                              {groupLabel}
+                                            </DropdownMenuItem>
+                                          );
+                                        })}
+                                      </DropdownMenuSubContent>
+                                    </DropdownMenuSub>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setEditingTaskId(task.id); }} title="Edit task"><PenLine className="h-4 w-4" /></Button>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={async (e) => { e.stopPropagation(); await deleteTodo(task.id); toast({ title: 'Removed', description: 'Task removed.' }); }} title="Delete task"><Trash2 className="h-4 w-4" /></Button>
                               </div>
@@ -730,7 +893,7 @@ export default function Dashboard() {
                 >
                   <div className="flex flex-wrap gap-2 items-center">
                     <Input placeholder="Add a task..." value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} className="flex-1 min-w-[140px]" style={{ borderColor: 'var(--landing-border)' }} />
-                    <Input placeholder="Group (e.g. Grocery Store)" value={newTaskGroup} onChange={(e) => setNewTaskGroup(e.target.value)} className="w-[140px]" style={{ borderColor: 'var(--landing-border)' }} title="Optional group name" />
+                    <Input placeholder="Group (e.g. Studying, Exercise)" value={newTaskGroup} onChange={(e) => setNewTaskGroup(e.target.value)} className="w-[140px]" style={{ borderColor: 'var(--landing-border)' }} title="Group: Studying, Exercise, Other, etc." />
                     <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
                       <SelectTrigger className="w-[110px]" style={{ borderColor: 'var(--landing-border)' }}><SelectValue /></SelectTrigger>
                       <SelectContent><SelectItem value="today">Today</SelectItem><SelectItem value="tomorrow">Tomorrow</SelectItem></SelectContent>
@@ -898,7 +1061,7 @@ function EditTaskDialog({
           </div>
           <div>
             <Label style={{ color: 'var(--landing-text)' }}>Group (optional)</Label>
-            <Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Grocery Store" className="mt-1.5 rounded-xl" style={{ borderColor: 'var(--landing-border)' }} />
+            <Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Studying, Exercise, Other" className="mt-1.5 rounded-xl" style={{ borderColor: 'var(--landing-border)' }} />
           </div>
           <div className="flex gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl flex-1">Cancel</Button>
@@ -1003,11 +1166,11 @@ function TasksTab({
             className="rounded-xl border-[var(--landing-border)] flex-1 min-w-[140px]"
           />
           <Input
-            placeholder="Group (optional)"
+            placeholder="Group (e.g. Studying, Exercise)"
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
             className="rounded-xl border-[var(--landing-border)] w-[130px]"
-            title="e.g. Grocery Store, Hardware Store"
+            title="e.g. Studying, Exercise, Other"
           />
           <Button onClick={handleAdd} className="rounded-xl" disabled={!title.trim()}>
             <Plus className="h-4 w-4 mr-2" />
@@ -1015,18 +1178,21 @@ function TasksTab({
           </Button>
         </div>
         {(() => {
+          const NO_GROUP = '\u200bNo group';
           const byGroup = todosOnDate.reduce<Record<string, typeof todosOnDate>>((acc, t) => {
-            const g = t.groupName?.trim() || '\u200bNo group';
+            const g = t.groupName?.trim() || NO_GROUP;
             if (!acc[g]) acc[g] = [];
             acc[g].push(t);
             return acc;
           }, {});
-          const order = Object.keys(byGroup).sort((a, b) => (a === '\u200bNo group' ? 1 : 0) - (b === '\u200bNo group' ? 1 : 0));
+          const order = Object.keys(byGroup).sort((a, b) => (a === NO_GROUP ? 1 : 0) - (b === NO_GROUP ? 1 : 0));
           return (
             <ul className="space-y-4">
-              {order.map((groupLabel) => (
+              {order.map((groupLabel, index) => (
                 <li key={groupLabel} className="space-y-2">
-                  {groupLabel !== '\u200bNo group' && <p className="text-xs font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--landing-primary)' }}>{groupLabel}</p>}
+                  <p className="text-sm font-semibold" style={{ color: 'var(--landing-primary)' }}>
+                    {index + 1}. {groupLabel === NO_GROUP ? 'Other' : groupLabel}
+                  </p>
                   {byGroup[groupLabel].map((t) => (
                     <li
                       key={t.id}

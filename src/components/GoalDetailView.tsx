@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,6 +18,9 @@ import {
   Loader2,
   Trash2,
   Plus,
+  Pause,
+  Play,
+  CheckCircle,
 } from 'lucide-react';
 import type { TaggedImage } from './VisualProgressTimeline';
 import { useGoalNotes, type GoalNotePhase } from '@/hooks/useGoalNotes';
@@ -33,7 +37,7 @@ import { analyzeProgressImage } from '@/lib/aiImageAnalysis';
 export interface GoalDetailViewProps {
   goal: ManifestationGoal;
   onBack: () => void;
-  updateGoal: (goalId: string, updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'budget' | 'spent' | 'title' | 'description' | 'timeline' | 'priority'>>) => Promise<void>;
+  updateGoal: (goalId: string, updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'budget' | 'spent' | 'title' | 'description' | 'timeline' | 'priority' | 'status'>>) => Promise<void>;
   onDeleteGoal?: (goalId: string) => void | Promise<void>;
   /** When true, only use mock AI insights (no OpenAI). */
   useMockInsightsOnly?: boolean;
@@ -44,6 +48,7 @@ type TimelineEntry =
   | { type: 'image'; id: string; date: string; url: string; label?: string; progress: number };
 
 export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal, useMockInsightsOnly = false }: GoalDetailViewProps) {
+  const navigate = useNavigate();
   const [currentGoal, setCurrentGoal] = useState(goal);
   const [newNote, setNewNote] = useState('');
   const [newNotePhase, setNewNotePhase] = useState<GoalNotePhase>(1);
@@ -54,6 +59,7 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
   const [editTimeline, setEditTimeline] = useState(goal.timeline);
   const [editPriority, setEditPriority] = useState(goal.priority);
   const [editSteps, setEditSteps] = useState<GoalStep[]>(goal.steps ?? []);
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [aiInsights, setAiInsights] = useState<{
     status: string;
     improvements: string[];
@@ -190,10 +196,11 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
   const goalImage = currentGoal.imageUrl || '';
 
   const handleAddStep = async () => {
-    const newStep: GoalStep = { id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, title: 'New step', completed: false };
+    const newStep: GoalStep = { id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, title: '', completed: false };
     const nextSteps = [...(currentGoal.steps ?? []), newStep];
     setCurrentGoal((prev) => ({ ...prev, steps: nextSteps }));
     await updateGoal(currentGoal.id, { steps: nextSteps });
+    setEditingStepId(newStep.id);
   };
 
   const handleRemoveStep = async (stepId: string) => {
@@ -217,26 +224,26 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
 
   return (
     <div className="min-h-screen landing overflow-x-hidden" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
-      <div className="fixed top-4 left-4 right-4 z-20 flex items-center justify-between gap-2">
-        <Button
-          onClick={onBack}
-          variant="ghost"
-          size="sm"
-          className="rounded-full bg-white/90 dark:bg-gray-900/90 shadow-lg backdrop-blur-sm border-0 hover:bg-white"
-          style={{ color: 'var(--landing-primary)' }}
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back
-        </Button>
-        <div className="flex items-center gap-2">
+      <div className="fixed top-4 left-4 right-4 z-20 flex items-center justify-end gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {(currentGoal.status === 'active' || !currentGoal.status) && (
+            <>
+              <Button variant="ghost" size="sm" className="rounded-full bg-white/90 shadow-lg" onClick={async () => { setCurrentGoal((p) => ({ ...p, status: 'paused' })); await updateGoal(currentGoal.id, { status: 'paused' }); }} title="Pause this goal">
+                <Pause className="h-4 w-4 mr-1" /> Pause
+              </Button>
+              <Button variant="ghost" size="sm" className="rounded-full bg-white/90 shadow-lg" onClick={async () => { setCurrentGoal((p) => ({ ...p, status: 'completed', progress: 10 })); await updateGoal(currentGoal.id, { status: 'completed', progress: 10 }); }} title="Mark goal complete">
+                <CheckCircle className="h-4 w-4 mr-1" /> Complete
+              </Button>
+            </>
+          )}
+          {currentGoal.status === 'paused' && (
+            <Button variant="ghost" size="sm" className="rounded-full bg-white/90 shadow-lg" onClick={async () => { setCurrentGoal((p) => ({ ...p, status: 'active' })); await updateGoal(currentGoal.id, { status: 'active' }); }} title="Resume working on this goal">
+              <Play className="h-4 w-4 mr-1" /> Resume
+            </Button>
+          )}
           <Button variant="ghost" size="sm" className="rounded-full bg-white/90 shadow-lg" onClick={() => setEditOpen((v) => !v)}>
             <PenLine className="h-4 w-4 mr-1" /> Edit goal
           </Button>
-          {onDeleteGoal && (
-            <Button variant="ghost" size="sm" className="rounded-full bg-white/90 shadow-lg text-red-600" onClick={() => setDeleteConfirmOpen(true)}>
-              <Trash2 className="h-4 w-4 mr-1" /> Delete goal
-            </Button>
-          )}
         </div>
       </div>
 
@@ -253,7 +260,7 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
               onClick={async () => {
                 if (onDeleteGoal) {
                   await onDeleteGoal(currentGoal.id);
-                  onBack();
+                  navigate(-1);
                 }
               }}
             >
@@ -361,12 +368,44 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
 
         <div className="relative z-10 max-w-6xl mx-auto w-full flex flex-col sm:flex-row items-end gap-8 px-4 sm:px-6">
           <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <Button
+                onClick={() => navigate(-1)}
+                variant="ghost"
+                size="sm"
+                className="rounded-full text-white border border-white/40 hover:bg-white/20 hover:border-white/60"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+              {onDeleteGoal && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-red-200 border border-red-300/50 hover:bg-red-500/20 hover:text-white"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete goal
+                </Button>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 mb-3">
             <span
-              className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-3"
+              className="inline-block px-3 py-1 rounded-full text-xs font-semibold"
               style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: 'white' }}
             >
               {currentGoal.timeline}
             </span>
+            {(currentGoal.status === 'paused' || currentGoal.status === 'completed') && (
+              <span
+                className="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+                style={{ backgroundColor: currentGoal.status === 'completed' ? 'rgba(34,197,94,0.9)' : 'rgba(234,179,8,0.9)', color: 'white' }}
+              >
+                {currentGoal.status === 'completed' ? 'Completed' : 'Paused'}
+              </span>
+            )}
+          </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white tracking-tight drop-shadow-lg">
               {currentGoal.title}
             </h1>
@@ -430,11 +469,42 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
                     onCheckedChange={() => handleStepToggle(step.id)}
                     className="mt-0.5 shrink-0"
                   />
-                  <div className="flex-1 min-w-0" onClick={() => handleStepToggle(step.id)}>
-                    <p className={`font-medium ${step.completed ? 'line-through opacity-60' : ''}`} style={{ color: 'var(--landing-text)' }}>
-                      {step.title}
-                    </p>
-                    {(step.predictDate != null || step.predictPrice != null) && (
+                  <div className="flex-1 min-w-0" onClick={() => editingStepId !== step.id && handleStepToggle(step.id)}>
+                    {editingStepId === step.id ? (
+                      <Input
+                        value={step.title}
+                        onChange={(e) => {
+                          const t = e.target.value;
+                          const nextSteps = (currentGoal.steps ?? []).map((s) => (s.id === step.id ? { ...s, title: t } : s));
+                          setCurrentGoal((prev) => ({ ...prev, steps: nextSteps }));
+                        }}
+                        onBlur={async (e) => {
+                          const title = (e.target as HTMLInputElement).value.trim() || 'New step';
+                          const nextSteps = (currentGoal.steps ?? []).map((s) => (s.id === step.id ? { ...s, title } : s));
+                          setEditingStepId(null);
+                          setCurrentGoal((prev) => ({ ...prev, steps: nextSteps }));
+                          await updateGoal(currentGoal.id, { steps: nextSteps });
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                        }}
+                        placeholder="Step name"
+                        className="h-8 rounded-lg font-medium"
+                        style={{ borderColor: 'var(--landing-border)' }}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                      />
+                    ) : (
+                      <p
+                        className={`font-medium ${step.completed ? 'line-through opacity-60' : ''}`}
+                        style={{ color: 'var(--landing-text)' }}
+                        onClick={(e) => { e.stopPropagation(); setEditingStepId(step.id); }}
+                        title="Click to edit name"
+                      >
+                        {step.title || 'Unnamed step'}
+                      </p>
+                    )}
+                    {(step.predictDate != null || step.predictPrice != null) && editingStepId !== step.id && (
                       <div className="flex flex-wrap gap-3 mt-1.5 text-xs opacity-80" style={{ color: 'var(--landing-text)' }}>
                         {step.predictDate && (
                           <span className="flex items-center gap-1">
@@ -456,7 +526,7 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
                     variant="ghost"
                     size="icon"
                     className="shrink-0 h-8 w-8 text-red-600 opacity-70 hover:opacity-100"
-                    onClick={(e) => { e.stopPropagation(); handleRemoveStep(step.id); }}
+                    onClick={(e) => { e.stopPropagation(); handleRemoveStep(step.id); setEditingStepId((id) => (id === step.id ? null : id)); }}
                     title="Remove step"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -693,7 +763,7 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
 }
 
 function ProgressPhotosBlock({ goalId }: { goalId: string }) {
-  const { photos, loading, uploadPhoto } = useProgressPhotos(goalId, { forManifestationGoal: true });
+  const { photos, loading, uploadPhoto, deletePhoto } = useProgressPhotos(goalId, { forManifestationGoal: true });
   const [caption, setCaption] = useState('');
   const [uploading, setUploading] = useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -713,7 +783,7 @@ function ProgressPhotosBlock({ goalId }: { goalId: string }) {
 
   return (
     <div className="rounded-2xl p-6 border" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
-      <p className="text-sm font-semibold mb-3" style={{ color: 'var(--landing-text)' }}>Add progress photo</p>
+      <p className="text-sm font-semibold mb-3" style={{ color: 'var(--landing-text)' }}>Progress photos</p>
       <input
         ref={inputRef}
         type="file"
@@ -721,7 +791,7 @@ function ProgressPhotosBlock({ goalId }: { goalId: string }) {
         className="hidden"
         onChange={handleFile}
       />
-      <div className="flex gap-2">
+      <div className="flex gap-2 mb-4">
         <input
           type="text"
           placeholder="Caption (optional)"
@@ -742,8 +812,30 @@ function ProgressPhotosBlock({ goalId }: { goalId: string }) {
         </Button>
       </div>
       {loading && <p className="text-sm mt-2 opacity-70">Loading photos…</p>}
+      {!loading && photos.length === 0 && (
+        <p className="text-sm opacity-70" style={{ color: 'var(--landing-text)' }}>No photos yet. Upload one above to track your progress.</p>
+      )}
       {!loading && photos.length > 0 && (
-        <p className="text-sm mt-2 opacity-70">{photos.length} photo(s) in your journey.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-2">
+          {photos.map((photo) => (
+            <div key={photo.id} className="relative group rounded-xl overflow-hidden border" style={{ borderColor: 'var(--landing-border)' }}>
+              <img src={photo.url} alt={photo.caption} className="w-full h-40 object-cover" />
+              <Button
+                type="button"
+                size="icon"
+                variant="destructive"
+                className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => deletePhoto(photo.id)}
+                aria-label="Remove photo"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              {photo.caption && (
+                <div className="p-2 text-sm truncate" style={{ color: 'var(--landing-text)', backgroundColor: 'var(--landing-bg)' }}>{photo.caption}</div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

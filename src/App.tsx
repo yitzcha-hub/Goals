@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { StorageModeProvider } from "@/contexts/StorageModeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AuthenticatedLayout } from "@/components/AuthenticatedLayout";
 import { Loader2 } from "lucide-react";
 
 // Route-level code splitting: load pages only when their route is visited
@@ -30,6 +31,7 @@ const FAQ = lazy(() => import("./pages/FAQ"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Progress = lazy(() => import("./pages/Progress"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Goals = lazy(() => import("./pages/Goals"));
 const Admin = lazy(() => import("./pages/Admin"));
 const InviteCodes = lazy(() => import("./pages/InviteCodes"));
 
@@ -73,6 +75,7 @@ const App = () => (
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/goals" element={<ProtectedRoute><AuthenticatedLayout><Goals /></AuthenticatedLayout></ProtectedRoute>} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/invite-codes" element={<ProtectedRoute><InviteCodes /></ProtectedRoute>} />
 

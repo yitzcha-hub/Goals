@@ -14,6 +14,8 @@ export interface GoalStep {
   completedAt?: string;
 }
 
+export type GoalStatus = 'active' | 'paused' | 'completed';
+
 export interface ManifestationGoal {
   id: string;
   title: string;
@@ -28,6 +30,8 @@ export interface ManifestationGoal {
   steps?: GoalStep[];
   budget?: number;
   spent?: number;
+  /** active = working on it; paused = shelved for now; completed = done */
+  status?: GoalStatus;
 }
 
 export interface ManifestationTodo {
@@ -95,7 +99,7 @@ export function useManifestationDatabase() {
         supabase.from('manifestation_journal_entries').select('*').eq('user_id', user.id).order('date', { ascending: false }),
         supabase.from('manifestation_stats').select('*').eq('user_id', user.id).maybeSingle()
       ]);
-      if (goalsRes.data) setGoals(goalsRes.data.map((r: any) => ({ id: r.id, title: r.title, description: r.description ?? '', timeline: r.timeline, progress: r.progress, imageUrl: r.image_url, priority: r.priority, createdAt: r.created_at, recommendations: (r.recommendations ?? []) as string[], targetDate: r.target_date ?? null, steps: (r.steps ?? []) as GoalStep[], budget: r.budget ?? 0, spent: r.spent ?? 0 })));
+      if (goalsRes.data) setGoals(goalsRes.data.map((r: any) => ({ id: r.id, title: r.title, description: r.description ?? '', timeline: r.timeline, progress: r.progress, imageUrl: r.image_url, priority: r.priority, createdAt: r.created_at, recommendations: (r.recommendations ?? []) as string[], targetDate: r.target_date ?? null, steps: (r.steps ?? []) as GoalStep[], budget: r.budget ?? 0, spent: r.spent ?? 0, status: (r.status ?? 'active') as GoalStatus })));
       if (todosRes.data) setTodos(todosRes.data.map((r: any) => ({ id: r.id, title: r.title, completed: r.completed, points: r.points, createdAt: r.created_at, scheduledDate: r.scheduled_date ?? null, completedAt: r.completed_at ?? null, timeSlot: r.time_slot ?? null, groupName: r.group_name ?? null })));
       if (gratitudeRes.data) setGratitudeEntries(gratitudeRes.data.map((r: any) => ({ id: r.id, content: r.content ?? '', date: r.date, createdAt: r.created_at, sectionKey: r.section_key ?? undefined, sectionLabel: r.section_label ?? undefined })));
       if (journalRes.data) setJournalEntries(journalRes.data.map((r: any) => ({ id: r.id, title: r.title ?? '', content: r.content, imageUrl: r.image_url, mood: r.mood, date: r.date, createdAt: r.created_at })));
@@ -192,6 +196,7 @@ export function useManifestationDatabase() {
     };
     if (goal.targetDate) payload.target_date = goal.targetDate;
     if (goal.steps && goal.steps.length > 0) payload.steps = goal.steps;
+    payload.status = goal.status ?? 'active';
     const { data, error } = await supabase.from('manifestation_goals').insert(payload).select('id,created_at').single();
     if (error) throw error;
     setGoals(prev => [{ ...goal, id: data.id, createdAt: data.created_at }, ...prev]);
@@ -218,10 +223,10 @@ export function useManifestationDatabase() {
     if (!wasComplete && isNowComplete) await updateStats(100, 0);
   };
 
-  /** Update goal fields (steps, targetDate, progress, budget, spent, etc.). */
+  /** Update goal fields (steps, targetDate, progress, status, budget, spent, etc.). */
   const updateGoal = async (
     goalId: string,
-    updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'title' | 'description' | 'timeline' | 'priority' | 'budget' | 'spent'>>
+    updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'title' | 'description' | 'timeline' | 'priority' | 'budget' | 'spent' | 'status'>>
   ) => {
     const goal = goals.find(g => g.id === goalId);
     if (!goal) return;
@@ -243,6 +248,7 @@ export function useManifestationDatabase() {
     if (updates.priority !== undefined) payload.priority = updates.priority;
     if (updates.budget !== undefined) payload.budget = updates.budget;
     if (updates.spent !== undefined) payload.spent = updates.spent;
+    if (updates.status !== undefined) payload.status = updates.status;
     if (Object.keys(payload).length === 0) return;
     await supabase.from('manifestation_goals').update(payload).eq('id', goalId);
     setGoals(prev => prev.map(g => (g.id === goalId ? { ...g, ...updates } : g)));

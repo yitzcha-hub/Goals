@@ -21,11 +21,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
-/** Center nav: Dashboard, Calendar, Progress */
+/** Center nav: Home (Dashboard), Goals, Progress, Calendar */
 const centerNavItems = [
-  { label: 'Dashboard', path: '/' },
-  { label: 'Calendar', path: '/calendar' },
-  { label: 'Progress', path: '/progress' },
+  { label: 'Home', path: '/', scrollId: undefined },
+  { label: 'Goals', path: '/goals', scrollId: undefined },
+  { label: 'Progress', path: '/progress', scrollId: undefined },
+  { label: 'Calendar', path: '/calendar', scrollId: undefined },
 ];
 
 const helpNavItems = [
@@ -50,10 +51,16 @@ export const AuthenticatedHeader: React.FC = () => {
     navigate(item.path);
   };
 
-  const handleCenterNav = (path: string) => {
+  const handleCenterNav = (item: typeof centerNavItems[0]) => {
     setMobileMenuOpen(false);
-    navigate(path);
+    navigate(item.path);
+    if (item.scrollId) {
+      setTimeout(() => document.getElementById(item.scrollId!)?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
   };
+
+  const isActive = (item: typeof centerNavItems[0]) =>
+    item.scrollId ? location.pathname === item.path : location.pathname === item.path;
 
   return (
     <header
@@ -83,17 +90,15 @@ export const AuthenticatedHeader: React.FC = () => {
 
         {/* Center nav — desktop (Landing-style tabs) */}
         <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-0.5">
-          {centerNavItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
+          {centerNavItems.map((item) => (
               <button
                 key={item.label}
-                onClick={() => handleCenterNav(item.path)}
+                onClick={() => handleCenterNav(item)}
                 className="group relative px-4 py-2 text-sm font-bold rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--landing-primary)]"
               >
                 <span
                   className={`relative z-10 bg-clip-text text-transparent transition-colors duration-150 ${
-                    isActive
+                    isActive(item)
                       ? 'bg-gradient-to-r from-[var(--landing-primary)] via-[var(--landing-primary)] to-[var(--landing-primary)]'
                       : 'bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280] group-hover:from-[#4b5563] group-hover:via-[var(--landing-primary)] group-hover:to-[#4b5563]'
                   }`}
@@ -101,13 +106,12 @@ export const AuthenticatedHeader: React.FC = () => {
                   {item.label}
                 </span>
                 <span
-                  className={`absolute bottom-0 left-1/2 h-0.5 w-3/4 -translate-x-1/2 origin-center rounded-full transition-transform duration-200 ease-out ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}
+                  className={`absolute bottom-0 left-1/2 h-0.5 w-3/4 -translate-x-1/2 origin-center rounded-full transition-transform duration-200 ease-out ${isActive(item) ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}
                   style={{ backgroundColor: 'var(--landing-primary)' }}
                   aria-hidden
                 />
               </button>
-            );
-          })}
+            ))}
         </nav>
 
         {/* Right: Help, Notifications, User */}
@@ -244,10 +248,10 @@ export const AuthenticatedHeader: React.FC = () => {
                 {centerNavItems.map((item) => (
                   <button
                     key={item.label}
-                    onClick={() => handleCenterNav(item.path)}
+                    onClick={() => handleCenterNav(item)}
                     className="flex items-center px-4 py-3 text-left text-sm font-bold rounded-lg transition-colors"
                     style={{
-                      color: location.pathname === item.path ? 'var(--landing-primary)' : 'var(--landing-text)',
+                      color: isActive(item) ? 'var(--landing-primary)' : 'var(--landing-text)',
                     }}
                   >
                     {item.label}

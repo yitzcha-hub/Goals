@@ -738,6 +738,7 @@ Respond with a JSON array only, no markdown. Use real YYYY-MM-DD dates for targe
 export interface AIGeneratedTodo {
   title: string;
   timeSlot?: string; // e.g. "09:00"
+  group?: string; // e.g. "Studying", "Exercise", "Work", "Health", "Other"
 }
 
 export async function generateTodosWithOpenAI(
@@ -753,11 +754,17 @@ ${goals.length ? goals.map((g) => `- "${g.title}" (${g.progress}/10)`).join('\n'
 Recent to-dos (completed or not):
 ${previousTodos.length ? previousTodos.slice(-15).map((t) => `- ${t.completed ? '[done]' : '[ ]'} ${t.title}`).join('\n') : '(None)'}
 
-Return 2-4 concrete, actionable tasks for ${day}. Each can optionally have a timeSlot in 24h format like "09:00" or "14:00".
+Return 2-4 concrete, actionable tasks for ${day}. For each task include:
+- title: string
+- timeSlot (optional): 24h format e.g. "09:00" or "14:00"
+- group (required): a short category name to group tasks, e.g. "Studying", "Exercise", "Work", "Health", "Personal", "Other". Use consistent group names when tasks belong together (e.g. all study tasks under "Studying").
+
 Respond with a JSON array only, no markdown. Example:
 [
-  { "title": "Review weekly goals and pick one priority action", "timeSlot": "09:00" },
-  { "title": "Work on [goal name] for 15 minutes", "timeSlot": "14:00" }
+  { "title": "Review weekly goals and pick one priority action", "timeSlot": "09:00", "group": "Work" },
+  { "title": "30 min English reading", "timeSlot": "10:00", "group": "Studying" },
+  { "title": "Work on [goal name] for 15 minutes", "timeSlot": "14:00", "group": "Work" },
+  { "title": "Evening walk or stretch", "group": "Exercise" }
 ]`;
 
   const raw = await chatCompletion(prompt, { maxTokens: 500, temperature: 0.7 });
