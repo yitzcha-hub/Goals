@@ -59,11 +59,11 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
         >
           <img
             src={logoImg}
-            alt="Goals and Development"
+            alt="Authenticity & Purpose"
             className="h-9 w-9 object-contain transition-transform duration-200 group-hover:scale-105"
           />
           <span className="text-lg font-bold tracking-tight hidden sm:inline bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280] bg-clip-text text-transparent">
-            Goals and Development
+            Authenticity & Purpose
           </span>
         </button>
 
