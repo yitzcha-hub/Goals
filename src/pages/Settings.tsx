@@ -66,6 +66,9 @@ const Settings: React.FC = () => {
                     <label className="text-sm font-medium">Email</label>
                     <p className="text-sm text-gray-600">{user.email}</p>
                   </div>
+                  <p className="text-sm text-muted-foreground border-t pt-4">
+                    Your information syncs across your computer, tablet, and phone.
+                  </p>
                 </div>
               </CardContent>
             </Card>

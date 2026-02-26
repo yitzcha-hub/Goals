@@ -75,7 +75,10 @@ export const AuthenticatedFooter: React.FC<AuthenticatedFooterProps> = ({ naviga
             <img src={logoImg} alt="" className="h-9 w-9 object-contain" aria-hidden />
             <span className="font-semibold text-white/95">Authenticity and Purpose</span>
           </div>
-          <p className="text-sm opacity-90">&copy; {new Date().getFullYear()} Authenticity and Purpose.</p>
+          <div className="text-right">
+            <p className="text-sm opacity-90">&copy; {new Date().getFullYear()} Authenticity and Purpose.</p>
+            <p className="text-xs opacity-80 mt-1">Your information syncs across your computer, tablet, and phone.</p>
+          </div>
         </div>
       </div>
     </footer>

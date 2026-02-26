@@ -80,6 +80,9 @@ const GetStarted: React.FC = () => {
               Go to your goals
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
+            <p className="text-sm opacity-80 mt-4" style={{ color: 'var(--landing-text)' }}>
+              Your information syncs across your computer, tablet, and phone.
+            </p>
           </div>
         </section>
       </div>

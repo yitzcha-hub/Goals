@@ -24,6 +24,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ navigate, scrollTo
         </div>
       </div>
       <p className="text-center text-sm opacity-90 mt-8">&copy; {new Date().getFullYear()} Authenticity and Purpose.</p>
+      <p className="text-center text-xs opacity-80 mt-2">Your information syncs across your computer, tablet, and phone.</p>
     </footer>
   );
 };

@@ -101,6 +101,10 @@ const faqCategories: FAQCategory[] = [
         q: 'Can I export my data?',
         a: 'Yes. You can export your goals, plans, and progress data from your account settings. We believe your data belongs to you, and we make it easy to take it with you if you ever decide to leave.',
       },
+      {
+        q: 'Does my data sync across devices?',
+        a: 'Yes. Your information transfers back and forth between your computer, tablet, and phone. When you sign in on any device, you see the same goals, plans, and progress.',
+      },
     ],
   },
 ];
