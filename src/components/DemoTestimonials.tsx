@@ -9,7 +9,7 @@ const DemoTestimonials: React.FC = () => {
       name: 'Johnson Oyinbo',
       role: 'Entrepreneur',
       image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1759372135118_4c9c2359.webp',
-      text: 'Goals and Development helped me launch my business in 6 months. The visual progress tracking kept me motivated every single day!',
+      text: 'Authenticity and Purpose helped me launch my business in 6 months. The visual progress tracking kept me motivated every single day!',
       rating: 5
     },
     {
@@ -33,7 +33,7 @@ const DemoTestimonials: React.FC = () => {
       name: 'Emily Rodriguez',
       role: 'Career Changer',
       image: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1759372142163_71220ea3.webp',
-      text: 'Transitioned to my dream career in tech. The goals and development framework gave me the structure I needed to succeed.',
+      text: 'Transitioned to my dream career in tech. The authenticity and purpose framework gave me the structure I needed to succeed.',
       rating: 5
     }
   ];
@@ -43,7 +43,7 @@ const DemoTestimonials: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--landing-text)' }}>Success Stories</h2>
-          <p className="text-lg opacity-90" style={{ color: 'var(--landing-text)' }}>Join thousands who've achieved their goals with Goals and Development</p>
+          <p className="text-lg opacity-90" style={{ color: 'var(--landing-text)' }}>Join thousands who've achieved their goals with Authenticity and Purpose</p>
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">

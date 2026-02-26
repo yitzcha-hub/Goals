@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Target, Calendar, Star, Heart, BookOpen, Award, Plus, Check, Trash2,
-  ChevronRight, Flame, CalendarClock, Clock, Sparkles, ChevronLeft,
+  ChevronRight, Flame, CalendarClock, Clock, Sparkles, ChevronLeft, Loader2,
 } from 'lucide-react';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
@@ -84,6 +84,7 @@ const ManifestationDashboard: React.FC = () => {
     journalEntries,
     totalPoints,
     streak,
+    isMutating,
     addGoal: addGoalDb,
     updateGoalProgress: updateGoalProgressDb,
     deleteGoal: deleteGoalDb,
@@ -334,7 +335,16 @@ const ManifestationDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+    <div className="min-h-screen landing relative" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+      {isMutating && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]" aria-live="polite" aria-busy="true">
+          <div className="rounded-2xl border-2 p-8 flex flex-col items-center gap-4 shadow-xl" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-primary)' }}>
+            <Loader2 className="h-12 w-12 animate-spin" style={{ color: 'var(--landing-primary)' }} />
+            <p className="font-medium text-sm sm:text-base" style={{ color: 'var(--landing-text)' }}>Saving…</p>
+          </div>
+        </div>
+      )}
+      <div className={isMutating ? 'pointer-events-none select-none' : ''}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <TrialBanner />
 
@@ -1553,6 +1563,7 @@ const ManifestationDashboard: React.FC = () => {
 
       <OfflineIndicator />
       <PWAInstallPrompt />
+      </div>
     </div>
   );
 };

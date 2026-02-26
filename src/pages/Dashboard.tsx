@@ -31,6 +31,9 @@ import {
   ArrowRightLeft,
   CalendarDays,
   FolderInput,
+  ChevronLeft,
+  ChevronRight,
+  BarChart3,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -104,7 +107,35 @@ export default function Dashboard() {
   const [slotClickTime, setSlotClickTime] = useState<string | undefined>();
   const [overviewNewTaskTitle, setOverviewNewTaskTitle] = useState('');
   const [overviewNewGratitude, setOverviewNewGratitude] = useState('');
+  const [activeHomeSection, setActiveHomeSection] = useState<string>('goals');
   const navigate = useNavigate();
+
+  const homeSectionIds = ['goals', 'to-do', 'calendar', 'progress', 'gratitude'] as const;
+  const scrollToHomeSection = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setActiveHomeSection(id);
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const id = entry.target.id;
+          if (homeSectionIds.includes(id as typeof homeSectionIds[number])) {
+            setActiveHomeSection(id);
+            break;
+          }
+        }
+      },
+      { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
+    );
+    homeSectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
 
   const {
     goals,
@@ -113,6 +144,7 @@ export default function Dashboard() {
     journalEntries,
     totalPoints,
     streak,
+    isMutating,
     addGoal,
     updateGoal,
     updateGoalProgress,
@@ -439,16 +471,26 @@ export default function Dashboard() {
         onBack={() => setSelectedGoalId(null)}
         updateGoal={updateGoal}
         onDeleteGoal={deleteGoal}
+        isMutating={isMutating}
       />
     );
   }
 
   return (
-    <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+    <div className="min-h-screen landing relative" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+      {isMutating && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]" aria-live="polite" aria-busy="true">
+          <div className="rounded-2xl border-2 p-8 flex flex-col items-center gap-4 shadow-xl" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            <Loader2 className="h-12 w-12 animate-spin" style={{ color: 'var(--landing-primary)' }} />
+            <p className="font-medium text-sm sm:text-base" style={{ color: 'var(--landing-text)' }}>Saving…</p>
+          </div>
+        </div>
+      )}
+      <div className={isMutating ? 'pointer-events-none select-none' : ''}>
       {/* Hero — Demo-style: same as Demo page */}
       <section
         id="hero"
-        className="relative py-20 sm:py-28 px-4 min-h-[28rem] flex items-center justify-center overflow-hidden"
+        className="relative py-12 sm:py-20 md:py-28 px-4 min-h-[20rem] sm:min-h-[26rem] md:min-h-[28rem] flex items-center justify-center overflow-hidden"
       >
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -480,7 +522,7 @@ export default function Dashboard() {
           >
             Goals, steps, progress timeline, and daily to-dos — all in one place
           </p>
-          <p className="text-sm font-medium opacity-90 mb-8 animate-slide-up" style={{ color: 'var(--landing-text)', animationDelay: '0.3s' }}>
+          <p className="text-xs sm:text-sm font-medium opacity-90 mb-6 sm:mb-8 animate-slide-up px-1" style={{ color: 'var(--landing-text)', animationDelay: '0.3s' }}>
             Click a goal to see details • Use AI to generate to-dos • Add gratitude
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: '0.4s' }}>
@@ -560,63 +602,82 @@ export default function Dashboard() {
       />
 
       {/* Banner section (same as Goals page) */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8" style={{ backgroundColor: 'var(--landing-bg)' }}>
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-8" style={{ backgroundColor: 'var(--landing-bg)' }}>
         <TrialBanner />
       </div>
 
       {/* Stats Bar */}
-      <section className="py-8 px-4 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
-            <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{activeGoals.length}</div>
-            <div className="text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Active Goals</div>
+      <section className="py-4 sm:py-8 px-3 sm:px-4 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 text-center">
+          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{activeGoals.length}</div>
+            <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Active Goals</div>
           </div>
-          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
-            <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{todos.filter((t) => t.completed).length}/{todos.length}</div>
-            <div className="text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Tasks Done</div>
+          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{todos.filter((t) => t.completed).length}/{todos.length}</div>
+            <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Tasks Done</div>
           </div>
-          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
-            <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{totalPoints}</div>
-            <div className="text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Total Points</div>
+          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{totalPoints}</div>
+            <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Total Points</div>
           </div>
-          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
-            <div className="text-3xl font-bold mb-1" style={{ color: 'var(--landing-primary)' }}>{streak} days</div>
-            <div className="text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Current Streak</div>
+          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{streak} days</div>
+            <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Current Streak</div>
           </div>
         </div>
       </section>
 
-      {/* Main content: Goals grid + To-Do by day + Gratitude */}
-      <section id="dashboard-content" className="py-12 px-4 sm:px-6 border-t scroll-mt-24" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
-        <div className="max-w-6xl mx-auto space-y-12">
-          {/* Goals Grid */}
-          <div id="goals">
-            <div className="flex items-center justify-between mb-8">
+      {/* Main content: Goals, To Do List, Calendar, Progress, Gratitude — click tab to go to section */}
+      <section id="dashboard-content" className="py-6 sm:py-12 px-3 sm:px-6 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
+        <div className="sticky top-14 sm:top-16 z-30 mb-6 sm:mb-10 -mx-3 sm:mx-0 px-2 sm:px-0">
+          <div className="rounded-lg sm:rounded-xl border-2 p-2 flex gap-2 justify-center overflow-x-auto overflow-y-hidden snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            {(['Goals', 'To Do List', 'Calendar', 'Progress', 'Gratitude'] as const).map((label, i) => {
+              const id = homeSectionIds[i];
+              const isActive = activeHomeSection === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => scrollToHomeSection(id)}
+                  className={`shrink-0 snap-start px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap min-h-[2.5rem] touch-manipulation ${isActive ? 'shadow-md' : 'opacity-90 hover:opacity-100'}`}
+                  style={isActive ? { backgroundColor: 'var(--landing-primary)', color: 'white' } : { color: 'var(--landing-text)' }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto space-y-8 sm:space-y-12">
+          {/* Goals */}
+          <section id="goals" className="scroll-mt-24 sm:scroll-mt-28">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
               <div className="flex items-center gap-3">
-                <Target className="h-8 w-8" style={{ color: 'var(--landing-primary)' }} />
-                <h2 className="text-3xl font-bold" style={{ color: 'var(--landing-text)' }}>Active Goals</h2>
+                <Target className="h-7 w-7 sm:h-8 sm:w-8 shrink-0" style={{ color: 'var(--landing-primary)' }} />
+                <h2 className="text-2xl sm:text-3xl font-bold truncate min-w-0" style={{ color: 'var(--landing-text)' }}>Active Goals</h2>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => navigate('/goals')}>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" className="rounded-xl shrink-0" onClick={() => navigate('/goals')}>
                   View all goals
                 </Button>
-                <Button className="hero-cta-primary rounded-xl" onClick={() => setAddGoalOpen(true)}>
+                <Button className="hero-cta-primary rounded-xl shrink-0" onClick={() => setAddGoalOpen(true)}>
                   <Plus className="h-5 w-5 mr-2" />
                   Add Goal
                 </Button>
               </div>
             </div>
             {activeGoals.length === 0 ? (
-              <Card className="overflow-hidden shadow-lg rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-                <CardContent className="p-8 text-center">
+              <Card className="overflow-hidden shadow-lg rounded-xl sm:rounded-2xl feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+                <CardContent className="p-6 sm:p-8 text-center">
                   <Target className="h-10 w-10 mx-auto mb-3 opacity-50" style={{ color: 'var(--landing-primary)' }} />
-                  <p className="font-medium" style={{ color: 'var(--landing-text)' }}>No active goals</p>
-                  <p className="text-sm mt-1" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>Add a goal or resume one from the Goals page.</p>
-                  <Button onClick={() => setAddGoalOpen(true)} className="mt-4 rounded-xl" size="sm">Add goal</Button>
+                  <p className="font-medium text-sm sm:text-base" style={{ color: 'var(--landing-text)' }}>No active goals</p>
+                  <p className="text-xs sm:text-sm mt-1 px-2" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>Add a goal or resume one from the Goals page.</p>
+                  <Button onClick={() => setAddGoalOpen(true)} className="mt-4 rounded-xl min-h-9 touch-manipulation" size="sm">Add goal</Button>
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {activeGoals.map((goal) => (
                   <Card
                     key={goal.id}
@@ -625,16 +686,16 @@ export default function Dashboard() {
                     onClick={() => setSelectedGoalId(goal.id)}
                   >
                     {goal.imageUrl && (
-                      <div className="w-full h-40 overflow-hidden">
+                      <div className="w-full h-32 sm:h-40 overflow-hidden">
                         <img src={goal.imageUrl} alt={goal.title} className="w-full h-full object-cover" />
                       </div>
                     )}
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-lg font-semibold" style={{ color: 'var(--landing-text)' }}>{goal.title}</h3>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-2xl font-bold" style={{ color: 'var(--landing-primary)' }}>{goal.progress}/10</span>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); setGoalToDeleteId(goal.id); }} title="Delete goal">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex justify-between items-start gap-2 mb-2">
+                        <h3 className="text-base sm:text-lg font-semibold min-w-0 line-clamp-2" style={{ color: 'var(--landing-text)' }}>{goal.title}</h3>
+                        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                          <span className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--landing-primary)' }}>{goal.progress}/10</span>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 text-red-600 hover:text-red-700 hover:bg-red-50 touch-manipulation" onClick={(e) => { e.stopPropagation(); setGoalToDeleteId(goal.id); }} title="Delete goal">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -646,22 +707,22 @@ export default function Dashboard() {
                         {goal.status === 'paused' && <Badge variant="outline" className="border-amber-500 text-amber-700">Paused</Badge>}
                         {goal.status === 'completed' && <Badge className="bg-green-100 text-green-800 border-0">Completed</Badge>}
                       </div>
-                      <div className="flex flex-wrap gap-1 mb-3" onClick={(e) => e.stopPropagation()}>
-                        <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => setSelectedGoalId(goal.id)} title="Open goal">
+                      <div className="flex flex-wrap gap-1.5 mb-3 touch-manipulation" onClick={(e) => e.stopPropagation()}>
+                        <Button variant="outline" size="sm" className="rounded-lg text-xs min-h-9" onClick={() => setSelectedGoalId(goal.id)} title="Open goal">
                           <LogIn className="h-3.5 w-3 mr-1" /> Enter
                         </Button>
                         {(goal.status === 'active' || !goal.status) && (
                           <>
-                            <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => updateGoal(goal.id, { status: 'paused' })} title="Pause goal">
+                            <Button variant="outline" size="sm" className="rounded-lg text-xs min-h-9" onClick={() => updateGoal(goal.id, { status: 'paused' })} title="Pause goal">
                               <Pause className="h-3.5 w-3 mr-1" /> Pause
                             </Button>
-                            <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => updateGoal(goal.id, { status: 'completed', progress: 10 })} title="Mark complete">
+                            <Button variant="outline" size="sm" className="rounded-lg text-xs min-h-9" onClick={() => updateGoal(goal.id, { status: 'completed', progress: 10 })} title="Mark complete">
                               <CheckCircle className="h-3.5 w-3 mr-1" /> Complete
                             </Button>
                           </>
                         )}
                         {goal.status === 'paused' && (
-                          <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => updateGoal(goal.id, { status: 'active' })} title="Resume goal">
+                          <Button variant="outline" size="sm" className="rounded-lg text-xs min-h-9" onClick={() => updateGoal(goal.id, { status: 'active' })} title="Resume goal">
                             <Play className="h-3.5 w-3 mr-1" /> Resume
                           </Button>
                         )}
@@ -687,24 +748,23 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Two Column: To-Do by day + Gratitude */}
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* To-Do List by day — Today/Tomorrow, time slot, AI generate */}
+          {/* To Do List */}
+          <section id="to-do" className="scroll-mt-24 sm:scroll-mt-28">
             <Card className="shadow-lg feature-card-shadow" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="h-7 w-7" style={{ color: 'var(--landing-primary)' }} />
-                    <h3 className="text-2xl font-semibold" style={{ color: 'var(--landing-text)' }}>To-Do List</h3>
-                    <Badge style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>By day · +5 pts each</Badge>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <CheckCircle2 className="h-6 w-6 sm:h-7 sm:w-7 shrink-0" style={{ color: 'var(--landing-primary)' }} />
+                    <h3 className="text-xl sm:text-2xl font-semibold truncate" style={{ color: 'var(--landing-text)' }}>To-Do List</h3>
+                    <Badge className="shrink-0 text-xs hidden sm:inline-flex" style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>+5 pts</Badge>
                   </div>
-                  <div className="flex gap-2">
-                    <Button type="button" size="sm" variant="outline" onClick={() => handleAIGenerateTodos('today')} className="text-xs" disabled={aiTodosLoading !== null}>
+                  <div className="flex gap-2 shrink-0">
+                    <Button type="button" size="sm" variant="outline" onClick={() => handleAIGenerateTodos('today')} className="text-xs min-h-9 touch-manipulation" disabled={aiTodosLoading !== null}>
                       {aiTodosLoading === 'today' ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <SparklesIcon className="h-3 w-3 mr-1" />} AI: Today
                     </Button>
-                    <Button type="button" size="sm" variant="outline" onClick={() => handleAIGenerateTodos('tomorrow')} className="text-xs" disabled={aiTodosLoading !== null}>
+                    <Button type="button" size="sm" variant="outline" onClick={() => handleAIGenerateTodos('tomorrow')} className="text-xs min-h-9 touch-manipulation" disabled={aiTodosLoading !== null}>
                       {aiTodosLoading === 'tomorrow' ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <SparklesIcon className="h-3 w-3 mr-1" />} AI: Tomorrow
                     </Button>
                   </div>
@@ -730,18 +790,18 @@ export default function Dashboard() {
                             {index + 1}. {groupLabel === NO_GROUP ? 'Other' : groupLabel}
                           </p>
                           {byGroup[groupLabel].map((task) => (
-                            <div key={task.id} className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`} style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}>
-                              <button type="button" onClick={() => toggleTodo(task.id)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
+                            <div key={task.id} className={`flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`} style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}>
+                              <button type="button" onClick={() => toggleTodo(task.id)} className={`w-7 h-7 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 touch-manipulation ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
                                 {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
                               </button>
-                              <div className="flex-1 min-w-0 flex items-center gap-2">
+                              <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
                                 {task.timeSlot && <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}><Clock className="h-3 w-3" /> {task.timeSlot}</span>}
-                                <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
+                                <span className={`truncate ${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
                               </div>
-                              <div className="flex items-center gap-1 shrink-0">
+                              <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()} title="Move task">
+                                    <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 touch-manipulation" onClick={(e) => e.stopPropagation()} title="Move task">
                                       <ArrowRightLeft className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
@@ -785,8 +845,8 @@ export default function Dashboard() {
                                     })}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setEditingTaskId(task.id); }} title="Edit task"><PenLine className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={async (e) => { e.stopPropagation(); await deleteTodo(task.id); toast({ title: 'Removed', description: 'Task removed.' }); }} title="Delete task"><Trash2 className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 touch-manipulation" onClick={(e) => { e.stopPropagation(); setEditingTaskId(task.id); }} title="Edit task"><PenLine className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 text-red-600 touch-manipulation" onClick={async (e) => { e.stopPropagation(); await deleteTodo(task.id); toast({ title: 'Removed', description: 'Task removed.' }); }} title="Delete task"><Trash2 className="h-4 w-4" /></Button>
                               </div>
                             </div>
                           ))}
@@ -810,18 +870,18 @@ export default function Dashboard() {
                             {index + 1}. {groupLabel === NO_GROUP ? 'Other' : groupLabel}
                           </p>
                           {byGroup[groupLabel].map((task) => (
-                            <div key={task.id} className={`flex items-center gap-3 p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`} style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}>
-                              <button type="button" onClick={() => toggleTodo(task.id)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
+                            <div key={task.id} className={`flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`} style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}>
+                              <button type="button" onClick={() => toggleTodo(task.id)} className={`w-7 h-7 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 touch-manipulation ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
                                 {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
                               </button>
-                              <div className="flex-1 min-w-0 flex items-center gap-2">
+                              <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
                                 {task.timeSlot && <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}><Clock className="h-3 w-3" /> {task.timeSlot}</span>}
-                                <span className={`${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
+                                <span className={`truncate ${task.completed ? 'line-through opacity-70' : ''}`} style={{ color: 'var(--landing-text)' }}>{task.title}</span>
                               </div>
-                              <div className="flex items-center gap-1 shrink-0">
+                              <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()} title="Move task">
+                                    <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 touch-manipulation" onClick={(e) => e.stopPropagation()} title="Move task">
                                       <ArrowRightLeft className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
@@ -865,8 +925,8 @@ export default function Dashboard() {
                                     })}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setEditingTaskId(task.id); }} title="Edit task"><PenLine className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={async (e) => { e.stopPropagation(); await deleteTodo(task.id); toast({ title: 'Removed', description: 'Task removed.' }); }} title="Delete task"><Trash2 className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 touch-manipulation" onClick={(e) => { e.stopPropagation(); setEditingTaskId(task.id); }} title="Edit task"><PenLine className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 text-red-600 touch-manipulation" onClick={async (e) => { e.stopPropagation(); await deleteTodo(task.id); toast({ title: 'Removed', description: 'Task removed.' }); }} title="Delete task"><Trash2 className="h-4 w-4" /></Button>
                               </div>
                             </div>
                           ))}
@@ -890,21 +950,103 @@ export default function Dashboard() {
                   }}
                   className="space-y-2 mt-4"
                 >
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <Input placeholder="Add a task..." value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} className="flex-1 min-w-[140px]" style={{ borderColor: 'var(--landing-border)' }} />
-                    <Input placeholder="Group (e.g. Studying, Exercise)" value={newTaskGroup} onChange={(e) => setNewTaskGroup(e.target.value)} className="w-[140px]" style={{ borderColor: 'var(--landing-border)' }} title="Group: Studying, Exercise, Other, etc." />
-                    <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
-                      <SelectTrigger className="w-[110px]" style={{ borderColor: 'var(--landing-border)' }}><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="today">Today</SelectItem><SelectItem value="tomorrow">Tomorrow</SelectItem></SelectContent>
-                    </Select>
-                    <Input placeholder="Time (e.g. 09:00)" value={newTaskTimeSlot} onChange={(e) => setNewTaskTimeSlot(e.target.value)} className="w-[100px]" style={{ borderColor: 'var(--landing-border)' }} />
-                    <Button type="submit" size="sm" className="hero-cta-primary" disabled={!newTaskTitle.trim()}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
+                    <Input placeholder="Add a task..." value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} className="flex-1 min-w-0 w-full sm:min-w-[140px]" style={{ borderColor: 'var(--landing-border)' }} />
+                    <div className="flex flex-wrap gap-2">
+                      <Input placeholder="Group" value={newTaskGroup} onChange={(e) => setNewTaskGroup(e.target.value)} className="w-full sm:w-[130px] min-w-0" style={{ borderColor: 'var(--landing-border)' }} title="Group: Studying, Exercise, Other, etc." />
+                      <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
+                        <SelectTrigger className="w-[100px] sm:w-[110px] shrink-0" style={{ borderColor: 'var(--landing-border)' }}><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="today">Today</SelectItem><SelectItem value="tomorrow">Tomorrow</SelectItem></SelectContent>
+                      </Select>
+                      <Input placeholder="Time" value={newTaskTimeSlot} onChange={(e) => setNewTaskTimeSlot(e.target.value)} className="w-[80px] sm:w-[100px] shrink-0" style={{ borderColor: 'var(--landing-border)' }} />
+                      <Button type="submit" size="sm" className="hero-cta-primary min-h-9 touch-manipulation shrink-0" disabled={!newTaskTitle.trim()}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+                    </div>
                   </div>
                 </form>
               </CardContent>
             </Card>
+          </section>
 
-            {/* Gratitude Journal — 10 sections + custom, works on computer, tablet, phone */}
+          {/* Calendar — day timeline */}
+          <section id="calendar" className="scroll-mt-24 sm:scroll-mt-28">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <CalendarIcon className="h-7 w-7 sm:h-8 sm:w-8 shrink-0" style={{ color: 'var(--landing-primary)' }} />
+                <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--landing-text)' }}>Calendar</h2>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="rounded-xl min-h-9 touch-manipulation" onClick={() => navigate('/calendar')}>
+                  Full calendar
+                </Button>
+                <Button className="hero-cta-primary rounded-xl min-h-9 touch-manipulation" onClick={openNewSchedule}>
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add event
+                </Button>
+              </div>
+            </div>
+            <Card className="shadow-lg feature-card-shadow overflow-hidden" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between px-3 sm:px-4 py-3 border-b" style={{ borderColor: 'var(--landing-border)' }}>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-9 sm:w-9 touch-manipulation" onClick={() => setSelectedDate((d) => { const n = new Date(d); n.setDate(n.getDate() - 1); return n; })}><ChevronLeft className="h-5 w-5" /></Button>
+                  <span className="font-semibold text-sm sm:text-base" style={{ color: 'var(--landing-text)' }}>{dateLabel}</span>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-9 sm:w-9 touch-manipulation" onClick={() => setSelectedDate((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; })}><ChevronRight className="h-5 w-5" /></Button>
+                </div>
+                <DayTimelineView
+                  events={dayEvents}
+                  eventColors={eventColors}
+                  onSlotClick={handleSlotClick}
+                  onEventUpdate={handleEventTimeUpdate}
+                  onEventClick={(id) => { const e = events.find((ev) => ev.id === id); if (e) setEditingEvent(e); setEventDialogOpen(true); }}
+                  selectedEventId={editingEvent?.id}
+                  maxHeight="min(320px, 50vh)"
+                  emptyMessage="No events this day. Click a time slot or Add event to schedule."
+                />
+              </CardContent>
+            </Card>
+            <EventDialog
+              open={eventDialogOpen}
+              onOpenChange={setEventDialogOpen}
+              selectedDate={selectedDate}
+              selectedTime={slotClickTime}
+              onSave={handleSaveEvent}
+              event={editingEvent}
+              goals={goals}
+            />
+          </section>
+
+          {/* Progress — compact overview */}
+          <section id="progress" className="scroll-mt-24 sm:scroll-mt-28">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <BarChart3 className="h-7 w-7 sm:h-8 sm:w-8 shrink-0" style={{ color: 'var(--landing-primary)' }} />
+                <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--landing-text)' }}>Progress</h2>
+              </div>
+              <Button variant="outline" size="sm" className="rounded-xl min-h-9 touch-manipulation w-full sm:w-auto" onClick={() => navigate('/progress')}>
+                View full progress
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+                <div className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{activeGoals.length}</div>
+                <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Active Goals</div>
+              </Card>
+              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+                <div className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{todos.filter((t) => t.completed).length}/{todos.length}</div>
+                <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Tasks Done</div>
+              </Card>
+              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+                <div className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{totalPoints}</div>
+                <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Points</div>
+              </Card>
+              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+                <div className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{streak} days</div>
+                <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Streak</div>
+              </Card>
+            </div>
+          </section>
+
+          {/* Gratitude */}
+          <section id="gratitude" className="scroll-mt-24 sm:scroll-mt-28">
             <GratitudeJournalSections
               date={todayIso}
               entries={gratitudeEntries}
@@ -916,7 +1058,7 @@ export default function Dashboard() {
               onRemoveCustomSection={(date, sectionKey) => deleteGratitudeBySection(date, sectionKey)}
               useLandingStyles
             />
-          </div>
+          </section>
         </div>
       </section>
 
@@ -991,6 +1133,7 @@ export default function Dashboard() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

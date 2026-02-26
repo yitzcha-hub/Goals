@@ -73,9 +73,9 @@ export const AuthenticatedFooter: React.FC<AuthenticatedFooterProps> = ({ naviga
         <div className="mt-10 pt-8 border-t border-white/20 flex flex-wrap justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <img src={logoImg} alt="" className="h-9 w-9 object-contain" aria-hidden />
-            <span className="font-semibold text-white/95">Goals and Development</span>
+            <span className="font-semibold text-white/95">Authenticity and Purpose</span>
           </div>
-          <p className="text-sm opacity-90">&copy; {new Date().getFullYear()} Goals and Development.</p>
+          <p className="text-sm opacity-90">&copy; {new Date().getFullYear()} Authenticity and Purpose.</p>
         </div>
       </div>
     </footer>

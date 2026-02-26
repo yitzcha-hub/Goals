@@ -37,8 +37,8 @@ const faqCategories: FAQCategory[] = [
     icon: Rocket,
     items: [
       {
-        q: 'What is Goals and Development?',
-        a: 'Goals and Development is a private personal growth system—not a task manager or habit tracker. It helps you define who you want to become, write a clear development plan, attach goals to time with a calendar, and get AI-powered feedback on your progress. Think of it as your dedicated space to design and follow your own path, without comparison, social pressure, or empty productivity hacks.',
+        q: 'What is Authenticity and Purpose?',
+        a: 'Authenticity and Purpose is a private personal growth system—not a task manager or habit tracker. It helps you define who you want to become, write a clear development plan, attach goals to time with a calendar, and get AI-powered feedback on your progress. Think of it as your dedicated space to design and follow your own path, without comparison, social pressure, or empty productivity hacks.',
       },
       {
         q: 'How do I get started?',
@@ -46,7 +46,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         q: 'Is there a mobile app?',
-        a: 'Yes. Goals and Development works as a Progressive Web App (PWA) on your phone. Open it in your mobile browser (Chrome, Safari, etc.), then add it to your home screen for an app-like experience—icon, full-screen, offline support, and push notifications. No app store download required.',
+        a: 'Yes. Authenticity and Purpose works as a Progressive Web App (PWA) on your phone. Open it in your mobile browser (Chrome, Safari, etc.), then add it to your home screen for an app-like experience—icon, full-screen, offline support, and push notifications. No app store download required.',
       },
     ],
   },

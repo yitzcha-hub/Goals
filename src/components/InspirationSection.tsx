@@ -22,7 +22,7 @@ interface InspirationSectionProps {
 
 export const InspirationSection: React.FC<InspirationSectionProps> = ({
   title = 'Inspired by successful people',
-  subtitle = 'Goals and development plans used by entrepreneurs, professionals, athletes, and creators. Use them as a starting point.',
+  subtitle = 'Authenticity and purpose plans used by entrepreneurs, professionals, athletes, and creators. Use them as a starting point.',
   onSelectTemplate,
   showAddButton = true,
 }) => {

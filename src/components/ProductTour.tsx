@@ -11,7 +11,7 @@ interface TourStep {
 const tourSteps: TourStep[] = [
   {
     target: 'hero-section',
-    title: 'Welcome to Goals and Development',
+    title: 'Welcome to Authenticity & Purpose',
     description: 'Your personal sanctuary for achieving goals, tracking progress, and celebrating YOUR journey - without comparing to others.',
     position: 'bottom'
   },

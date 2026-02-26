@@ -12,7 +12,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ navigate, scrollTo
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-wrap justify-between items-center gap-6">
         <div className="flex items-center gap-2">
           <img src={logoImg} alt="" className="h-9 w-9 object-contain" aria-hidden />
-          <span className="font-semibold">Goals and Development</span>
+          <span className="font-semibold">Authenticity and Purpose</span>
         </div>
         <div className="flex flex-wrap gap-6">
           <button onClick={() => navigate('/features')} className="hover:underline opacity-90">Features</button>
@@ -23,7 +23,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({ navigate, scrollTo
           <button onClick={() => navigate('/about')} className="hover:underline opacity-90">About</button>
         </div>
       </div>
-      <p className="text-center text-sm opacity-90 mt-8">&copy; {new Date().getFullYear()} Goals and Development.</p>
+      <p className="text-center text-sm opacity-90 mt-8">&copy; {new Date().getFullYear()} Authenticity and Purpose.</p>
     </footer>
   );
 };

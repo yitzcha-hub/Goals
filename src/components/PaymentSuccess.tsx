@@ -108,7 +108,7 @@ const PaymentSuccess: React.FC = () => {
             <CheckCircle className="h-8 w-8 text-emerald-700" />
           </div>
           <CardTitle className="text-2xl text-emerald-800">Payment successful</CardTitle>
-          <CardDescription>Welcome to Goals and Development Premium</CardDescription>
+          <CardDescription>Welcome to Authenticity and Purpose Premium</CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">

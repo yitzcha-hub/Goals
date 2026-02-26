@@ -62,7 +62,7 @@ const GetStarted: React.FC = () => {
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <InspirationSection
               title="Inspired by successful people"
-              subtitle="Goals and development plans from entrepreneurs, professionals, athletes, and creators. Use them as a starting point."
+              subtitle="Authenticity and purpose plans from entrepreneurs, professionals, athletes, and creators. Use them as a starting point."
               onSelectTemplate={handleSelectTemplate}
               showAddButton={true}
             />

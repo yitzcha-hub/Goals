@@ -34,12 +34,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { analyzeProgressImage } from '@/lib/aiImageAnalysis';
+import { useToast } from '@/hooks/use-toast';
 
 export interface GoalDetailViewProps {
   goal: ManifestationGoal;
   onBack: () => void;
   updateGoal: (goalId: string, updates: Partial<Pick<ManifestationGoal, 'steps' | 'targetDate' | 'progress' | 'budget' | 'spent' | 'title' | 'description' | 'timeline' | 'priority' | 'status' | 'imageUrl'>>) => Promise<void>;
   onDeleteGoal?: (goalId: string) => void | Promise<void>;
+  /** When true, show loading overlay and block interaction (e.g. while saving). */
+  isMutating?: boolean;
   /** When true, only use mock AI insights (no OpenAI). */
   useMockInsightsOnly?: boolean;
 }
@@ -48,7 +51,7 @@ type TimelineEntry =
   | { type: 'note'; id: string; date: string; content: string; phase?: GoalNotePhase }
   | { type: 'image'; id: string; date: string; url: string; label?: string; progress: number };
 
-export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal, useMockInsightsOnly = false }: GoalDetailViewProps) {
+export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal, isMutating = false, useMockInsightsOnly = false }: GoalDetailViewProps) {
   const navigate = useNavigate();
   const [currentGoal, setCurrentGoal] = useState(goal);
   const [newNote, setNewNote] = useState('');
@@ -229,7 +232,16 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
   };
 
   return (
-    <div className="min-h-screen landing overflow-x-hidden" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+    <div className="min-h-screen landing overflow-x-hidden relative" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+      {isMutating && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]" aria-live="polite" aria-busy="true">
+          <div className="rounded-2xl border-2 p-8 flex flex-col items-center gap-4 shadow-xl" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            <Loader2 className="h-12 w-12 animate-spin" style={{ color: 'var(--landing-primary)' }} />
+            <p className="font-medium text-sm sm:text-base" style={{ color: 'var(--landing-text)' }}>Saving…</p>
+          </div>
+        </div>
+      )}
+      <div className={isMutating ? 'pointer-events-none select-none' : ''}>
       <div className="fixed top-4 left-4 right-4 z-20 flex items-center justify-end gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           {(currentGoal.status === 'active' || !currentGoal.status) && (
@@ -809,14 +821,18 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
           </div>
         </section>
       </div>
+      </div>
     </div>
   );
 }
 
 function ProgressPhotosBlock({ goalId }: { goalId: string }) {
-  const { photos, loading, uploadPhoto, deletePhoto } = useProgressPhotos(goalId, { forManifestationGoal: true });
+  const { toast } = useToast();
+  const { photos, loading, uploadPhoto, addPhotoByUrl, deletePhoto } = useProgressPhotos(goalId, { forManifestationGoal: true });
   const [caption, setCaption] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [addingByUrl, setAddingByUrl] = useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -826,9 +842,31 @@ function ProgressPhotosBlock({ goalId }: { goalId: string }) {
     try {
       await uploadPhoto(file, caption);
       setCaption('');
+      toast({ title: 'Photo added', description: 'Progress photo uploaded.' });
+    } catch (err) {
+      toast({ title: 'Upload failed', description: err instanceof Error ? err.message : 'Could not upload photo.', variant: 'destructive' });
     } finally {
       setUploading(false);
       e.target.value = '';
+    }
+  };
+
+  const handleAddByUrl = async () => {
+    const url = imageUrl.trim();
+    if (!url) {
+      toast({ title: 'Enter a URL', description: 'Paste an image URL to add.', variant: 'destructive' });
+      return;
+    }
+    setAddingByUrl(true);
+    try {
+      await addPhotoByUrl(url, caption);
+      setImageUrl('');
+      setCaption('');
+      toast({ title: 'Photo added', description: 'Progress photo added from URL.' });
+    } catch (err) {
+      toast({ title: 'Failed to add photo', description: err instanceof Error ? err.message : 'Could not add image from URL.', variant: 'destructive' });
+    } finally {
+      setAddingByUrl(false);
     }
   };
 
@@ -842,25 +880,48 @@ function ProgressPhotosBlock({ goalId }: { goalId: string }) {
         className="hidden"
         onChange={handleFile}
       />
-      <div className="flex gap-2 mb-4">
-        <input
-          type="text"
-          placeholder="Caption (optional)"
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          className="flex-1 px-3 py-2 rounded-xl border-2"
-          style={{ borderColor: 'var(--landing-border)' }}
-        />
-        <Button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="rounded-xl"
-          style={{ backgroundColor: 'var(--landing-primary)' }}
-        >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4 mr-2" />}
-          Upload
-        </Button>
+      <div className="space-y-3 mb-4">
+        <div className="flex flex-wrap gap-2 items-center">
+          <input
+            type="text"
+            placeholder="Caption (optional)"
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            className="flex-1 min-w-[120px] px-3 py-2 rounded-xl border-2"
+            style={{ borderColor: 'var(--landing-border)' }}
+          />
+          <Button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="rounded-xl shrink-0"
+            style={{ backgroundColor: 'var(--landing-primary)' }}
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4 mr-2" />}
+            Upload file
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-2 items-center">
+          <input
+            type="url"
+            placeholder="Or paste image URL (https://...)"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            className="flex-1 min-w-[180px] px-3 py-2 rounded-xl border-2"
+            style={{ borderColor: 'var(--landing-border)' }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleAddByUrl}
+            disabled={addingByUrl || !imageUrl.trim()}
+            className="rounded-xl shrink-0"
+            style={{ borderColor: 'var(--landing-border)' }}
+          >
+            {addingByUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Add from URL
+          </Button>
+        </div>
       </div>
       {loading && <p className="text-sm mt-2 opacity-70">Loading photos…</p>}
       {!loading && photos.length === 0 && (

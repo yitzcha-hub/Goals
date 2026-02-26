@@ -304,7 +304,7 @@ export const LandingContent: React.FC = () => {
 
   const stepItems: StepItem[] = [
     { step: 1, title: 'Choose who you want to become', icon: Target, img: stepImg1 },
-    { step: 2, title: 'Write your goals and development plan', icon: BookOpen, img: stepImg2 },
+    { step: 2, title: 'Write your authenticity and purpose plan', icon: BookOpen, img: stepImg2 },
     { step: 3, title: 'Attach goals to time (calendar + reminders)', icon: Calendar, img: stepImg3 },
     { step: 4, title: 'Get AI feedback on your progress', icon: Sparkles, img: stepImg4 },
   ];

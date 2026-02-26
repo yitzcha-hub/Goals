@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Trophy, Sparkles, CheckCircle } from 'lucide-react';
 
@@ -10,6 +10,7 @@ export function OnboardingCelebration({ onClose }: OnboardingCelebrationProps) {
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
+        <DialogTitle className="sr-only">Onboarding complete</DialogTitle>
         <div className="text-center py-6">
           <div className="relative inline-block mb-6">
             <Trophy className="w-24 h-24 text-yellow-500 animate-bounce" />

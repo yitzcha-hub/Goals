@@ -4,7 +4,7 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// Goals and Development - Firebase config (must match src/lib/firebase.ts)
+// Authenticity and Purpose - Firebase config (must match src/lib/firebase.ts)
 firebase.initializeApp({
   apiKey: 'AIzaSyB5DFrkjolSKUCdx08Peq-GiZ55UEAKpIo',
   authDomain: 'goals-and-development.firebaseapp.com',

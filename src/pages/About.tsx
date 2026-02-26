@@ -65,7 +65,7 @@ export default function About() {
               animationDelay: "0.25s",
             }}
           >
-            Goals and Development is a private space to dream, plan, and achieve—without the noise of social feeds or the pressure to perform for anyone but yourself.
+            Authenticity & Purpose is a private space to dream, plan, and achieve—without the noise of social feeds or the pressure to perform for anyone but yourself.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: "0.4s" }}>
             <AuthModal trigger={<Button size="lg" variant="default" className="trial-cta">Start 7-day free trial</Button>} defaultMode="signup" />
@@ -89,7 +89,7 @@ export default function About() {
                 Your only competition is who you were yesterday.
               </h2>
               <p className="text-base sm:text-lg mb-6 opacity-90" style={{ color: "var(--landing-text)" }}>
-                We built Goals and Development because the apps meant to help us improve were making us feel worse. Social feeds, leaderboards, and comparison culture don’t belong in your growth journey.
+                We built Authenticity and Purpose because the apps meant to help us improve were making us feel worse. Social feeds, leaderboards, and comparison culture don’t belong in your growth journey.
               </p>
               <p className="text-base sm:text-lg opacity-90" style={{ color: "var(--landing-text)" }}>
                 Our mission: a personal sanctuary where you visualize dreams, track progress, and celebrate every step—without feeling inadequate. No feeds. No likes. Just you and your path forward.
@@ -128,7 +128,7 @@ export default function About() {
             </div>
             <div className="rounded-2xl p-6 sm:p-8 border transition-all duration-300 feature-card-shadow" style={{ borderColor: "var(--landing-border)", backgroundColor: "var(--landing-accent)" }}>
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2" style={{ color: "var(--landing-primary)" }}>
-                <Leaf className="h-5 w-5" /> Goals and Development
+                <Leaf className="h-5 w-5" /> Authenticity and Purpose
               </h3>
               <ul className="space-y-3 text-sm opacity-90" style={{ color: "var(--landing-text)" }}>
                 <li>Your space only—no feeds, no audience</li>
@@ -157,7 +157,7 @@ export default function About() {
               Our story
             </h2>
             <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed opacity-90" style={{ color: "var(--landing-text)" }}>
-              What if we created something focused entirely on you? No social features. No leaderboards. Just a private space to dream big and celebrate every step. That question became Goals and Development.
+              What if we created something focused entirely on you? No social features. No leaderboards. Just a private space to dream big and celebrate every step. That question became Authenticity and Purpose.
             </p>
           </div>
 

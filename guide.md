@@ -62,7 +62,7 @@ GitHub is where your project code lives. Vercel will read from GitHub to build y
 1. Once logged in, click the **"+"** icon in the top right corner and choose **"New repository"**
 2. Fill in the details:
    - **Repository name:** `goals-app` (or whatever you like)
-   - **Description:** `My Goals & Development App` (optional)
+   - **Description:** `My Authenticity & Purpose App` (optional)
    - **Visibility:** Choose **Private** (recommended) or **Public**
    - Do **NOT** check "Add a README file" (we already have one)
 3. Click **"Create repository"**

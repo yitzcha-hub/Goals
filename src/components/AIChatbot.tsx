@@ -45,7 +45,7 @@ const SUGGESTED_QUESTIONS = [
   'How does family connection work?',
 ];
 
-const SYSTEM_PROMPT = `You are the friendly AI assistant for "Goals and Development" — a website that helps people plan, track, and grow through goals, timelines, and personal development without social comparison.
+const SYSTEM_PROMPT = `You are the friendly AI assistant for "Authenticity & Purpose" — a website that helps people plan, track, and grow through goals, timelines, and personal development without social comparison.
 
 Product context:
 - Free trial: 7-day free trial, no credit card required. After that, paid plans (see Pricing page).
@@ -291,7 +291,7 @@ export const AIChatbot: React.FC = () => {
                   </DropdownMenu>
                   <div>
                     <p className="font-bold text-sm" style={{ color: 'var(--chatbot-title-text)' }}>
-                      Goals & Development AI
+                      Authenticity & Purpose AI
                     </p>
                   </div>
                 </div>

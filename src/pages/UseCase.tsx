@@ -62,7 +62,7 @@ const useCaseCards: UseCaseCard[] = [
     name: 'Riley T.',
     role: 'Product manager',
     otherApps: ['Generic productivity apps with no real analysis', 'Streaks and badges that don\'t improve behavior', 'No link between goals and actual outcomes'],
-    ourApp: ['AI that analyzes patterns, not just stores data', 'Meaningful feedback on why and when I slip', 'Goals and development plan that scale with my role'],
+    ourApp: ['AI that analyzes patterns, not just stores data', 'Meaningful feedback on why and when I slip', 'Authenticity and purpose plan that scale with my role'],
   },
   {
     id: 'tired-fake-productivity',
@@ -115,7 +115,7 @@ const UseCase: React.FC = () => {
               animationDelay: '0.25s',
             }}
           >
-            Goals and Development is built for anyone who wants real progress—not fake productivity. Whether you're building a business, growing as a student, or simply tired of apps that don't deliver, this is for you.
+            Authenticity & Purpose is built for anyone who wants real progress—not fake productivity. Whether you're building a business, growing as a student, or simply tired of apps that don't deliver, this is for you.
           </p>
           <div
             className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up"
@@ -227,7 +227,7 @@ const UseCase: React.FC = () => {
                         >
                           <div className="flex items-center gap-2 mb-3">
                             <Check className="h-4 w-4 shrink-0 text-white rounded-full" style={{ backgroundColor: 'var(--landing-primary)', padding: 2 }} />
-                            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--landing-primary)' }}>Goals & Development</span>
+                            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--landing-primary)' }}>Authenticity & Purpose</span>
                           </div>
                           <ul className="space-y-1.5 text-sm" style={{ color: 'var(--landing-text)' }}>
                             {card.ourApp.map((item, i) => (

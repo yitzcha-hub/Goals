@@ -85,6 +85,7 @@ export function useManifestationDatabase() {
   const [totalPoints, setTotalPoints] = useState(0);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isMutating, setIsMutating] = useState(false);
 
   const useLocalStorageOnly = !user && isDemoMode;
 
@@ -170,57 +171,67 @@ export function useManifestationDatabase() {
   };
 
   const addGoal = async (goal: Omit<ManifestationGoal, 'id' | 'createdAt'>) => {
-    if (useLocalStorageOnly) {
-      const now = new Date().toISOString();
-      const data: ManifestationGoal = { ...goal, id: crypto.randomUUID(), createdAt: now };
-      setGoals(prev => {
-        const next = [data, ...prev];
-        persistDemo({ goals: next, todos, gratitudeEntries, journalEntries, totalPoints: totalPoints + 10, streak });
-        return next;
-      });
-      setTotalPoints(p => p + 10);
-      return;
+    setIsMutating(true);
+    try {
+      if (useLocalStorageOnly) {
+        const now = new Date().toISOString();
+        const data: ManifestationGoal = { ...goal, id: crypto.randomUUID(), createdAt: now };
+        setGoals(prev => {
+          const next = [data, ...prev];
+          persistDemo({ goals: next, todos, gratitudeEntries, journalEntries, totalPoints: totalPoints + 10, streak });
+          return next;
+        });
+        setTotalPoints(p => p + 10);
+        return;
+      }
+      if (!user) return;
+      const payload: Record<string, unknown> = {
+        user_id: user.id,
+        title: goal.title ?? '',
+        description: goal.description ?? '',
+        timeline: goal.timeline,
+        progress: Math.round(Number(goal.progress)) || 0,
+        image_url: goal.imageUrl ?? null,
+        priority: goal.priority,
+        recommendations: Array.isArray(goal.recommendations) ? goal.recommendations : [],
+        budget: Math.round(Number(goal.budget)) || 0,
+        spent: Math.round(Number(goal.spent)) || 0,
+      };
+      if (goal.targetDate) payload.target_date = goal.targetDate;
+      if (goal.steps && goal.steps.length > 0) payload.steps = goal.steps;
+      payload.status = goal.status ?? 'active';
+      const { data, error } = await supabase.from('manifestation_goals').insert(payload).select('id,created_at').single();
+      if (error) throw error;
+      setGoals(prev => [{ ...goal, id: data.id, createdAt: data.created_at }, ...prev]);
+      await updateStats(10, 0);
+    } finally {
+      setIsMutating(false);
     }
-    if (!user) return;
-    const payload: Record<string, unknown> = {
-      user_id: user.id,
-      title: goal.title ?? '',
-      description: goal.description ?? '',
-      timeline: goal.timeline,
-      progress: Math.round(Number(goal.progress)) || 0,
-      image_url: goal.imageUrl ?? null,
-      priority: goal.priority,
-      recommendations: Array.isArray(goal.recommendations) ? goal.recommendations : [],
-      budget: Math.round(Number(goal.budget)) || 0,
-      spent: Math.round(Number(goal.spent)) || 0,
-    };
-    if (goal.targetDate) payload.target_date = goal.targetDate;
-    if (goal.steps && goal.steps.length > 0) payload.steps = goal.steps;
-    payload.status = goal.status ?? 'active';
-    const { data, error } = await supabase.from('manifestation_goals').insert(payload).select('id,created_at').single();
-    if (error) throw error;
-    setGoals(prev => [{ ...goal, id: data.id, createdAt: data.created_at }, ...prev]);
-    await updateStats(10, 0);
   };
 
   const updateGoalProgress = async (goalId: string, progress: number) => {
     const goal = goals.find(g => g.id === goalId);
     if (!goal) return;
-    const wasComplete = goal.progress === 10;
-    const isNowComplete = progress === 10;
-    if (useLocalStorageOnly) {
-      setGoals(prev => {
-        const next = prev.map(g => g.id === goalId ? { ...g, progress } : g);
-        const newPoints = totalPoints + (isNowComplete && !wasComplete ? 100 : 0);
-        persistDemo({ goals: next, todos, gratitudeEntries, journalEntries, totalPoints: newPoints, streak });
-        return next;
-      });
-      if (isNowComplete && !wasComplete) setTotalPoints(p => p + 100);
-      return;
+    setIsMutating(true);
+    try {
+      const wasComplete = goal.progress === 10;
+      const isNowComplete = progress === 10;
+      if (useLocalStorageOnly) {
+        setGoals(prev => {
+          const next = prev.map(g => g.id === goalId ? { ...g, progress } : g);
+          const newPoints = totalPoints + (isNowComplete && !wasComplete ? 100 : 0);
+          persistDemo({ goals: next, todos, gratitudeEntries, journalEntries, totalPoints: newPoints, streak });
+          return next;
+        });
+        if (isNowComplete && !wasComplete) setTotalPoints(p => p + 100);
+        return;
+      }
+      await supabase.from('manifestation_goals').update({ progress }).eq('id', goalId);
+      setGoals(prev => prev.map(g => g.id === goalId ? { ...g, progress } : g));
+      if (!wasComplete && isNowComplete) await updateStats(100, 0);
+    } finally {
+      setIsMutating(false);
     }
-    await supabase.from('manifestation_goals').update({ progress }).eq('id', goalId);
-    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, progress } : g));
-    if (!wasComplete && isNowComplete) await updateStats(100, 0);
   };
 
   /** Update goal fields (steps, targetDate, progress, imageUrl, status, budget, spent, etc.). */
@@ -230,101 +241,126 @@ export function useManifestationDatabase() {
   ) => {
     const goal = goals.find(g => g.id === goalId);
     if (!goal) return;
-    if (useLocalStorageOnly) {
-      setGoals(prev =>
-        prev.map(g => (g.id === goalId ? { ...g, ...updates } : g))
-      );
-      persistDemo({ goals: goals.map(g => g.id === goalId ? { ...goal, ...updates } : g), todos, gratitudeEntries, journalEntries, totalPoints, streak });
-      return;
+    setIsMutating(true);
+    try {
+      if (useLocalStorageOnly) {
+        setGoals(prev =>
+          prev.map(g => (g.id === goalId ? { ...g, ...updates } : g))
+        );
+        persistDemo({ goals: goals.map(g => g.id === goalId ? { ...goal, ...updates } : g), todos, gratitudeEntries, journalEntries, totalPoints, streak });
+        return;
+      }
+      if (!user) return;
+      const payload: Record<string, unknown> = {};
+      if (updates.steps !== undefined) payload.steps = updates.steps;
+      if (updates.targetDate !== undefined) payload.target_date = updates.targetDate;
+      if (updates.progress !== undefined) payload.progress = updates.progress;
+      if (updates.title !== undefined) payload.title = updates.title;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.timeline !== undefined) payload.timeline = updates.timeline;
+      if (updates.priority !== undefined) payload.priority = updates.priority;
+      if (updates.budget !== undefined) payload.budget = updates.budget;
+      if (updates.spent !== undefined) payload.spent = updates.spent;
+      if (updates.status !== undefined) payload.status = updates.status;
+      if (updates.imageUrl !== undefined) payload.image_url = updates.imageUrl;
+      if (Object.keys(payload).length === 0) return;
+      await supabase.from('manifestation_goals').update(payload).eq('id', goalId);
+      setGoals(prev => prev.map(g => (g.id === goalId ? { ...g, ...updates } : g)));
+    } finally {
+      setIsMutating(false);
     }
-    if (!user) return;
-    const payload: Record<string, unknown> = {};
-    if (updates.steps !== undefined) payload.steps = updates.steps;
-    if (updates.targetDate !== undefined) payload.target_date = updates.targetDate;
-    if (updates.progress !== undefined) payload.progress = updates.progress;
-    if (updates.title !== undefined) payload.title = updates.title;
-    if (updates.description !== undefined) payload.description = updates.description;
-    if (updates.timeline !== undefined) payload.timeline = updates.timeline;
-    if (updates.priority !== undefined) payload.priority = updates.priority;
-    if (updates.budget !== undefined) payload.budget = updates.budget;
-    if (updates.spent !== undefined) payload.spent = updates.spent;
-    if (updates.status !== undefined) payload.status = updates.status;
-    if (updates.imageUrl !== undefined) payload.image_url = updates.imageUrl;
-    if (Object.keys(payload).length === 0) return;
-    await supabase.from('manifestation_goals').update(payload).eq('id', goalId);
-    setGoals(prev => prev.map(g => (g.id === goalId ? { ...g, ...updates } : g)));
   };
 
   const deleteGoal = async (goalId: string) => {
-    if (useLocalStorageOnly) {
-      setGoals(prev => {
-        const next = prev.filter(g => g.id !== goalId);
-        persistDemo({ goals: next, todos, gratitudeEntries, journalEntries, totalPoints, streak });
-        return next;
-      });
-      return;
+    setIsMutating(true);
+    try {
+      if (useLocalStorageOnly) {
+        setGoals(prev => {
+          const next = prev.filter(g => g.id !== goalId);
+          persistDemo({ goals: next, todos, gratitudeEntries, journalEntries, totalPoints, streak });
+          return next;
+        });
+        return;
+      }
+      await supabase.from('manifestation_goals').delete().eq('id', goalId);
+      setGoals(prev => prev.filter(g => g.id !== goalId));
+    } finally {
+      setIsMutating(false);
     }
-    await supabase.from('manifestation_goals').delete().eq('id', goalId);
-    setGoals(prev => prev.filter(g => g.id !== goalId));
   };
 
   const addTodo = async (todo: Omit<ManifestationTodo, 'id' | 'createdAt' | 'completedAt'>) => {
-    if (useLocalStorageOnly) {
-      const now = new Date().toISOString();
-      const data: ManifestationTodo = { ...todo, id: crypto.randomUUID(), createdAt: now, completedAt: null };
-      setTodos(prev => {
-        const next = [data, ...prev];
-        persistDemo({ goals, todos: next, gratitudeEntries, journalEntries, totalPoints, streak });
-        return next;
-      });
-      return;
+    setIsMutating(true);
+    try {
+      if (useLocalStorageOnly) {
+        const now = new Date().toISOString();
+        const data: ManifestationTodo = { ...todo, id: crypto.randomUUID(), createdAt: now, completedAt: null };
+        setTodos(prev => {
+          const next = [data, ...prev];
+          persistDemo({ goals, todos: next, gratitudeEntries, journalEntries, totalPoints, streak });
+          return next;
+        });
+        return;
+      }
+      if (!user) return;
+      const payload: Record<string, unknown> = {
+        user_id: user.id,
+        title: todo.title,
+        completed: todo.completed,
+        points: todo.points,
+      };
+      if (todo.scheduledDate) payload.scheduled_date = todo.scheduledDate;
+      if (todo.timeSlot) payload.time_slot = todo.timeSlot;
+      if (todo.groupName) payload.group_name = todo.groupName;
+      const { data, error } = await supabase.from('manifestation_todos').insert(payload).select('id,created_at,scheduled_date,completed_at,time_slot,group_name').single();
+      if (error) throw error;
+      setTodos(prev => [{ ...todo, id: data.id, createdAt: data.created_at, scheduledDate: data.scheduled_date ?? null, completedAt: data.completed_at ?? null, timeSlot: data.time_slot ?? null, groupName: data.group_name ?? null }, ...prev]);
+    } finally {
+      setIsMutating(false);
     }
-    if (!user) return;
-    const payload: Record<string, unknown> = {
-      user_id: user.id,
-      title: todo.title,
-      completed: todo.completed,
-      points: todo.points,
-    };
-    if (todo.scheduledDate) payload.scheduled_date = todo.scheduledDate;
-    if (todo.timeSlot) payload.time_slot = todo.timeSlot;
-    if (todo.groupName) payload.group_name = todo.groupName;
-    const { data, error } = await supabase.from('manifestation_todos').insert(payload).select('id,created_at,scheduled_date,completed_at,time_slot,group_name').single();
-    if (error) throw error;
-    setTodos(prev => [{ ...todo, id: data.id, createdAt: data.created_at, scheduledDate: data.scheduled_date ?? null, completedAt: data.completed_at ?? null, timeSlot: data.time_slot ?? null, groupName: data.group_name ?? null }, ...prev]);
   };
 
   const toggleTodo = async (todoId: string) => {
     const todo = todos.find(t => t.id === todoId);
     if (!todo) return;
-    const newCompleted = !todo.completed;
-    const completedAt = newCompleted ? new Date().toISOString() : null;
-    if (useLocalStorageOnly) {
-      setTodos(prev => {
-        const next = prev.map(t => t.id === todoId ? { ...t, completed: newCompleted, completedAt } : t);
-        const newPoints = totalPoints + (newCompleted ? todo.points : 0);
-        persistDemo({ goals, todos: next, gratitudeEntries, journalEntries, totalPoints: newPoints, streak });
-        return next;
-      });
-      if (newCompleted) setTotalPoints(p => p + todo.points);
-      return;
+    setIsMutating(true);
+    try {
+      const newCompleted = !todo.completed;
+      const completedAt = newCompleted ? new Date().toISOString() : null;
+      if (useLocalStorageOnly) {
+        setTodos(prev => {
+          const next = prev.map(t => t.id === todoId ? { ...t, completed: newCompleted, completedAt } : t);
+          const newPoints = totalPoints + (newCompleted ? todo.points : 0);
+          persistDemo({ goals, todos: next, gratitudeEntries, journalEntries, totalPoints: newPoints, streak });
+          return next;
+        });
+        if (newCompleted) setTotalPoints(p => p + todo.points);
+        return;
+      }
+      await supabase.from('manifestation_todos').update({ completed: newCompleted, completed_at: completedAt }).eq('id', todoId);
+      setTodos(prev => prev.map(t => t.id === todoId ? { ...t, completed: newCompleted, completedAt } : t));
+      if (newCompleted) await updateStats(todo.points, 0);
+    } finally {
+      setIsMutating(false);
     }
-    await supabase.from('manifestation_todos').update({ completed: newCompleted, completed_at: completedAt }).eq('id', todoId);
-    setTodos(prev => prev.map(t => t.id === todoId ? { ...t, completed: newCompleted, completedAt } : t));
-    if (newCompleted) await updateStats(todo.points, 0);
   };
 
   const deleteTodo = async (todoId: string) => {
-    if (useLocalStorageOnly) {
-      setTodos(prev => {
-        const next = prev.filter(t => t.id !== todoId);
-        persistDemo({ goals, todos: next, gratitudeEntries, journalEntries, totalPoints, streak });
-        return next;
-      });
-      return;
+    setIsMutating(true);
+    try {
+      if (useLocalStorageOnly) {
+        setTodos(prev => {
+          const next = prev.filter(t => t.id !== todoId);
+          persistDemo({ goals, todos: next, gratitudeEntries, journalEntries, totalPoints, streak });
+          return next;
+        });
+        return;
+      }
+      await supabase.from('manifestation_todos').delete().eq('id', todoId);
+      setTodos(prev => prev.filter(t => t.id !== todoId));
+    } finally {
+      setIsMutating(false);
     }
-    await supabase.from('manifestation_todos').delete().eq('id', todoId);
-    setTodos(prev => prev.filter(t => t.id !== todoId));
   };
 
   const updateTodo = async (
@@ -333,20 +369,25 @@ export function useManifestationDatabase() {
   ) => {
     const todo = todos.find(t => t.id === todoId);
     if (!todo) return;
-    if (useLocalStorageOnly) {
-      const nextTodos = todos.map(t => (t.id === todoId ? { ...t, ...updates } : t));
-      setTodos(nextTodos);
-      persistDemo({ goals, todos: nextTodos, gratitudeEntries, journalEntries, totalPoints, streak });
-      return;
+    setIsMutating(true);
+    try {
+      if (useLocalStorageOnly) {
+        const nextTodos = todos.map(t => (t.id === todoId ? { ...t, ...updates } : t));
+        setTodos(nextTodos);
+        persistDemo({ goals, todos: nextTodos, gratitudeEntries, journalEntries, totalPoints, streak });
+        return;
+      }
+      const payload: Record<string, unknown> = {};
+      if (updates.title !== undefined) payload.title = updates.title;
+      if (updates.scheduledDate !== undefined) payload.scheduled_date = updates.scheduledDate;
+      if (updates.timeSlot !== undefined) payload.time_slot = updates.timeSlot;
+      if (updates.groupName !== undefined) payload.group_name = updates.groupName;
+      if (Object.keys(payload).length === 0) return;
+      await supabase.from('manifestation_todos').update(payload).eq('id', todoId);
+      setTodos(prev => prev.map(t => (t.id === todoId ? { ...t, ...updates } : t)));
+    } finally {
+      setIsMutating(false);
     }
-    const payload: Record<string, unknown> = {};
-    if (updates.title !== undefined) payload.title = updates.title;
-    if (updates.scheduledDate !== undefined) payload.scheduled_date = updates.scheduledDate;
-    if (updates.timeSlot !== undefined) payload.time_slot = updates.timeSlot;
-    if (updates.groupName !== undefined) payload.group_name = updates.groupName;
-    if (Object.keys(payload).length === 0) return;
-    await supabase.from('manifestation_todos').update(payload).eq('id', todoId);
-    setTodos(prev => prev.map(t => (t.id === todoId ? { ...t, ...updates } : t)));
   };
 
   const addGratitude = async (content: string) => {
@@ -495,6 +536,7 @@ export function useManifestationDatabase() {
     totalPoints,
     streak,
     loading,
+    isMutating,
     addGoal,
     updateGoalProgress,
     updateGoal,

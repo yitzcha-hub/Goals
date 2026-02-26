@@ -785,7 +785,7 @@ const DemoLayout: React.FC = () => {
 
           {/* Feature Highlights */}
           <div className="rounded-2xl p-6 sm:p-8 shadow-lg border min-w-0 overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--landing-border)' }}>
-            <h3 className="text-xl sm:text-2xl font-bold mb-6 text-center" style={{ color: 'var(--landing-text)' }}>Why Goals and Development?</h3>
+            <h3 className="text-xl sm:text-2xl font-bold mb-6 text-center" style={{ color: 'var(--landing-text)' }}>Why Authenticity and Purpose?</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 min-w-0">
               <div className="text-center p-6 rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
                 <Calendar className="h-10 w-10 mx-auto mb-3" style={{ color: 'var(--landing-primary)' }} />

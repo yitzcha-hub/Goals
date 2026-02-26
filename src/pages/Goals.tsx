@@ -10,6 +10,7 @@ import {
   CheckCircle,
   LogIn,
   DollarSign,
+  Loader2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -37,7 +38,7 @@ function generateRecommendations(timeline: string): string[] {
 
 export default function Goals() {
   const { toast } = useToast();
-  const { goals, addGoal, updateGoal, updateGoalProgress, deleteGoal } = useManifestationDatabase();
+  const { goals, addGoal, updateGoal, updateGoalProgress, deleteGoal, isMutating } = useManifestationDatabase();
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [addGoalOpen, setAddGoalOpen] = useState(false);
   const [goalToDeleteId, setGoalToDeleteId] = useState<string | null>(null);
@@ -51,12 +52,22 @@ export default function Goals() {
         onBack={() => setSelectedGoalId(null)}
         updateGoal={updateGoal}
         onDeleteGoal={deleteGoal}
+        isMutating={isMutating}
       />
     );
   }
 
   return (
-    <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+    <div className="min-h-screen landing relative" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
+      {isMutating && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]" aria-live="polite" aria-busy="true">
+          <div className="rounded-2xl border-2 p-8 flex flex-col items-center gap-4 shadow-xl" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+            <Loader2 className="h-12 w-12 animate-spin" style={{ color: 'var(--landing-primary)' }} />
+            <p className="font-medium text-sm sm:text-base" style={{ color: 'var(--landing-text)' }}>Saving…</p>
+          </div>
+        </div>
+      )}
+      <div className={isMutating ? 'pointer-events-none select-none' : ''}>
       <section className="py-12 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
@@ -192,6 +203,7 @@ export default function Goals() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </div>
   );
 }
