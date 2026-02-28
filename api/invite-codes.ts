@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 function normalizeEmail(email: string | undefined): string {
   if (!email || typeof email !== 'string') return '';
@@ -6,7 +6,7 @@ function normalizeEmail(email: string | undefined): string {
 }
 
 async function isAdmin(
-  supabaseService: ReturnType<typeof createClient>,
+  supabaseService: SupabaseClient,
   email: string | undefined
 ): Promise<boolean> {
   const normalized = normalizeEmail(email);
