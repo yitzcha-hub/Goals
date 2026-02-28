@@ -65,8 +65,8 @@ export const TrialBanner = () => {
             <div className="flex items-center gap-3">
               <Leaf className="h-5 w-5 text-green-600" />
               <AlertDescription className="text-green-900">
-                <span className="font-semibold">You're a Premium Member!</span>
-                {' - '}Enjoy unlimited access to all features
+                <span className="font-semibold">You're a Lifetime Member!</span>
+                {' - '}Enjoy full access to all features, for life.
               </AlertDescription>
             </div>
           </div>
@@ -77,7 +77,7 @@ export const TrialBanner = () => {
   }
 
   if (!isTrial || trialDaysRemaining === null) {
-    // Show 7 day free trial banner for new users
+    // Show one-time purchase banner for free users
     return (
       <div>
         <Alert className="border-2 border-green-500 bg-gradient-to-r from-green-50 to-lime-50 relative pr-12 mb-2">
@@ -90,14 +90,18 @@ export const TrialBanner = () => {
           >
             <X className="h-4 w-4" />
           </Button>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <Gift className="h-5 w-5 text-green-600" />
               <AlertDescription className="text-green-900">
-                <span className="font-semibold">Your first 7 days are FREE!</span>
-                {' - '}Explore all features and start achieving your goals
+                <span className="font-semibold">Get lifetime access</span>
+                {' - '}One payment of $19. Full access to all features, for life.
               </AlertDescription>
             </div>
+            <Button onClick={() => navigate('/pricing')} className="bg-gradient-to-r from-green-600 to-lime-500 hover:from-green-700 hover:to-lime-600 shrink-0">
+              <Leaf className="h-4 w-4 mr-2" />
+              Get access
+            </Button>
           </div>
         </Alert>
         {inviteCodeLine}
@@ -130,18 +134,17 @@ export const TrialBanner = () => {
               <span className="font-semibold">
                 {trialDaysRemaining === 0 ? 'Your free trial expires today!' : 
                  trialDaysRemaining === 1 ? 'Your free trial expires tomorrow!' :
-                 `${trialDaysRemaining} days left in your 7 day free trial`}
+                 `${trialDaysRemaining} days left in your free trial`}
               </span>
-
-              {' - '}Continue your growth journey for just $4.99/month
+              {' - '}Get lifetime access for $19 one time and never lose your progress.
             </AlertDescription>
           </div>
           <Button 
             onClick={() => navigate('/pricing')}
             className={isExpiringSoon ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600' : 'bg-gradient-to-r from-green-600 to-lime-500 hover:from-green-700 hover:to-lime-600'}
           >
-            <Flame className="h-4 w-4 mr-2" />
-            Upgrade Now
+            <Leaf className="h-4 w-4 mr-2" />
+            Get lifetime access
           </Button>
         </div>
       </Alert>
