@@ -13,7 +13,7 @@ import stepImg2 from '@/assets/images/Write-your-goals-and-development-plan.jpg'
 import stepImg3 from '@/assets/images/Attach-goals-to-time.jpg';
 import stepImg4 from '@/assets/images/Get-AI-feedback-on-your-progress.jpg';
 import successPhoneImg from '@/assets/images/hand-holding-smartphone-displaying-financial-app-with-quotsuccessquot-notification_1298745-37939.jpg';
-import problemImg1 from '@/assets/images/unhappy-teenager-with-few-social-media-engagement_53876-98439.avif';
+import problemImg1 from '@/assets/images/happy-man.jpg';
 import problemImg2 from '@/assets/images/marketing-pretty-young-blonde-girl-grey-suit-office-very-upset-tired_140725-165512.avif';
 import problemImg3 from '@/assets/images/medium-shot-suffering-teenager-being-cyberbullied_23-2150171402.avif';
 import problemImg4 from '@/assets/images/familiy-connection.jpg';
