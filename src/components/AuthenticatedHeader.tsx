@@ -21,13 +21,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
-/** Center nav: Home (Dashboard), Journal, Goals, Progress, Calendar */
+/** Center nav: Home (Dashboard), Goals, Progress, Calendar, Journal */
 const centerNavItems = [
   { label: 'Home', path: '/', scrollId: undefined },
-  { label: 'Journal', path: '/journal', scrollId: undefined },
   { label: 'Goals', path: '/goals', scrollId: undefined },
   { label: 'Progress', path: '/progress', scrollId: undefined },
   { label: 'Calendar', path: '/calendar', scrollId: undefined },
+  { label: 'Journal', path: '/journal', scrollId: undefined },
 ];
 
 const helpNavItems = [

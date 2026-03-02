@@ -157,13 +157,40 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
 
   const handleStepToggle = async (stepId: string) => {
     const todayIso = new Date().toISOString().split('T')[0];
-    const updatedSteps: GoalStep[] = (currentGoal.steps ?? []).map((step) =>
+    const steps = currentGoal.steps ?? [];
+    const updatedSteps: GoalStep[] = steps.map((step) =>
       step.id === stepId
         ? { ...step, completed: !step.completed, completedAt: step.completed ? undefined : todayIso }
         : step
     );
-    setCurrentGoal((prev) => ({ ...prev, steps: updatedSteps }));
-    await updateGoal(currentGoal.id, { steps: updatedSteps });
+    const totalSteps = updatedSteps.length;
+    const completedCount = updatedSteps.filter((s) => s.completed).length;
+    const newProgress = totalSteps > 0 ? Math.round((completedCount / totalSteps) * 10) : (currentGoal.progress ?? 0);
+
+    const budget = currentGoal.budget ?? 0;
+    const currentSpent = currentGoal.spent ?? 0;
+    const stepCost = totalSteps > 0 && budget > 0 ? Math.round(budget / totalSteps) : 0;
+    const toggledStep = steps.find((s) => s.id === stepId);
+    const isNowCompleted = toggledStep ? !toggledStep.completed : false;
+    let newSpent = currentSpent;
+    if (stepCost > 0) {
+      if (isNowCompleted) {
+        newSpent = Math.min(budget, currentSpent + stepCost);
+      } else {
+        newSpent = Math.max(0, currentSpent - stepCost);
+      }
+    }
+
+    const newStatus = newProgress >= 10 ? 'completed' : (currentGoal.status === 'completed' ? 'active' : currentGoal.status);
+
+    const updates = {
+      steps: updatedSteps,
+      progress: newProgress,
+      ...(budget > 0 ? { spent: newSpent } : {}),
+      ...(newStatus ? { status: newStatus } : {}),
+    };
+    setCurrentGoal((prev) => ({ ...prev, ...updates }));
+    await updateGoal(currentGoal.id, updates);
   };
 
   const handleAddNote = async () => {

@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,6 +37,8 @@ interface Goal {
   priority: 'high' | 'medium' | 'low';
   createdAt: string;
   recommendations: string[];
+  budget?: number;
+  spent?: number;
 }
 
 interface TodoItem {
@@ -790,17 +791,21 @@ const ManifestationDashboard: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium mb-1.5 opacity-75" style={{ color: 'var(--landing-text)' }}>
-                            Progress · drag to update
+                            Progress {goal.progress}/10 — update in goal detail
                           </p>
-                          <Slider
-                            value={[goal.progress]}
-                            onValueChange={(v) => updateGoalProgressDb(goal.id, v[0])}
-                            max={10}
-                            step={1}
-                            className="w-full"
-                          />
+                          <Progress value={goal.progress * 10} className="h-2" style={{ backgroundColor: 'var(--landing-accent)' }} />
                         </div>
                       </div>
+
+                      {/* Budget progress */}
+                      {goal.budget != null && goal.budget > 0 && (
+                        <div className="mt-4 space-y-1">
+                          <p className="text-xs font-medium opacity-75" style={{ color: 'var(--landing-text)' }}>
+                            Budget — {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.spent ?? 0)} / {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.budget)} ({Math.min(100, Math.round(((goal.spent ?? 0) / goal.budget) * 100))}% used)
+                          </p>
+                          <Progress value={Math.min(100, ((goal.spent ?? 0) / goal.budget) * 100)} className="h-2" style={{ backgroundColor: 'var(--landing-accent)' }} />
+                        </div>
+                      )}
 
                       <Button
                         variant="outline"

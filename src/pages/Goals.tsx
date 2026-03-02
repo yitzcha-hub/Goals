@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Slider } from '@/components/ui/slider';
 import { useManifestationDatabase } from '@/hooks/useManifestationDatabase';
 import { useToast } from '@/hooks/use-toast';
 import GoalDetailView from '@/components/GoalDetailView';
@@ -144,25 +143,35 @@ export default function Goals() {
                         </Button>
                       )}
                     </div>
-                    {(goal.budget != null && goal.budget > 0) && (
-                      <div className="flex flex-wrap items-center gap-4 mb-3 text-sm" style={{ color: 'var(--landing-text)' }} onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4" style={{ color: 'var(--landing-primary)' }} />
-                          <span><strong>Budget:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.budget)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4" style={{ color: 'var(--landing-primary)' }} />
-                          <span><strong>Spent:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.spent ?? 0)}</span>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setBudgetEditGoal(goal)} title="Edit budget and spent">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-                      <Slider value={[goal.progress]} onValueChange={(v) => updateGoalProgress(goal.id, v[0])} max={10} step={1} className="w-full" />
+                    <div className="space-y-2 mb-3" onClick={(e) => e.stopPropagation()}>
+                      <p className="text-xs font-medium opacity-80" style={{ color: 'var(--landing-text)' }}>
+                        Progress {goal.progress}/10 — update in goal detail
+                      </p>
                       <Progress value={goal.progress * 10} className="h-2" style={{ backgroundColor: 'var(--landing-accent)' }} />
                     </div>
+                    {(goal.budget != null && goal.budget > 0) && (
+                      <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-wrap items-center gap-4 text-sm" style={{ color: 'var(--landing-text)' }}>
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" style={{ color: 'var(--landing-primary)' }} />
+                            <span><strong>Budget:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.budget)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" style={{ color: 'var(--landing-primary)' }} />
+                            <span><strong>Spent:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(goal.spent ?? 0)}</span>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setBudgetEditGoal(goal)} title="Edit budget and spent">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium opacity-80" style={{ color: 'var(--landing-text)' }}>
+                            Budget progress — {Math.min(100, Math.round(((goal.spent ?? 0) / goal.budget) * 100))}% used
+                          </p>
+                          <Progress value={Math.min(100, ((goal.spent ?? 0) / goal.budget) * 100)} className="h-2" style={{ backgroundColor: 'var(--landing-accent)' }} />
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
