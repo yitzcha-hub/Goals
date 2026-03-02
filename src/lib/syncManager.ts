@@ -46,8 +46,8 @@ export const scheduleNotification = (title: string, body: string, timestamp: num
     navigator.serviceWorker.ready.then(registration => {
       registration.showNotification(title, {
         body,
-        icon: '/placeholder.svg',
-        badge: '/placeholder.svg',
+        icon: '/Logo.jpg',
+        badge: '/Logo.jpg',
         tag: `goal-reminder-${timestamp}`,
         requireInteraction: false,
         timestamp

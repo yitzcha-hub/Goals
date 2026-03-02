@@ -20,8 +20,8 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || 'Goal Reminder';
   const notificationOptions = {
     body: payload.notification?.body || 'You have a goal reminder!',
-    icon: '/placeholder.svg',
-    badge: '/placeholder.svg',
+    icon: '/Logo.jpg',
+    badge: '/Logo.jpg',
     tag: payload.data?.tag || 'goal-reminder',
     data: payload.data || {},
     requireInteraction: false,

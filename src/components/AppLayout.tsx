@@ -1,11 +1,13 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProductTour } from './ProductTour';
 import { OfflineIndicator } from './OfflineIndicator';
 import { AIChatbot } from './AIChatbot';
-import Dashboard from '@/pages/Dashboard';
 import { AuthenticatedLayout } from '@/components/AuthenticatedLayout';
+import { Loader2 } from 'lucide-react';
+
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
 import { LandingHeader } from '@/components/LandingHeader';
 import { LandingFooter } from '@/components/LandingFooter';
 import { LandingContent } from '@/components/LandingContent';
@@ -81,7 +83,13 @@ const AppLayout: React.FC = () => {
   if (user) {
     return (
       <AuthenticatedLayout>
-        <Dashboard />
+        <Suspense fallback={
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        }>
+          <Dashboard />
+        </Suspense>
       </AuthenticatedLayout>
     );
   }

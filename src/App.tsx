@@ -12,7 +12,8 @@ import { AuthenticatedLayout } from "@/components/AuthenticatedLayout";
 import { Loader2 } from "lucide-react";
 
 // Route-level code splitting: load pages only when their route is visited
-const Index = lazy(() => import("./pages/Index"));
+// Index imported directly so home page always loads (avoids 500 on dynamic chunk)
+import Index from "./pages/Index";
 const GetStarted = lazy(() => import("./pages/GetStarted"));
 const Contact = lazy(() => import("./pages/Contact"));
 const About = lazy(() => import("./pages/About"));

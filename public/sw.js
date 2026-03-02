@@ -1,13 +1,13 @@
 const CACHE_NAME = 'goal-tracker-v2';
 const urlsToCache = [
   '/manifest.json',
-  '/placeholder.svg'
+  '/Logo.jpg'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
+      .then((cache) => Promise.allSettled(urlsToCache.map((url) => cache.add(url).catch(() => {}))))
       .then(() => self.skipWaiting())
   );
 });
@@ -92,8 +92,8 @@ self.addEventListener('push', (event) => {
   const data = event.data?.json() || {};
   const options = {
     body: data.body || 'You have a goal reminder!',
-    icon: '/placeholder.svg',
-    badge: '/placeholder.svg',
+    icon: '/Logo.jpg',
+    badge: '/Logo.jpg',
     vibrate: [200, 100, 200],
     tag: data.tag || 'goal-reminder',
     data: {
