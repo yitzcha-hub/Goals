@@ -1,4 +1,4 @@
-const CACHE_NAME = 'goal-tracker-v2';
+const CACHE_NAME = 'goal-tracker-v3';
 const urlsToCache = [
   '/manifest.json',
   '/Logo.jpg'
@@ -29,19 +29,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Document/navigation requests: always try network first so updates are visible on refresh.
-  // Fall back to cache only when offline (keeps offline support).
+  // Document/navigation requests: always use network, never cache HTML.
+  // Caching index.html would serve stale asset URLs (e.g. index-XXX.js) after deploy → 404s.
+  // Fall back to cached index.html only when offline.
   const isDocument = event.request.mode === 'navigate' || event.request.destination === 'document';
   if (isDocument) {
     event.respondWith(
       fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200 && response.type === 'basic') {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {});
-          }
-          return response;
-        })
+        .then((response) => response)
         .catch(() => caches.match('/index.html').then((r) => r || caches.match('/')))
     );
     return;
