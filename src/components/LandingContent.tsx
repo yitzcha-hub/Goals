@@ -14,8 +14,8 @@ import stepImg3 from '@/assets/images/Attach-goals-to-time.jpg';
 import stepImg4 from '@/assets/images/Get-AI-feedback-on-your-progress.jpg';
 import successPhoneImg from '@/assets/images/hand-holding-smartphone-displaying-financial-app-with-quotsuccessquot-notification_1298745-37939.jpg';
 import problemImg1 from '@/assets/images/happy-man.jpg';
-import problemImg2 from '@/assets/images/marketing-pretty-young-blonde-girl-grey-suit-office-very-upset-tired_140725-165512.avif';
-import problemImg3 from '@/assets/images/Success-Man.jpg';
+import problemImg2 from '@/assets/images/Set-Goals-Woman.jpg';
+import problemImg3 from '@/assets/images/Tomorrow-Goal.jpg';
 import problemImg4 from '@/assets/images/family-connection.jpg';  
 import problemImg5 from '@/assets/images/Get-AI-feedback-on-your-progress.jpg';
 
@@ -304,7 +304,7 @@ export const LandingContent: React.FC = () => {
 
   const stepItems: StepItem[] = [
     { step: 1, title: 'Choose who you want to become', icon: Target, img: stepImg1 },
-    { step: 2, title: 'Write your authenticity and purpose plan', icon: BookOpen, img: stepImg2 },
+    { step: 2, title: 'Write your Goals and plan', icon: BookOpen, img: stepImg2 },
     { step: 3, title: 'Attach goals to time (calendar + reminders)', icon: Calendar, img: stepImg3 },
     { step: 4, title: 'Get AI feedback on your progress', icon: Sparkles, img: stepImg4 },
   ];
