@@ -11,14 +11,15 @@ import writtenPlanImg from '@/assets/images/Written-plan.jpg';
 import calendarImg from '@/assets/images/Calendar.jpg';
 import aiAnalysisImg from '@/assets/images/AI-analysis.jpg';
 import getAIFeedbackImg from '@/assets/images/Get-AI-feedback-on-your-progress.jpg';
-import familyConnectionImg from '@/assets/images/family-connection.jpg';
+import familyConnectionImg1 from '@/assets/images/family-painting-floor_23-2147997732.jpg';
+import familyConnectionImg2 from '@/assets/images/father-daughter-playing-with-planes_23-2147997391.jpg';
 
 const featureShowcaseItems = [
   { img: goalsImg, title: 'Goals', desc: 'Set and track what matters to you.' },
   { img: writtenPlanImg, title: 'Written plan', desc: 'Clarify your path in your own words.' },
   { img: calendarImg, title: 'Calendar', desc: 'Attach goals to time and reminders.' },
   { img: aiAnalysisImg, title: 'AI analysis', desc: 'Insights that help you improve.' },
-  { img: familyConnectionImg, title: 'Family connection', desc: 'Private accountability, not social sharing.' },
+  { img: familyConnectionImg1, title: 'Family connection', desc: 'Private accountability, not social sharing.' },
 ];
 
 const Features: React.FC = () => {
@@ -140,7 +141,7 @@ const Features: React.FC = () => {
 
             {/* Family connection — spans 2 cols on lg */}
             <article className="group relative sm:col-span-2 min-h-[200px] sm:min-h-[220px] rounded-3xl overflow-hidden border transition-all duration-500 feature-card-shadow" style={{ borderColor: 'var(--landing-border)' }}>
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-110" style={{ backgroundImage: `url(${familyConnectionImg})` }} />
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-110" style={{ backgroundImage: `url(${familyConnectionImg1})` }} />
               <div className="absolute inset-0 rounded-3xl" style={{ background: 'linear-gradient(to top, rgba(26, 107, 79, 0.9) 0%, rgba(44, 157, 115, 0.5) 50%, transparent 100%)' }} />
               <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ boxShadow: 'inset 0 0 0 1px rgba(44, 157, 115, 0.25)' }} />
               <div className="absolute bottom-0 left-0 right-0 p-6">
@@ -253,7 +254,7 @@ const Features: React.FC = () => {
             {/* Image — right side */}
             <div className="relative">
               <div className="aspect-[4/3] rounded-3xl overflow-hidden border feature-card-shadow group" style={{ borderColor: 'var(--landing-border)' }}>
-                <img src={familyConnectionImg} alt="Family connection and accountability" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <img src={familyConnectionImg2} alt="Family connection and accountability" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 rounded-3xl" style={{ background: 'linear-gradient(to top, rgba(26, 107, 79, 0.35) 0%, transparent 55%)' }} />
               </div>
               <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-2xl flex items-center justify-center hidden sm:flex" style={{ backgroundColor: 'var(--landing-primary)', boxShadow: '0 8px 24px rgba(44, 157, 115, 0.35)' }}>
