@@ -488,7 +488,7 @@ export const LandingContent: React.FC = () => {
                 animate={isProblemIntroInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: 0.35, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
               >
-                When you are operating at your highest level, you are in the zone. No Fear, Frustration or Doubt—that&apos;s when you find out who you are. We help you get there.
+               The good life isn’t about how much you can trudge through—it’s about being in your element. When you’re aligned with your true path, opportunities that fit naturally come your way, and there’s no second-guessing because it feels right for who you are. We help you get there.
               </motion.p>
             </motion.div>
           </div>

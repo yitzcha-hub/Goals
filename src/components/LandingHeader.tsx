@@ -62,13 +62,13 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
             alt="Authenticity & Purpose"
             className="h-9 w-9 object-contain transition-transform duration-200 group-hover:scale-105"
           />
-          <span className="text-lg font-bold tracking-tight hidden sm:inline bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280] bg-clip-text text-transparent">
+          <span className="text-lg font-bold tracking-tight hidden sm:inline md:max-lg:hidden lg:inline bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280] bg-clip-text text-transparent">
             Authenticity & Purpose
           </span>
         </button>
 
-        {/* Nav — desktop (no mobile-only items e.g. Demo) */}
-        <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-0.5">
+        {/* Nav — desktop only at lg+ so tablet (768–1023px) uses hamburger and avoids overlap */}
+        <nav className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-0.5">
           {navItems.filter((item) => !item.mobileOnly).map((item) => {
             const isActive =
               'path' in item
@@ -101,25 +101,25 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 
         {/* Right: CTA or logged-in user */}
         <div className="flex items-center gap-2">
-          {/* Home — visible on mobile only */}
+          {/* Home — visible when hamburger is shown (< lg) */}
           <button
             onClick={() => {
               setMobileMenuOpen(false);
               navigate('/');
             }}
-            className="md:hidden text-sm font-bold text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--landing-primary)]"
+            className="lg:hidden text-sm font-bold text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--landing-primary)]"
           >
             <span className={`relative z-10 bg-clip-text text-transparent transition-colors duration-150 ${location.pathname === '/' ? 'bg-gradient-to-r from-[var(--landing-primary)] via-[var(--landing-primary)] to-[var(--landing-primary)]' : 'bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280]'}`}>
               Home
             </span>
           </button>
-          {/* Demo — visible on mobile only */}
+          {/* Demo — visible when hamburger is shown (< lg) */}
           <button
             onClick={() => {
               setMobileMenuOpen(false);
               navigate('/demo');
             }}
-            className="md:hidden text-sm font-bold text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--landing-primary)]"
+            className="lg:hidden text-sm font-bold text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--landing-primary)]"
           >
             <span className={`relative z-10 bg-clip-text text-transparent transition-colors duration-150 ${location.pathname === '/demo' ? 'bg-gradient-to-r from-[var(--landing-primary)] via-[var(--landing-primary)] to-[var(--landing-primary)]' : 'bg-gradient-to-r from-[#6b7280] via-[#4b5563] to-[#6b7280]'}`}>
               Demo
@@ -174,7 +174,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
               </Button>
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="sm:hidden rounded-lg" style={{ color: 'var(--landing-text)' }} aria-label="Open menu">
+                  <Button variant="ghost" size="icon" className="lg:hidden rounded-lg" style={{ color: 'var(--landing-text)' }} aria-label="Open menu">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
@@ -220,7 +220,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
               />
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden rounded-lg" style={{ color: 'var(--landing-text)' }} aria-label="Open menu">
+                  <Button variant="ghost" size="icon" className="lg:hidden rounded-lg" style={{ color: 'var(--landing-text)' }} aria-label="Open menu">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
