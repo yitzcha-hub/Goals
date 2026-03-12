@@ -137,14 +137,14 @@ const ProblemCard: React.FC<{ item: ProblemItem; index: number }> = ({ item, ind
           <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-5">
             <motion.div
               className="p-4 rounded-xl border-l-4"
-              style={{ borderColor: '#1d4ed8', backgroundColor: 'rgba(37,99,235,0.06)' }}
+              style={{ borderColor: '#fb923c', backgroundColor: 'rgba(251, 146, 60, 0.08)' }}
               initial={{ opacity: 0, x: -8 }}
               animate={isInView ? { opacity: 1, x: 0 } : {}}
               transition={{ delay: 0.4 + i * 0.1, duration: 0.6 }}
             >
               <span
                 className="text-[10px] font-bold uppercase tracking-widest block mb-1.5"
-                style={{ color: '#1d4ed8' }}
+                style={{ color: '#fb923c' }}
               >
                 Problem
               </span>
@@ -397,8 +397,8 @@ export const LandingContent: React.FC = () => {
                   <circle cx="32" cy="32" r="24" fill="#E0E6F0" />
                   {/* Needle — top half red */}
                   <path d="M32 14 L28 32 L36 32 Z" fill="#E74C3C" />
-                  {/* Needle — bottom half light blue */}
-                  <path d="M32 50 L36 32 L28 32 Z" fill="#3498DB" />
+                  {/* Needle — bottom half light orange */}
+                  <path d="M32 50 L36 32 L28 32 Z" fill="#fb923c" />
                   {/* Central pivot — dark blue */}
                   <circle cx="32" cy="32" r="5" fill="#2C3E50" />
                 </g>
