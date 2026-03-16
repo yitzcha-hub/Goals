@@ -268,6 +268,32 @@ WHERE email = 'admin@gad.com'
   AND (confirmation_token IS NULL OR recovery_token IS NULL OR email_change_token_new IS NULL OR email_change IS NULL);
 
 -- =============================================================================
+-- 3d. PROFILES (display name, timezone — used by Settings and TimezoneContext)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  username text,
+  timezone text,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_profiles_id ON public.profiles(id);
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can read own profile"
+  ON public.profiles FOR SELECT
+  USING (auth.uid() = id);
+CREATE POLICY "Users can insert own profile"
+  ON public.profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can update own profile"
+  ON public.profiles FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
+
+-- =============================================================================
 -- 4. REMINDERS
 -- =============================================================================
 
@@ -1075,6 +1101,8 @@ BEGIN
   CREATE TRIGGER set_calendar_events_updated_at BEFORE UPDATE ON public.calendar_events FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
   DROP TRIGGER IF EXISTS set_invite_codes_updated_at ON public.invite_codes;
   CREATE TRIGGER set_invite_codes_updated_at BEFORE UPDATE ON public.invite_codes FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+  DROP TRIGGER IF EXISTS set_profiles_updated_at ON public.profiles;
+  CREATE TRIGGER set_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 END
 $$;
 

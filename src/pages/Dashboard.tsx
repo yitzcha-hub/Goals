@@ -503,7 +503,7 @@ export default function Dashboard() {
           style={{ backgroundImage: `url(${demoHeroBg})` }}
           aria-hidden
         />
-        <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.85 }} aria-hidden />
+        <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0 }} aria-hidden />
         <HeroFloatingCircles />
         <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
           <h1

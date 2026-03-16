@@ -63,28 +63,59 @@ export const TimezoneProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return;
     }
     let cancelled = false;
+    const usernameFromAuth =
+      (user.user_metadata as { full_name?: string } | undefined)?.full_name ||
+      user.email?.split('@')[0] ||
+      null;
+
     supabase
       .from('profiles')
-      .select('timezone')
+      .select('timezone, username')
       .eq('id', user.id)
       .single()
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error && error.code !== 'PGRST116') {
-          // ignore errors here; fall back to IP/browser
           setTzFromProfile(null);
           return;
         }
         if (data?.timezone) {
           setTzFromProfile(data.timezone);
+          return;
+        }
+
+        // Auto-fill profile from auth user when missing or empty (no timezone / no username)
+        const noRow = error?.code === 'PGRST116' || !data;
+        const needsFill = noRow || !data?.timezone;
+        const fillTimezone = tzFromIP ?? getBrowserTimezone();
+        const fillUsername = (noRow || !data?.username) ? usernameFromAuth : (data?.username ?? null);
+
+        if (needsFill) {
+          supabase
+            .from('profiles')
+            .upsert(
+              {
+                id: user.id,
+                username: fillUsername,
+                timezone: fillTimezone,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'id' },
+            )
+            .then(({ error: upsertError }) => {
+              if (!cancelled && !upsertError) setTzFromProfile(fillTimezone);
+            });
         } else {
           setTzFromProfile(null);
         }
+      })
+      .catch(() => {
+        if (!cancelled) setTzFromProfile(null);
       });
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, tzFromIP]);
 
   const todayISO = getTodayISO(timezone);
   const tomorrowISO = (() => {
