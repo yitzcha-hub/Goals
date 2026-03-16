@@ -71,6 +71,7 @@ import { BudgetSpentEditDialog } from '@/components/BudgetSpentEditDialog';
 import type { DemoGoalGenerated } from '@/data/demoOnboardingMockData';
 import { getDefaultImageForCategory } from '@/data/demoOnboardingMockData';
 import { generateGoalsWithOpenAI, recommendImagesForGoals, generateTodosWithOpenAI, getActiveProvider } from '@/lib/openaiProgressAnalysis';
+import { getEncouragement, getWelcomeEncouragement } from '@/lib/encouragement';
 import demoHeroBg from '@/assets/images/Demo-bg.png';
 
 function isSameDay(a: Date, b: Date, toISODate: (d: Date) => string): boolean {
@@ -312,6 +313,29 @@ export default function Dashboard() {
       return da.localeCompare(db);
     });
   }, [todos]);
+
+  /** Toggle todo and show encouragement when user completes a task */
+  const handleToggleTodoWithEncouragement = useCallback((taskId: string) => {
+    const task = todos.find((t) => t.id === taskId);
+    const wasIncomplete = task && !task.completed;
+    toggleTodo(taskId);
+    if (wasIncomplete) {
+      toast({ title: getEncouragement('taskComplete') });
+    }
+  }, [todos, toggleTodo, toast]);
+
+  /** One-time welcome encouragement when user has already completed tasks today */
+  const welcomeEncouragementShown = React.useRef(false);
+  const completedTodayCount = useMemo(
+    () => todos.filter((t) => t.completed && t.scheduledDate === todayIso).length,
+    [todos, todayIso]
+  );
+  useEffect(() => {
+    if (welcomeEncouragementShown.current || completedTodayCount <= 0) return;
+    welcomeEncouragementShown.current = true;
+    const msg = getWelcomeEncouragement(completedTodayCount);
+    if (msg) toast({ title: msg });
+  }, [completedTodayCount, toast]);
 
   /** Groups used on today's tasks only (for Move to group on Today tab) */
   const todayGroupsForMove = useMemo(() => {
@@ -578,7 +602,7 @@ export default function Dashboard() {
             recommendations: generateRecommendations(g.timeline),
           });
           setAddGoalOpen(false);
-          toast({ title: 'Added', description: 'Goal created.' });
+          toast({ title: getEncouragement('goalAdded') });
         }}
       />
 
@@ -778,7 +802,10 @@ export default function Dashboard() {
                               variant="outline"
                               size="sm"
                               className="rounded-full text-xs min-h-9 border-sky-500 bg-sky-500 text-white hover:bg-sky-600 hover:border-sky-600 shadow-sm"
-                              onClick={() => updateGoal(goal.id, { status: 'completed', progress: 10 })}
+                              onClick={async () => {
+                                await updateGoal(goal.id, { status: 'completed', progress: 10 });
+                                toast({ title: getEncouragement('goalComplete') });
+                              }}
                               title="Mark complete"
                             >
                               <CheckCircle className="h-3.5 w-3 mr-1" /> Complete
@@ -882,7 +909,7 @@ export default function Dashboard() {
                           </p>
                           {byGroup[groupLabel].map((task) => (
                             <div key={task.id} className={`flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`} style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}>
-                              <button type="button" onClick={() => toggleTodo(task.id)} className={`w-7 h-7 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 touch-manipulation ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
+                              <button type="button" onClick={() => handleToggleTodoWithEncouragement(task.id)} className={`w-7 h-7 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 touch-manipulation ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
                                 {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
                               </button>
                               <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
@@ -962,7 +989,7 @@ export default function Dashboard() {
                           </p>
                           {byGroup[groupLabel].map((task) => (
                             <div key={task.id} className={`flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl transition-all ${task.completed ? 'border-2' : ''}`} style={{ backgroundColor: task.completed ? 'var(--landing-accent)' : 'var(--landing-bg)', borderColor: task.completed ? 'var(--landing-primary)' : 'transparent' }}>
-                              <button type="button" onClick={() => toggleTodo(task.id)} className={`w-7 h-7 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 touch-manipulation ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
+                              <button type="button" onClick={() => handleToggleTodoWithEncouragement(task.id)} className={`w-7 h-7 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 touch-manipulation ${task.completed ? '' : 'border-gray-300'}`} style={task.completed ? { backgroundColor: 'var(--landing-primary)', borderColor: 'var(--landing-primary)' } : {}}>
                                 {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
                               </button>
                               <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
@@ -1058,7 +1085,7 @@ export default function Dashboard() {
                                 </p>
                                 {list.map((task) => (
                                   <div key={task.id} className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
-                                    <button type="button" onClick={() => toggleTodo(task.id)} className="w-7 h-7 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 touch-manipulation border-gray-300">
+                                    <button type="button" onClick={() => handleToggleTodoWithEncouragement(task.id)} className="w-7 h-7 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 touch-manipulation border-gray-300">
                                       {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
                                     </button>
                                     <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 overflow-hidden">
@@ -1111,11 +1138,11 @@ export default function Dashboard() {
                       const title = newTaskTitle.trim();
                       if (title) {
                         const iso = newTaskDay === 'today' ? todayIso : tomorrowIso;
-                        addTodo({ title, completed: false, points: 5, scheduledDate: iso, timeSlot: newTaskTimeSlot.trim() || undefined, groupName: newTaskGroup.trim() || undefined });
-                        setNewTaskTitle('');
-                        setNewTaskTimeSlot('');
-                        setNewTaskGroup('');
-                        toast({ title: 'Added', description: `Task added for ${newTaskDay}.` });
+addTodo({ title, completed: false, points: 5, scheduledDate: iso, timeSlot: newTaskTimeSlot.trim() || undefined, groupName: newTaskGroup.trim() || undefined });
+                      setNewTaskTitle('');
+                      setNewTaskTimeSlot('');
+                      setNewTaskGroup('');
+                      toast({ title: getEncouragement('taskAdded') });
                       }
                     }}
                     className="space-y-2 mt-4"
