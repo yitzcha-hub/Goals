@@ -186,6 +186,7 @@ export default function Dashboard() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDay, setNewTaskDay] = useState<'today' | 'tomorrow'>('today');
+  const [todoListTab, setTodoListTab] = useState<string>('today');
   const [newTaskTimeSlot, setNewTaskTimeSlot] = useState('');
   const [newTaskGroup, setNewTaskGroup] = useState('');
 
@@ -298,6 +299,19 @@ export default function Dashboard() {
 
   const todosToday = useMemo(() => todos.filter((t) => t.scheduledDate === todayIso), [todos, todayIso]);
   const todosTomorrow = useMemo(() => todos.filter((t) => t.scheduledDate === tomorrowIso), [todos, tomorrowIso]);
+
+  /** Incomplete todos only, sorted: overdue first, then today, tomorrow, then upcoming (so they "stay" until checked off) */
+  const todosPending = useMemo(() => {
+    const incomplete = todos.filter((t) => !t.completed);
+    return incomplete.slice().sort((a, b) => {
+      const da = a.scheduledDate ?? '';
+      const db = b.scheduledDate ?? '';
+      if (da === db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da.localeCompare(db);
+    });
+  }, [todos]);
 
   /** Groups used on today's tasks only (for Move to group on Today tab) */
   const todayGroupsForMove = useMemo(() => {
@@ -845,10 +859,11 @@ export default function Dashboard() {
                     </Button>
                   </div>
                 </div>
-                <Tabs defaultValue="today" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-4" style={{ backgroundColor: 'var(--landing-accent)' }}>
+                <Tabs value={todoListTab} onValueChange={setTodoListTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-4" style={{ backgroundColor: 'var(--landing-accent)' }}>
                     <TabsTrigger value="today">Today</TabsTrigger>
                     <TabsTrigger value="tomorrow">Tomorrow</TabsTrigger>
+                    <TabsTrigger value="pending">Pending</TabsTrigger>
                   </TabsList>
                   <TabsContent value="today" className="space-y-3 mt-0">
                     {(() => {
@@ -999,7 +1014,7 @@ export default function Dashboard() {
                                         </DropdownMenuItem>
                                       );
                                     })}
-                                  </DropdownMenuContent>
+                                    </DropdownMenuContent>
                                 </DropdownMenu>
                                 <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 touch-manipulation" onClick={(e) => { e.stopPropagation(); setEditingTaskId(task.id); }} title="Edit task"><PenLine className="h-4 w-4" /></Button>
                                 <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 text-red-600 touch-manipulation" onClick={async (e) => { e.stopPropagation(); await deleteTodo(task.id); toast({ title: 'Removed', description: 'Task removed.' }); }} title="Delete task"><Trash2 className="h-4 w-4" /></Button>
@@ -1010,35 +1025,115 @@ export default function Dashboard() {
                       ));
                     })()}
                   </TabsContent>
+                  <TabsContent value="pending" className="space-y-3 mt-0">
+                    {(() => {
+                      type Bucket = 'overdue' | 'today' | 'tomorrow' | 'upcoming';
+                      const bucketOrder: Bucket[] = ['overdue', 'today', 'tomorrow', 'upcoming'];
+                      const getBucket = (scheduledDate: string | null | undefined): Bucket => {
+                        if (!scheduledDate) return 'upcoming';
+                        if (scheduledDate < todayIso) return 'overdue';
+                        if (scheduledDate === todayIso) return 'today';
+                        if (scheduledDate === tomorrowIso) return 'tomorrow';
+                        return 'upcoming';
+                      };
+                      const bucketLabels: Record<Bucket, string> = { overdue: 'Overdue', today: 'Today', tomorrow: 'Tomorrow', upcoming: 'Upcoming' };
+                      const byBucket = todosPending.reduce<Record<Bucket, typeof todosPending>>((acc, task) => {
+                        const b = getBucket(task.scheduledDate);
+                        if (!acc[b]) acc[b] = [];
+                        acc[b].push(task);
+                        return acc;
+                      }, {} as Record<Bucket, typeof todosPending>);
+                      return (
+                        <div className="space-y-4">
+                          <p className="text-sm opacity-80" style={{ color: 'var(--landing-text)' }}>
+                            Incomplete tasks stay here until you check them off. Move to Today or Tomorrow to schedule.
+                          </p>
+                          {bucketOrder.map((bucket) => {
+                            const list = byBucket[bucket] ?? [];
+                            if (list.length === 0) return null;
+                            return (
+                              <div key={bucket} className="space-y-2">
+                                <p className="text-sm font-semibold" style={{ color: 'var(--landing-primary)' }}>
+                                  {bucketLabels[bucket]}
+                                </p>
+                                {list.map((task) => (
+                                  <div key={task.id} className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
+                                    <button type="button" onClick={() => toggleTodo(task.id)} className="w-7 h-7 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 touch-manipulation border-gray-300">
+                                      {task.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
+                                    </button>
+                                    <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 overflow-hidden">
+                                      {task.timeSlot && <span className="flex items-center gap-1 text-xs shrink-0 opacity-80" style={{ color: 'var(--landing-text)' }}><Clock className="h-3 w-3" /> {task.timeSlot}</span>}
+                                      <span className="truncate" style={{ color: 'var(--landing-text)' }}>{task.title}</span>
+                                      {task.scheduledDate && (
+                                        <span className="text-xs shrink-0 opacity-70" style={{ color: 'var(--landing-text)' }}>
+                                          {task.scheduledDate < todayIso ? `Was due ${task.scheduledDate}` : task.scheduledDate === todayIso ? 'Due today' : task.scheduledDate === tomorrowIso ? 'Due tomorrow' : `Due ${task.scheduledDate}`}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 touch-manipulation" title="Move task">
+                                            <ArrowRightLeft className="h-4 w-4" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          <DropdownMenuItem disabled={task.scheduledDate === todayIso} onClick={async () => { await updateTodo(task.id, { scheduledDate: todayIso }); toast({ title: 'Moved', description: 'Task moved to Today.' }); }}>
+                                            <CalendarDays className="h-4 w-4 mr-2" /> Move to Today
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem disabled={task.scheduledDate === tomorrowIso} onClick={async () => { await updateTodo(task.id, { scheduledDate: tomorrowIso }); toast({ title: 'Moved', description: 'Task moved to Tomorrow.' }); }}>
+                                            <CalendarDays className="h-4 w-4 mr-2" /> Move to Tomorrow
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                      <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 touch-manipulation" onClick={() => setEditingTaskId(task.id)} title="Edit task"><PenLine className="h-4 w-4" /></Button>
+                                      <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 text-red-600 touch-manipulation" onClick={async () => { await deleteTodo(task.id); toast({ title: 'Removed', description: 'Task removed.' }); }} title="Delete task"><Trash2 className="h-4 w-4" /></Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })}
+                          {todosPending.length === 0 && (
+                            <p className="text-sm py-4 text-center" style={{ color: 'var(--landing-text)', opacity: 0.7 }}>
+                              No pending tasks. All set!
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </TabsContent>
                 </Tabs>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const title = newTaskTitle.trim();
-                    if (title) {
-                      const iso = newTaskDay === 'today' ? todayIso : tomorrowIso;
-                      addTodo({ title, completed: false, points: 5, scheduledDate: iso, timeSlot: newTaskTimeSlot.trim() || undefined, groupName: newTaskGroup.trim() || undefined });
-                      setNewTaskTitle('');
-                      setNewTaskTimeSlot('');
-                      setNewTaskGroup('');
-                      toast({ title: 'Added', description: `Task added for ${newTaskDay}.` });
-                    }
-                  }}
-                  className="space-y-2 mt-4"
-                >
-                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
-                    <Input placeholder="Add a task..." value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} className="flex-1 min-w-0 w-full sm:min-w-[140px]" style={{ borderColor: 'var(--landing-border)' }} />
-                    <div className="flex flex-wrap gap-2">
-                      <Input placeholder="Group" value={newTaskGroup} onChange={(e) => setNewTaskGroup(e.target.value)} className="w-full sm:w-[130px] min-w-0" style={{ borderColor: 'var(--landing-border)' }} title="Group: Studying, Exercise, Other, etc." />
-                      <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
-                        <SelectTrigger className="w-[100px] sm:w-[110px] shrink-0" style={{ borderColor: 'var(--landing-border)' }}><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="today">Today</SelectItem><SelectItem value="tomorrow">Tomorrow</SelectItem></SelectContent>
-                      </Select>
-                      <Input placeholder="Time" value={newTaskTimeSlot} onChange={(e) => setNewTaskTimeSlot(e.target.value)} className="w-[80px] sm:w-[100px] shrink-0" style={{ borderColor: 'var(--landing-border)' }} />
-                      <Button type="submit" size="sm" className="hero-cta-primary min-h-9 touch-manipulation shrink-0" disabled={!newTaskTitle.trim()}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+                {todoListTab !== 'pending' && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const title = newTaskTitle.trim();
+                      if (title) {
+                        const iso = newTaskDay === 'today' ? todayIso : tomorrowIso;
+                        addTodo({ title, completed: false, points: 5, scheduledDate: iso, timeSlot: newTaskTimeSlot.trim() || undefined, groupName: newTaskGroup.trim() || undefined });
+                        setNewTaskTitle('');
+                        setNewTaskTimeSlot('');
+                        setNewTaskGroup('');
+                        toast({ title: 'Added', description: `Task added for ${newTaskDay}.` });
+                      }
+                    }}
+                    className="space-y-2 mt-4"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
+                      <Input placeholder="Add a task..." value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} className="flex-1 min-w-0 w-full sm:min-w-[140px]" style={{ borderColor: 'var(--landing-border)' }} />
+                      <div className="flex flex-wrap gap-2">
+                        <Input placeholder="Group" value={newTaskGroup} onChange={(e) => setNewTaskGroup(e.target.value)} className="w-full sm:w-[130px] min-w-0" style={{ borderColor: 'var(--landing-border)' }} title="Group: Studying, Exercise, Other, etc." />
+                        <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
+                          <SelectTrigger className="w-[100px] sm:w-[110px] shrink-0" style={{ borderColor: 'var(--landing-border)' }}><SelectValue /></SelectTrigger>
+                          <SelectContent><SelectItem value="today">Today</SelectItem><SelectItem value="tomorrow">Tomorrow</SelectItem></SelectContent>
+                        </Select>
+                        <Input placeholder="Time" value={newTaskTimeSlot} onChange={(e) => setNewTaskTimeSlot(e.target.value)} className="w-[80px] sm:w-[100px] shrink-0" style={{ borderColor: 'var(--landing-border)' }} />
+                        <Button type="submit" size="sm" className="hero-cta-primary min-h-9 touch-manipulation shrink-0" disabled={!newTaskTitle.trim()}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+                      </div>
                     </div>
-                  </div>
-                </form>
+                  </form>
+                )}
               </CardContent>
             </Card>
           </section>
