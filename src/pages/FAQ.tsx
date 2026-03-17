@@ -119,17 +119,9 @@ const FAQ: React.FC = () => {
         id="hero"
         className="relative py-20 sm:py-28 px-4 min-h-[28rem] flex items-center justify-center overflow-hidden"
       >
-        <div className="absolute inset-0" aria-hidden>
-          <div
-            className="absolute inset-0 bg-cover bg-center scale-105"
-            style={{ backgroundImage: `url(${faqBg})` }}
-          />
-        </div>
         <div
-          className="absolute inset-0"
-          style={{
-            backgroundColor: 'var(--landing-accent)', opacity: 0.85
-          }}
+          className="absolute inset-0 bg-cover bg-center scale-105"
+          style={{ backgroundImage: `url(${faqBg})` }}
           aria-hidden
         />
         <HeroFloatingCircles />
@@ -143,24 +135,14 @@ const FAQ: React.FC = () => {
             Everything you need to know
           </div>
           <h1
-            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up"
-            style={{
-              backgroundImage: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              animationDelay: '0.1s',
-            }}
+            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.7)] animate-slide-up"
+            style={{ animationDelay: '0.1s' }}
           >
             Frequently Asked Questions
           </h1>
           <p
-            className="text-lg sm:text-xl mb-10 font-bold max-w-2xl mx-auto bg-clip-text text-transparent animate-slide-up"
-            style={{
-              backgroundImage: 'linear-gradient(135deg, #4a5568 0%, #2d3748 50%, #1a1a1a 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              animationDelay: '0.2s',
-            }}
+            className="text-lg sm:text-xl mb-10 font-semibold max-w-2xl mx-auto text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] animate-slide-up"
+            style={{ animationDelay: '0.2s' }}
           >
             Clear, honest answers about our personal growth system—what it is, how it works, and how we help you be the person you want to become.
           </p>

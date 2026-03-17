@@ -357,7 +357,7 @@ export const LandingContent: React.FC = () => {
             />
           ))}
         </div>
-        <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0 }} aria-hidden />
+        <div className="absolute inset-0" aria-hidden />
         <HeroFloatingCircles />
         <div className="relative z-10 flex-1 flex flex-col justify-between w-full max-w-6xl mx-auto text-center px-4 sm:px-6">
           {/* Hero content — title, subline, CTA */}

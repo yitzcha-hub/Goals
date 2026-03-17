@@ -233,18 +233,12 @@ const Progress: React.FC = () => {
   return (
     <AuthenticatedLayout>
       <div className="min-h-screen landing" style={{ backgroundColor: 'var(--landing-bg)', color: 'var(--landing-text)' }}>
-        {/* Hero — light green overlay like Dashboard */}
         <section
           className="relative w-full overflow-hidden"
-          style={{ minHeight: '240px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
+          style={{ minHeight: '320px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
         >
           <div className="absolute inset-0">
             <img src={progressHeroImg} alt="" className="w-full h-full object-cover" />
-            <div
-              className="absolute inset-0"
-              style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.9 }}
-              aria-hidden
-            />
           </div>
           <HeroFloatingCircles />
           <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
@@ -254,31 +248,25 @@ const Progress: React.FC = () => {
                   <Button
                     variant="ghost"
                     onClick={() => navigate(-1)}
-                    className="rounded-xl hover:bg-[var(--landing-hover-bg)]"
-                    style={{ color: 'var(--landing-text)' }}
+                    className="rounded-xl bg-black/30 hover:bg-black/40 text-white border border-white/40"
                   >
                     Back
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => navigate('/')}
-                    className="rounded-xl"
-                    style={{ borderColor: 'var(--landing-primary)', color: 'var(--landing-primary)' }}
+                    className="rounded-xl bg-white/85 hover:bg-white text-[var(--landing-primary)] border-none"
                   >
                     Home
                   </Button>
                 </div>
                 <div>
                   <h1
-                    className="text-3xl sm:text-4xl font-bold tracking-tight bg-clip-text text-transparent"
-                    style={{
-                      backgroundImage: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)',
-                      WebkitBackgroundClip: 'text',
-                    }}
+                    className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]"
                   >
                     Your progress at a glance
                   </h1>
-                  <p className="mt-3 text-sm sm:text-base max-w-2xl leading-relaxed opacity-90" style={{ color: 'var(--landing-text)' }}>
+                  <p className="mt-3 text-sm sm:text-base max-w-2xl leading-relaxed text-white/95 font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)]">
                     See completion rate, weekly consistency, journal frequency, and goal activity. Get AI-powered insights to understand how you&apos;re doing and how to improve.
                   </p>
                 </div>
@@ -286,7 +274,7 @@ const Progress: React.FC = () => {
               <Button
                 onClick={handleGetAIInsights}
                 disabled={aiLoading}
-                className="hero-cta-primary font-semibold rounded-xl shrink-0"
+                className="hero-cta-primary font-semibold rounded-xl shrink-0 bg-white text-[var(--landing-primary)] hover:bg-slate-100 shadow-lg disabled:opacity-80"
               >
                 {aiLoading ? (
                   <>
