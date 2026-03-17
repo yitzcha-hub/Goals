@@ -367,7 +367,7 @@ const DemoLayout: React.FC = () => {
         </Button>
       </div>
 
-      {/* Hero Section — matches Features/Pricing/About pattern */}
+      {/* Hero Section — pure image, high-contrast text */}
       <section
         id="hero"
         className="relative py-20 sm:py-28 px-4 min-h-[28rem] flex items-center justify-center overflow-hidden w-full max-w-[100vw]"
@@ -377,34 +377,23 @@ const DemoLayout: React.FC = () => {
           style={{ backgroundImage: `url(${demoHeroBg})` }}
           aria-hidden
         />
-        <div className="absolute inset-0" style={{ backgroundColor: 'var(--landing-accent)', opacity: 0.85 }} aria-hidden />
         <HeroFloatingCircles />
         <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6 w-full min-w-0">
           <h1
-            className="text-3xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent animate-slide-up break-words"
-            style={{
-              backgroundImage: 'linear-gradient(135deg, var(--landing-primary) 0%, var(--landing-primary-soft) 50%, #1a6b4f 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              animationDelay: '0.1s',
-            }}
+            className="text-3xl sm:text-5xl md:text-6xl font-bold mb-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] animate-slide-up break-words"
+            style={{ animationDelay: '0.1s' }}
           >
             See how it works
           </h1>
           <p
-            className="text-lg sm:text-xl mb-4 font-bold max-w-2xl mx-auto bg-clip-text text-transparent animate-slide-up"
-            style={{
-              backgroundImage: 'linear-gradient(135deg, #4a5568 0%, #2d3748 50%, #1a1a1a 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              animationDelay: '0.25s',
-            }}
+            className="text-lg sm:text-xl mb-4 font-semibold max-w-2xl mx-auto text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] animate-slide-up"
+            style={{ animationDelay: '0.25s' }}
           >
             Explore goals, progress tracking, and daily tasks — no account needed
           </p>
           <p
-            className="text-sm font-medium opacity-90 mb-8 animate-slide-up"
-            style={{ color: 'var(--landing-text)', animationDelay: '0.3s' }}
+            className="text-sm font-medium mb-8 text-white/95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] animate-slide-up"
+            style={{ animationDelay: '0.3s' }}
           >
             Try it: Click a goal to see details • Drag the progress sliders • Toggle tasks • Add your own
           </p>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { LandingPageLayout } from '@/components/LandingPageLayout';
 import { HeroFloatingCircles } from '@/components/HeroFloatingCircles';
-import useCasesBg from '@/assets/images/Usecases-bg.jpg';
+import useCasesBg from '@/assets/images/1770752738.png';
 import peopleSelfDevImg from '@/assets/images/People-serious-about-self-development.jpg';
 import entrepreneursImg from '@/assets/images/Entrepreneurs.jpg';
 import studentsImg from '@/assets/images/Students.jpg';
@@ -92,19 +92,33 @@ const UseCase: React.FC = () => {
           aria-hidden
         />
         <HeroFloatingCircles />
-        <div className="relative z-10 max-w-6xl mx-auto text-center px-4 sm:px-6">
+        <div className="relative z-10 max-w-5xl mx-auto text-center px-4 sm:px-6">
           <h1
-            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.7)] animate-slide-up"
+            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] animate-slide-up"
             style={{ animationDelay: '0.1s' }}
           >
-            Who This Is For
+            Who is this for?
           </h1>
-          <p
-            className="text-lg sm:text-xl mb-10 font-semibold max-w-2xl mx-auto text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] animate-slide-up"
+          <div
+            className="space-y-4 text-base sm:text-lg mb-10 font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] animate-slide-up"
             style={{ animationDelay: '0.25s' }}
           >
-            Authenticity & Purpose is built for anyone who wants real progress—not fake productivity. Whether you're building a business, growing as a student, or simply tired of apps that don't deliver, this is for you.
-          </p>
+            <p>
+              Who is Authenticity &amp; Purpose built for? People who want to live authentically: doing what they truly enjoy,
+              excelling at it, and naturally attracting opportunities, relationships, and success that align with their true self.
+            </p>
+            <p>
+              The app helps you discover your purpose, set meaningful goals, break them into clear steps, stay consistent and
+              motivated, and create daily rhythm and flow—so your life feels synergistic, fulfilling, and effortlessly meaningful.
+              In the zone, fear and doubt fade away. All that’s left is pure focus and action—the meaningless noise that once
+              held you back from living your real purpose disappears.
+            </p>
+            <p>
+              We’ve all been conditioned by society: how to act, think, and feel, how to live a “safe” but ultimately empty life.
+              Authenticity &amp; Purpose breaks through those barriers, clears the path, and guides you back to where you are
+              supposed to be—where you pursue what truly matters to you, and that is going to make the world a better place.
+            </p>
+          </div>
           <div
             className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up"
             style={{ animationDelay: '0.4s' }}
@@ -125,113 +139,6 @@ const UseCase: React.FC = () => {
             >
               Watch demo
             </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Who This Is For — cards with testimonials & comparison */}
-      <section
-        id="who-its-for"
-        className="py-20 sm:py-24 px-4 overflow-hidden relative"
-        style={{ backgroundColor: 'var(--landing-bg)', borderTop: '1px solid var(--landing-border)' }}
-      >
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, var(--landing-primary) 1px, transparent 0)', backgroundSize: '28px 28px' }} />
-        <div className="max-w-6xl mx-auto relative px-4 sm:px-6">
-          <div className="text-center mb-14">
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4" style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>Who This Is For</span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold max-w-2xl mx-auto" style={{ color: 'var(--landing-text)' }}>
-              Real people, real progress—see how they compare
-            </h2>
-          </div>
-
-          <div className="space-y-16 sm:space-y-20">
-            {useCaseCards.map((card, index) => {
-              const isEven = index % 2 === 0;
-              return (
-                <article
-                  key={card.id}
-                  className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center"
-                >
-                  {/* Image — alternating side */}
-                  <div className={isEven ? 'lg:order-1' : 'lg:order-2'}>
-                    <div className="relative group">
-                      <div
-                        className="aspect-[4/3] rounded-2xl sm:rounded-3xl overflow-hidden border feature-card-shadow"
-                        style={{ borderColor: 'var(--landing-border)' }}
-                      >
-                        <img
-                          src={card.image}
-                          alt={card.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                        <div
-                          className="absolute inset-0 rounded-2xl sm:rounded-3xl pointer-events-none"
-                          style={{ background: 'linear-gradient(to top, rgba(44, 157, 115, 0.4) 0%, transparent 55%)' }}
-                        />
-                      </div>
-                      <div
-                        className="absolute -bottom-3 left-4 right-4 sm:left-6 sm:right-6 py-2 px-3 rounded-xl text-center text-sm font-semibold"
-                        style={{ backgroundColor: 'var(--landing-primary)', color: 'white', boxShadow: '0 6px 20px rgba(44, 157, 115, 0.35)' }}
-                      >
-                        {card.title}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Content: quote + comparison */}
-                  <div className={isEven ? 'lg:order-2' : 'lg:order-1'}>
-                    <div className="relative pl-6 sm:pl-8">
-                      <Quote className="absolute left-0 top-0 h-8 w-8 opacity-30" style={{ color: 'var(--landing-primary)' }} />
-                      <blockquote className="text-base sm:text-lg font-medium mb-6 leading-relaxed" style={{ color: 'var(--landing-text)' }}>
-                        "{card.quote}"
-                      </blockquote>
-                      <footer className="mb-8">
-                        <span className="font-bold" style={{ color: 'var(--landing-primary)' }}>{card.name}</span>
-                        <span className="opacity-80" style={{ color: 'var(--landing-text)' }}> · {card.role}</span>
-                      </footer>
-
-                      {/* Other apps vs Us */}
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div
-                          className="rounded-xl p-4 border"
-                          style={{ backgroundColor: 'rgba(220, 53, 69, 0.04)', borderColor: 'rgba(220, 53, 69, 0.2)' }}
-                        >
-                          <div className="flex items-center gap-2 mb-3">
-                            <X className="h-4 w-4 text-red-500 shrink-0" />
-                            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--landing-text)' }}>Other apps</span>
-                          </div>
-                          <ul className="space-y-1.5 text-sm" style={{ color: 'var(--landing-text)', opacity: 0.9 }}>
-                            {card.otherApps.map((item, i) => (
-                              <li key={i} className="flex gap-2">
-                                <span className="text-red-400/80 mt-0.5">·</span>
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div
-                          className="rounded-xl p-4 border feature-card-shadow"
-                          style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'rgba(44, 157, 115, 0.3)' }}
-                        >
-                          <div className="flex items-center gap-2 mb-3">
-                            <Check className="h-4 w-4 shrink-0 text-white rounded-full" style={{ backgroundColor: 'var(--landing-primary)', padding: 2 }} />
-                            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--landing-primary)' }}>Authenticity & Purpose</span>
-                          </div>
-                          <ul className="space-y-1.5 text-sm" style={{ color: 'var(--landing-text)' }}>
-                            {card.ourApp.map((item, i) => (
-                              <li key={i} className="flex gap-2">
-                                <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: 'var(--landing-primary)' }} />
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
           </div>
         </div>
       </section>
