@@ -76,5 +76,31 @@ export function useGoalNotes(goalId: string | null) {
     setNotes((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
-  return { notes, loading, addNote, deleteNote, refresh: load };
+  const updateNote = useCallback(
+    async (id: string, updates: Partial<Pick<GoalNote, 'content' | 'date' | 'phase'>>) => {
+      if (!user || !goalId) return;
+      const payload: { content?: string; date?: string; phase?: number } = {};
+      if (updates.content != null) payload.content = updates.content;
+      if (updates.date != null) payload.date = updates.date;
+      if (updates.phase != null) payload.phase = updates.phase;
+      const { data, error } = await supabase
+        .from('goal_notes')
+        .update(payload)
+        .eq('id', id)
+        .eq('goal_id', goalId)
+        .eq('user_id', user.id)
+        .select('id, content, date, created_at, phase')
+        .single();
+      if (error) throw error;
+      const p = (data.phase >= 1 && data.phase <= 4 ? data.phase : 1) as GoalNotePhase;
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === id ? { ...n, content: data.content, date: data.date, createdAt: data.created_at, phase: p } : n
+        )
+      );
+    },
+    [user?.id, goalId]
+  );
+
+  return { notes, loading, addNote, updateNote, deleteNote, refresh: load };
 }

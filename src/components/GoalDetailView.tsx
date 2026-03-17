@@ -35,6 +35,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { analyzeProgressImage } from '@/lib/aiImageAnalysis';
 import { useToast } from '@/hooks/use-toast';
 import { useTimezone } from '@/contexts/TimezoneContext';
+import VisualProgressTimeline from './VisualProgressTimeline';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export interface GoalDetailViewProps {
   goal: ManifestationGoal;
@@ -51,10 +53,26 @@ type TimelineEntry =
   | { type: 'note'; id: string; date: string; content: string; phase?: GoalNotePhase }
   | { type: 'image'; id: string; date: string; url: string; label?: string; progress: number };
 
+type PhotoMeta = { date?: string; progress?: number; label?: string; caption?: string };
+function encodePhotoCaption(meta: PhotoMeta): string {
+  const { date, progress, label, caption } = meta;
+  const payload = { date, progress, label, caption };
+  return `__goals_photo_meta__:${JSON.stringify(payload)}`;
+}
+function decodePhotoCaption(raw: string): PhotoMeta {
+  const prefix = '__goals_photo_meta__:';
+  if (!raw?.startsWith(prefix)) return { caption: raw || '' };
+  try {
+    const parsed = JSON.parse(raw.slice(prefix.length)) as PhotoMeta;
+    return { ...parsed, caption: parsed.caption ?? '' };
+  } catch {
+    return { caption: raw };
+  }
+}
+
 export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal, isMutating = false, useMockInsightsOnly = false }: GoalDetailViewProps) {
   const [currentGoal, setCurrentGoal] = useState(goal);
   const [newNote, setNewNote] = useState('');
-  const [newNotePhase, setNewNotePhase] = useState<GoalNotePhase>(1);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editTitle, setEditTitle] = useState(goal.title);
@@ -74,21 +92,39 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
     todoTomorrow: string[];
   } | null>(null);
   const [aiLoading, setAiLoading] = useState(!useMockInsightsOnly);
+  const [editNoteOpen, setEditNoteOpen] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteContent, setEditingNoteContent] = useState('');
+  const [editPhotoOpen, setEditPhotoOpen] = useState(false);
+  const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
+  const [editingPhotoDate, setEditingPhotoDate] = useState('');
+  const [editingPhotoProgress, setEditingPhotoProgress] = useState<number>(0);
+  const [editingPhotoLabel, setEditingPhotoLabel] = useState('');
 
-  const { notes, loading: notesLoading, addNote } = useGoalNotes(currentGoal.id);
-  const { photos, loading: photosLoading, uploadPhoto, deletePhoto } = useProgressPhotos(currentGoal.id, { forManifestationGoal: true });
+  const { notes, loading: notesLoading, addNote, updateNote, deleteNote } = useGoalNotes(currentGoal.id);
+  const { photos, loading: photosLoading, uploadPhoto, deletePhoto, updatePhotoCaption } = useProgressPhotos(currentGoal.id, { forManifestationGoal: true });
   const { analyzeGoal } = useProgressAnalysis();
 
   const taggedImages: TaggedImage[] = useMemo(
     () =>
-      photos.map((p) => ({
-        id: p.id,
-        url: p.url,
-        date: new Date(p.timestamp).toISOString().split('T')[0],
-        progress: 0,
-        label: p.caption || undefined,
-        aiAnalysis: analyzeProgressImage('', 0, 'Goal', []),
-      })),
+      photos.map((p) => {
+        const meta = decodePhotoCaption(p.caption);
+        const date = meta.date ?? new Date(p.timestamp).toISOString().split('T')[0];
+        const progress = typeof meta.progress === 'number' ? meta.progress : currentGoal.progress * 10;
+        const label = meta.label || meta.caption || '';
+        const previousImages = photos
+          .filter((x) => x.id !== p.id)
+          .slice(0, 3)
+          .map((x) => ({ url: x.url, progress: (decodePhotoCaption(x.caption).progress ?? currentGoal.progress * 10) as number }));
+        return {
+          id: p.id,
+          url: p.url,
+          date,
+          progress,
+          label: label || undefined,
+          aiAnalysis: analyzeProgressImage(p.url, progress, 'Goal', previousImages),
+        };
+      }),
     [photos]
   );
 
@@ -197,7 +233,7 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
     const date = new Date().toISOString().split('T')[0];
-    await addNote(newNote.trim(), date, newNotePhase);
+    await addNote(newNote.trim(), date, 1);
     setNewNote('');
   };
 
@@ -216,14 +252,6 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
       ].sort((a, b) => b.date.localeCompare(a.date)),
     [notes, taggedImages]
   );
-
-  const notesByPhase = useMemo(() => {
-    const map: Record<GoalNotePhase, typeof notes> = { 1: [], 2: [], 3: [], 4: [] };
-    notes.forEach((n) => {
-      if (n.phase >= 1 && n.phase <= 4) map[n.phase].push(n);
-    });
-    return map;
-  }, [notes]);
 
   const displayInsights = aiInsights ?? getMockGoalInsights(currentGoal.title, currentGoal.progress);
   const progressPct = currentGoal.progress * 10;
@@ -264,6 +292,101 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
         </div>
       )}
       <div className={isMutating ? 'pointer-events-none select-none' : ''}>
+      <Dialog open={editNoteOpen} onOpenChange={setEditNoteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit note</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              value={editingNoteContent}
+              onChange={(e) => setEditingNoteContent(e.target.value)}
+              rows={5}
+              className="rounded-xl resize-none"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" className="rounded-xl" onClick={() => setEditNoteOpen(false)}>Cancel</Button>
+              <Button
+                className="rounded-xl"
+                onClick={async () => {
+                  if (!editingNoteId) return;
+                  const content = editingNoteContent.trim();
+                  if (!content) return;
+                  await updateNote(editingNoteId, { content });
+                  setEditNoteOpen(false);
+                }}
+                disabled={!editingNoteId || !editingNoteContent.trim()}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editPhotoOpen} onOpenChange={setEditPhotoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit photo milestone</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Date</Label>
+              <Input
+                type="date"
+                value={editingPhotoDate}
+                onChange={(e) => setEditingPhotoDate(e.target.value)}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label>Progress Milestone (%)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={Math.max(0, Math.min(100, currentGoal.progress * 10))}
+                value={editingPhotoProgress}
+                onChange={(e) => {
+                  const raw = Number(e.target.value);
+                  const max = Math.max(0, Math.min(100, currentGoal.progress * 10));
+                  const clamped = Number.isFinite(raw) ? Math.max(0, Math.min(max, raw)) : 0;
+                  setEditingPhotoProgress(clamped);
+                }}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label>Label (optional)</Label>
+              <Input
+                value={editingPhotoLabel}
+                onChange={(e) => setEditingPhotoLabel(e.target.value)}
+                placeholder="e.g., Week 1, Halfway Point"
+                className="mt-1.5"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" className="rounded-xl" onClick={() => setEditPhotoOpen(false)}>Cancel</Button>
+              <Button
+                className="rounded-xl"
+                onClick={async () => {
+                  if (!editingPhotoId) return;
+                  const caption = encodePhotoCaption({
+                    date: editingPhotoDate || undefined,
+                    progress: editingPhotoProgress,
+                    label: editingPhotoLabel.trim() || undefined,
+                    caption: '',
+                  });
+                  await updatePhotoCaption(editingPhotoId, caption);
+                  setEditPhotoOpen(false);
+                }}
+                disabled={!editingPhotoId}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       <div className="fixed top-4 left-4 right-4 z-20 flex items-center justify-end gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           {(currentGoal.status === 'active' || !currentGoal.status) && (
@@ -773,7 +896,41 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
                 >
                   <div className="p-4 border-b flex items-center justify-between gap-2 text-xs font-semibold" style={{ borderColor: 'var(--landing-border)', color: 'var(--landing-primary)' }}>
                     <span>{new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                    {entry.type === 'note' && entry.phase != null && <span className="opacity-80">Phase {entry.phase}</span>}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="opacity-80 hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (entry.type === 'note') {
+                            setEditingNoteId(entry.id);
+                            setEditingNoteContent(entry.content);
+                            setEditNoteOpen(true);
+                          } else {
+                            setEditingPhotoId(entry.id);
+                            setEditingPhotoDate(entry.date);
+                            setEditingPhotoProgress(entry.progress);
+                            setEditingPhotoLabel(entry.label ?? '');
+                            setEditPhotoOpen(true);
+                          }
+                        }}
+                        title={entry.type === 'note' ? 'Edit note' : 'Edit photo milestone'}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        type="button"
+                        className="opacity-80 hover:opacity-100"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (entry.type === 'note') await deleteNote(entry.id);
+                          else await deletePhoto(entry.id);
+                        }}
+                        title={entry.type === 'note' ? 'Delete note' : 'Delete photo'}
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                   {entry.type === 'note' ? (
                     <p className="p-4 text-sm leading-relaxed" style={{ color: 'var(--landing-text)' }}>{entry.content}</p>
@@ -793,20 +950,6 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
 
           <div className="mt-8 rounded-2xl p-6 border" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
             <p className="text-sm font-semibold mb-3" style={{ color: 'var(--landing-text)' }}>Add a note</p>
-            <div className="mb-3">
-              <label className="text-xs font-medium block mb-1.5 opacity-80" style={{ color: 'var(--landing-text)' }}>Phase</label>
-              <select
-                value={newNotePhase}
-                onChange={(e) => setNewNotePhase(Number(e.target.value) as GoalNotePhase)}
-                className="w-full max-w-[140px] px-3 py-2 rounded-xl border-2 text-sm"
-                style={{ borderColor: 'var(--landing-border)' }}
-              >
-                <option value={1}>Phase 1</option>
-                <option value={2}>Phase 2</option>
-                <option value={3}>Phase 3</option>
-                <option value={4}>Phase 4</option>
-              </select>
-            </div>
             <Textarea
               placeholder="What happened? How do you feel about your progress?"
               value={newNote}
@@ -825,166 +968,33 @@ export default function GoalDetailView({ goal, onBack, updateGoal, onDeleteGoal,
               Add note
             </Button>
           </div>
-
-          {(notesByPhase[1].length > 0 || notesByPhase[2].length > 0 || notesByPhase[3].length > 0 || notesByPhase[4].length > 0) && (
-            <div className="mt-10">
-              <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--landing-text)' }}>Notes by phase</h3>
-              <p className="text-sm opacity-80 mb-6" style={{ color: 'var(--landing-text)' }}>Organize notes by project phase so you can work in multiple phases at once.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {([1, 2, 3, 4] as const).map((phase) => (
-                  <div key={phase} className="rounded-2xl border p-4" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
-                    <p className="text-sm font-semibold mb-3" style={{ color: 'var(--landing-primary)' }}>Phase {phase}</p>
-                    <div className="space-y-3">
-                      {notesByPhase[phase].length === 0 ? (
-                        <p className="text-xs opacity-70" style={{ color: 'var(--landing-text)' }}>No notes yet</p>
-                      ) : (
-                        notesByPhase[phase].map((n) => (
-                          <div key={n.id} className="rounded-xl p-3 border text-sm" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}>
-                            <p style={{ color: 'var(--landing-text)' }}>{n.content}</p>
-                            <p className="text-xs mt-1.5 opacity-70" style={{ color: 'var(--landing-text)' }}>{new Date(n.date).toLocaleDateString('en-US')}</p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="mt-6">
-            <ProgressPhotosBlock goalId={currentGoal.id} />
+            <VisualProgressTimeline
+              images={taggedImages}
+              onAddImage={() => {}}
+              onRemoveImage={async (id) => {
+                await deletePhoto(id);
+              }}
+              currentProgress={currentGoal.progress * 10}
+              goalType="Goal"
+              embedded
+              onUploadFile={async ({ file, date, progress, label }) => {
+                const caption = encodePhotoCaption({ date, progress, label, caption: '' });
+                await uploadPhoto(file, caption);
+                // The hook updates state; return a best-effort TaggedImage so timeline updates immediately.
+                const url = await new Promise<string>((res, rej) => {
+                  const r = new FileReader();
+                  r.onload = () => res(r.result as string);
+                  r.onerror = rej;
+                  r.readAsDataURL(file);
+                });
+                return { id: `${Date.now()}`, url, date, progress, label };
+              }}
+            />
           </div>
         </section>
       </div>
       </div>
-    </div>
-  );
-}
-
-function ProgressPhotosBlock({ goalId }: { goalId: string }) {
-  const { toast } = useToast();
-  const { photos, loading, uploadPhoto, addPhotoByUrl, deletePhoto } = useProgressPhotos(goalId, { forManifestationGoal: true });
-  const [caption, setCaption] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [addingByUrl, setAddingByUrl] = useState(false);
-  const inputRef = React.useRef<HTMLInputElement>(null);
-
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      await uploadPhoto(file, caption);
-      setCaption('');
-      toast({ title: 'Photo added', description: 'Progress photo uploaded.' });
-    } catch (err) {
-      toast({ title: 'Upload failed', description: err instanceof Error ? err.message : 'Could not upload photo.', variant: 'destructive' });
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-    }
-  };
-
-  const handleAddByUrl = async () => {
-    const url = imageUrl.trim();
-    if (!url) {
-      toast({ title: 'Enter a URL', description: 'Paste an image URL to add.', variant: 'destructive' });
-      return;
-    }
-    setAddingByUrl(true);
-    try {
-      await addPhotoByUrl(url, caption);
-      setImageUrl('');
-      setCaption('');
-      toast({ title: 'Photo added', description: 'Progress photo added from URL.' });
-    } catch (err) {
-      toast({ title: 'Failed to add photo', description: err instanceof Error ? err.message : 'Could not add image from URL.', variant: 'destructive' });
-    } finally {
-      setAddingByUrl(false);
-    }
-  };
-
-  return (
-    <div className="rounded-2xl p-6 border" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)' }}>
-      <p className="text-sm font-semibold mb-3" style={{ color: 'var(--landing-text)' }}>Progress photos</p>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFile}
-      />
-      <div className="space-y-3 mb-4">
-        <div className="flex flex-wrap gap-2 items-center">
-          <input
-            type="text"
-            placeholder="Caption (optional)"
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            className="flex-1 min-w-[120px] px-3 py-2 rounded-xl border-2"
-            style={{ borderColor: 'var(--landing-border)' }}
-          />
-          <Button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="rounded-xl shrink-0"
-            style={{ backgroundColor: 'var(--landing-primary)' }}
-          >
-            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4 mr-2" />}
-            Upload file
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <input
-            type="url"
-            placeholder="Or paste image URL (https://...)"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            className="flex-1 min-w-[180px] px-3 py-2 rounded-xl border-2"
-            style={{ borderColor: 'var(--landing-border)' }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleAddByUrl}
-            disabled={addingByUrl || !imageUrl.trim()}
-            className="rounded-xl shrink-0"
-            style={{ borderColor: 'var(--landing-border)' }}
-          >
-            {addingByUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Add from URL
-          </Button>
-        </div>
-      </div>
-      {loading && <p className="text-sm mt-2 opacity-70">Loading photos…</p>}
-      {!loading && photos.length === 0 && (
-        <p className="text-sm opacity-70" style={{ color: 'var(--landing-text)' }}>No photos yet. Upload one above to track your progress.</p>
-      )}
-      {!loading && photos.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-2">
-          {photos.map((photo) => (
-            <div key={photo.id} className="relative group rounded-xl overflow-hidden border" style={{ borderColor: 'var(--landing-border)' }}>
-              <img src={photo.url} alt={photo.caption} className="w-full h-40 object-cover" />
-              <Button
-                type="button"
-                size="icon"
-                variant="destructive"
-                className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => deletePhoto(photo.id)}
-                aria-label="Remove photo"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              {photo.caption && (
-                <div className="p-2 text-sm truncate" style={{ color: 'var(--landing-text)', backgroundColor: 'var(--landing-bg)' }}>{photo.caption}</div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

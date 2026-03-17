@@ -178,6 +178,25 @@ export function useProgressPhotos(goalId: string, options: UseProgressPhotosOpti
     setPhotos(prev => prev.filter(p => p.id !== id));
   };
 
+  const updatePhotoCaption = async (id: string, caption: string) => {
+    if (useLocalStorageOnly && goalId) {
+      setPhotos(prev => {
+        const next = prev.map(p => (p.id === id ? { ...p, caption } : p));
+        setDemoPhotos(goalId, next);
+        return next;
+      });
+      return;
+    }
+    if (!user || !goalId) return;
+    const { error } = await supabase
+      .from('progress_photos')
+      .update({ caption })
+      .eq('id', id)
+      .eq('user_id', user.id);
+    if (error) throw error;
+    setPhotos(prev => prev.map(p => (p.id === id ? { ...p, caption } : p)));
+  };
+
   /** Add a progress photo by external URL (stored in file_path). */
   const addPhotoByUrl = async (imageUrl: string, caption: string) => {
     const url = imageUrl.trim();
@@ -204,5 +223,5 @@ export function useProgressPhotos(goalId: string, options: UseProgressPhotosOpti
     setPhotos(prev => [{ id: row.id, url, caption, timestamp: new Date(row.created_at).getTime() }, ...prev]);
   };
 
-  return { photos, loading, uploadPhoto, addPhotoByUrl, deletePhoto, refresh: loadPhotos };
+  return { photos, loading, uploadPhoto, addPhotoByUrl, deletePhoto, updatePhotoCaption, refresh: loadPhotos };
 }

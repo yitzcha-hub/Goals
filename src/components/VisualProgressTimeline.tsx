@@ -26,6 +26,11 @@ interface VisualProgressTimelineProps {
   goalType?: string;
   /** When true, render without outer Card and with a smaller "Progress photos" heading (for embedding in another section) */
   embedded?: boolean;
+  /**
+   * Optional: persist the selected file and return the saved image metadata.
+   * If provided, VisualProgressTimeline will prefer this over adding a data URL image.
+   */
+  onUploadFile?: (args: { file: File; date: string; progress: number; label?: string }) => Promise<TaggedImage>;
 }
 
 
@@ -36,6 +41,7 @@ export default function VisualProgressTimeline({
   currentProgress,
   goalType = 'General Goal',
   embedded = false,
+  onUploadFile,
 }: VisualProgressTimelineProps) {
 
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -43,6 +49,9 @@ export default function VisualProgressTimeline({
   const [uploadProgress, setUploadProgress] = useState(currentProgress);
   const [uploadLabel, setUploadLabel] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const maxMilestone = Math.max(0, Math.min(100, Math.round(currentProgress)));
 
   const sortedImages = [...images].sort((a, b) => 
     new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -51,6 +60,7 @@ export default function VisualProgressTimeline({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string);
@@ -59,33 +69,44 @@ export default function VisualProgressTimeline({
     }
   };
 
-  const handleUpload = () => {
-    if (previewUrl) {
-      // Run AI analysis on the image
-      const previousImages = sortedImages.map(img => ({
-        url: img.url,
-        progress: img.progress
-      }));
-      
-      const aiAnalysis = analyzeProgressImage(
-        previewUrl,
-        uploadProgress,
-        goalType,
-        previousImages
-      );
+  const handleUpload = async () => {
+    if (!previewUrl) return;
+    setSaving(true);
+    try {
+      const label = uploadLabel || undefined;
+      if (onUploadFile && selectedFile) {
+        const saved = await onUploadFile({ file: selectedFile, date: uploadDate, progress: uploadProgress, label });
+        onAddImage(saved);
+      } else {
+        // Run AI analysis on the image
+        const previousImages = sortedImages.map(img => ({
+          url: img.url,
+          progress: img.progress
+        }));
+        
+        const aiAnalysis = analyzeProgressImage(
+          previewUrl,
+          uploadProgress,
+          goalType,
+          previousImages
+        );
 
-      onAddImage({
-        id: Date.now().toString(),
-        url: previewUrl,
-        date: uploadDate,
-        progress: uploadProgress,
-        label: uploadLabel || undefined,
-        aiAnalysis
-      });
+        onAddImage({
+          id: Date.now().toString(),
+          url: previewUrl,
+          date: uploadDate,
+          progress: uploadProgress,
+          label,
+          aiAnalysis
+        });
+      }
       setShowUploadDialog(false);
       setPreviewUrl('');
+      setSelectedFile(null);
       setUploadLabel('');
       setUploadProgress(currentProgress);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -244,9 +265,13 @@ export default function VisualProgressTimeline({
                 id="progress"
                 type="number"
                 min="0"
-                max="100"
+                max={maxMilestone}
                 value={uploadProgress}
-                onChange={(e) => setUploadProgress(Number(e.target.value))}
+                onChange={(e) => {
+                  const raw = Number(e.target.value);
+                  const clamped = Number.isFinite(raw) ? Math.max(0, Math.min(maxMilestone, raw)) : 0;
+                  setUploadProgress(clamped);
+                }}
               />
             </div>
             
@@ -260,7 +285,7 @@ export default function VisualProgressTimeline({
               />
             </div>
             
-            <Button onClick={handleUpload} className="w-full" disabled={!previewUrl}>
+            <Button onClick={handleUpload} className="w-full" disabled={!previewUrl || saving}>
               Add to Timeline
             </Button>
           </div>
