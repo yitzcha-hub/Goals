@@ -803,7 +803,7 @@ export const LandingContent: React.FC = () => {
                         textShadow: '0 0 40px rgba(26, 107, 79, 0.08)',
                       }}
                     >
-                      You&apos;re not everybody, you are you.
+                      Because You&apos;re not everybody, and we want you to be you.
                     </p>
                   </motion.div>
                 </div>
