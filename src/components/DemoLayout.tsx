@@ -24,6 +24,7 @@ import { getMockTodosForDay, type DemoGoalGenerated } from '@/data/demoOnboardin
 import { GratitudeJournalSections } from '@/components/GratitudeJournalSections';
 import demoHeroBg from '@/assets/images/Demo-bg.png';
 import { BookOpen } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 const DEMO_STORAGE_GOALS = 'goals_app_demo_layout_goals';
 const DEMO_STORAGE_TASKS = 'goals_app_demo_layout_tasks';
@@ -174,10 +175,10 @@ const DEFAULT_DEMO_GOALS = [
       budget: 0,
       spent: 0,
       steps: [
-        { id: 's1', title: 'Weekly worship or reflection', completed: true },
-        { id: 's2', title: 'Regular yoga or mindful movement', completed: true },
-        { id: 's3', title: 'Meditation and chakra awareness', completed: false },
-        { id: 's4', title: 'Sustain a balanced routine', completed: false }
+        { id: 's1', title: 'Create a weekly prayer and reflection rhythm', completed: true },
+        { id: 's2', title: 'Practice mindful movement 3x each week', completed: true },
+        { id: 's3', title: 'Build a daily meditation habit', completed: false },
+        { id: 's4', title: 'Live my calling through intentional service', completed: false }
       ]
     }
 ];
@@ -207,6 +208,7 @@ const DEFAULT_DEMO_TASKS: DemoTask[] = [
 ];
 
 const DemoLayout: React.FC = () => {
+  const location = useLocation();
   const { todayISO: todayIso, tomorrowISO: tomorrowIso } = useTimezone();
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -233,6 +235,16 @@ const DemoLayout: React.FC = () => {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDay, setNewTaskDay] = useState<'today' | 'tomorrow'>('today');
   const [newTaskTimeSlot, setNewTaskTimeSlot] = useState('');
+
+  useEffect(() => {
+    const selectedGoalId = (location.state as { selectedGoalId?: string } | null)?.selectedGoalId;
+    if (!selectedGoalId) return;
+
+    const matchedGoal = demoGoals.find((goal: { id: string }) => goal.id === selectedGoalId);
+    if (matchedGoal) {
+      setSelectedGoal(matchedGoal);
+    }
+  }, [location.state, demoGoals]);
 
   useEffect(() => {
     try {

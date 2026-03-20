@@ -51,12 +51,30 @@ interface DemoGoalDetailViewProps {
 
 export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoGoalDetailViewProps) {
   const [currentGoal, setCurrentGoal] = useState(goal);
-  const [notes, setNotes] = useState<Note[]>([
-    { id: '1', content: 'Started working on this goal today!', date: new Date().toISOString() }
-  ]);
+  const getInitialNotes = (goalItem: Goal): Note[] => {
+    if (goalItem.id === '8') {
+      return [
+        { id: '1', content: 'Committed to a daily prayer and meditation routine this month.', date: '2026-01-14T08:00:00.000Z' },
+        { id: '2', content: 'Completed two mindful movement sessions and felt more grounded.', date: '2026-01-21T18:30:00.000Z' },
+        { id: '3', content: 'This week I am focusing on consistency and listening to my calling.', date: '2026-01-28T07:45:00.000Z' },
+      ];
+    }
+
+    return [{ id: '1', content: 'Started working on this goal today!', date: new Date().toISOString() }];
+  };
+
+  const [notes, setNotes] = useState<Note[]>(() => getInitialNotes(goal));
   const [newNote, setNewNote] = useState('');
 
-  const getCategoryImages = (category: string): TaggedImage[] => {
+  const getCategoryImages = (category: string, goalItem: Goal): TaggedImage[] => {
+    if (goalItem.id === '8') {
+      return [
+        { id: '1', url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80', date: '2026-01-10', progress: 20, label: 'Mind-body reset', aiAnalysis: analyzeProgressImage('', 20, category, []) },
+        { id: '2', url: 'https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=600&q=80', date: '2026-01-20', progress: 40, label: 'Faith and community', aiAnalysis: analyzeProgressImage('', 40, category, [{ url: '', progress: 20 }]) },
+        { id: '3', url: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&q=80', date: '2026-02-01', progress: 55, label: 'Meditation depth', aiAnalysis: analyzeProgressImage('', 55, category, [{ url: '', progress: 20 }, { url: '', progress: 40 }]) }
+      ];
+    }
+
     const personalImages = { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313355593_1366f9cc.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313356469_7d5cbb6c.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313357732_45dc90f0.webp' };
     const purposeImages = { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313337681_8f380009.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313338490_d34ce5f7.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313339293_90544afc.webp' };
     const familyImage = 'https://d64gsuwffb70l.cloudfront.net/68c468b90879cba7ca0dcccd_1757703340244_c4563a20.webp';
@@ -80,6 +98,7 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
       Wellness: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313400738_0397d33b.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313401543_1e9a42f2.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313402336_36dc20cf.webp' },
       Travel: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760531037278_55604682.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760531038069_b2a3394d.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760531039095_6b7be7f5.webp' },
       Career: { start: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313364420_116e655c.webp', mid: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313365234_ba8c7e8e.webp', advanced: 'https://d64gsuwffb70l.cloudfront.net/68dab31588d806ca5c085b8d_1760313365979_65d24337.webp' },
+      Spiritual: { start: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80', mid: 'https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=600&q=80', advanced: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&q=80' },
     };
     const images = imageMap[category] || imageMap['Personal'];
     return [
@@ -89,7 +108,7 @@ export default function DemoGoalDetailView({ goal, onBack, onUpdateGoal }: DemoG
     ];
   };
 
-  const [taggedImages, setTaggedImages] = useState<TaggedImage[]>(() => getCategoryImages(goal.category));
+  const [taggedImages, setTaggedImages] = useState<TaggedImage[]>(() => getCategoryImages(goal.category, goal));
 
   const stepCompletionHistory: StepCompletionDay[] = (() => {
     const byDate: Record<string, string[]> = {};

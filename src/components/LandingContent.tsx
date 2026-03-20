@@ -498,6 +498,118 @@ export const LandingContent: React.FC = () => {
             </motion.div>
           </div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            className="mx-auto max-w-5xl"
+          >
+            <div
+              className="rounded-3xl border p-5 sm:p-7 lg:p-8 bg-white/85 backdrop-blur-sm shadow-[0_18px_50px_-26px_rgba(44,157,115,0.45)]"
+              style={{ borderColor: 'var(--landing-border)' }}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                <h3 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--landing-text)' }}>
+                  Preview Demo
+                </h3>
+                <span
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                  style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  One Goal + Detail View
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <article
+                  className="rounded-2xl border overflow-hidden"
+                  style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}
+                >
+                  <img
+                    src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=900&q=80"
+                    alt="Spiritual goal preview"
+                    className="h-44 w-full object-cover"
+                  />
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <h4 className="text-base sm:text-lg font-semibold leading-snug" style={{ color: 'var(--landing-text)' }}>
+                        Deepen Spiritual Practice
+                      </h4>
+                      <span className="text-lg sm:text-xl font-bold" style={{ color: 'var(--landing-primary)' }}>4/10</span>
+                    </div>
+                    <p className="text-sm opacity-85 mb-4" style={{ color: 'var(--landing-text)' }}>
+                      Mind, body and soul - faith, prayer, meditation, and living your calling with consistency.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-xs px-2.5 py-1 rounded-full border" style={{ borderColor: 'var(--landing-border)', color: 'var(--landing-primary)', backgroundColor: 'var(--landing-accent)' }}>
+                        Spiritual
+                      </span>
+                      <span className="text-xs px-2.5 py-1 rounded-full border" style={{ borderColor: 'var(--landing-border)', color: 'var(--landing-primary)', backgroundColor: 'var(--landing-accent)' }}>
+                        90 Days
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      className="mt-4"
+                      onClick={() => navigate('/demo', { state: { selectedGoalId: '8' } })}
+                      style={{ backgroundColor: 'var(--landing-primary)', color: 'white' }}
+                    >
+                      View Detail
+                    </Button>
+                  </div>
+                </article>
+
+                <article
+                  className="rounded-2xl border p-4 sm:p-5"
+                  style={{ borderColor: 'var(--landing-border)', backgroundColor: 'white' }}
+                >
+                  <h4 className="text-base sm:text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--landing-text)' }}>
+                    <Target className="h-4 w-4" style={{ color: 'var(--landing-primary)' }} />
+                    Goal Detail Preview
+                  </h4>
+
+                  <div className="mb-4">
+                    <p className="text-xs uppercase tracking-wider font-semibold mb-2 opacity-70" style={{ color: 'var(--landing-text)' }}>Steps</p>
+                    <ul className="space-y-2">
+                      {[
+                        'Create a weekly prayer and reflection rhythm',
+                        'Practice mindful movement 3x each week',
+                        'Build a daily meditation habit',
+                      ].map((step, idx) => (
+                        <li key={step} className="flex items-start gap-2 text-sm" style={{ color: 'var(--landing-text)' }}>
+                          <Check className={`h-4 w-4 mt-0.5 shrink-0 ${idx < 2 ? 'opacity-100' : 'opacity-45'}`} style={{ color: 'var(--landing-primary)' }} />
+                          <span className={idx < 2 ? '' : 'opacity-70'}>{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-xs uppercase tracking-wider font-semibold mb-2 opacity-70" style={{ color: 'var(--landing-text)' }}>Progress Photos</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&q=80',
+                        'https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=300&q=80',
+                        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=300&q=80',
+                      ].map((src) => (
+                        <img key={src} src={src} alt="" className="w-full h-16 sm:h-20 object-cover rounded-lg border" style={{ borderColor: 'var(--landing-border)' }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs uppercase tracking-wider font-semibold mb-2 opacity-70" style={{ color: 'var(--landing-text)' }}>Journey</p>
+                    <div className="rounded-xl border p-3 text-sm" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)', color: 'var(--landing-text)' }}>
+                      Added notes and photo milestones over time to track how the goal evolves.
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </motion.div>
+
           {/* <div className="grid gap-10 sm:gap-12">
             {problemItems.map((item, i) => (
               <ProblemCard key={i} item={item} index={i} />
