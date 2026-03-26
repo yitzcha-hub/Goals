@@ -143,7 +143,7 @@ export function GratitudeJournalSections({
     ? 'border-[var(--landing-border)]'
     : 'border-gray-200';
   const bgClass = useLandingStyles
-    ? 'bg-[var(--landing-accent)]'
+    ? 'bg-gray-100'
     : 'bg-gray-50';
   const textClass = useLandingStyles
     ? 'text-[var(--landing-text)]'
@@ -177,8 +177,8 @@ export function GratitudeJournalSections({
           {allSections.map(({ key, label }) => (
             <div
               key={key}
-              className={`rounded-xl border p-3 sm:p-4 min-w-0 ${borderClass}`}
-              style={useLandingStyles ? { backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' } : undefined}
+              className={`rounded-xl border p-3 sm:p-4 min-w-0 ${borderClass} ${bgClass}`}
+              style={useLandingStyles ? { backgroundColor: '#f3f4f6', borderColor: 'var(--landing-border)' } : undefined}
             >
               <label
                 className={`block text-sm font-semibold mb-2 ${primaryClass}`}
@@ -198,7 +198,7 @@ export function GratitudeJournalSections({
                 }
                 rows={compact ? 2 : 3}
                 className={`resize-none min-w-0 w-full text-sm rounded-lg ${borderClass}`}
-                style={useLandingStyles ? { borderColor: 'var(--landing-border)' } : undefined}
+                style={useLandingStyles ? { borderColor: 'var(--landing-border)', backgroundColor: '#f9fafb' } : undefined}
               />
               {key.startsWith('custom-') && onRemoveCustomSection && (
                 <Button

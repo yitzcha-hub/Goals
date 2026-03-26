@@ -653,19 +653,19 @@ export default function Dashboard() {
       {/* Stats Bar */}
       <section className="py-4 sm:py-8 px-3 sm:px-4 border-t" style={{ backgroundColor: 'var(--landing-bg)', borderColor: 'var(--landing-border)' }}>
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 text-center">
-          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: '#f3f4f6', borderColor: 'var(--landing-border)' }}>
             <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{activeGoals.length}</div>
             <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Active Goals</div>
           </div>
-          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: '#f3f4f6', borderColor: 'var(--landing-border)' }}>
             <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{todos.filter((t) => t.completed).length}/{todos.length}</div>
             <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Tasks Done</div>
           </div>
-          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: '#f3f4f6', borderColor: 'var(--landing-border)' }}>
             <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{totalPoints}</div>
             <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Total Points</div>
           </div>
-          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+          <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: '#f3f4f6', borderColor: 'var(--landing-border)' }}>
             <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{streak} days</div>
             <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Current Streak</div>
           </div>
@@ -678,7 +678,7 @@ export default function Dashboard() {
           <div
             ref={tabsScrollRef}
             className="rounded-lg sm:rounded-xl border-2 p-2 flex gap-2 justify-start sm:justify-center overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth min-w-0 w-full [scrollbar-width:thin] [scrollbar-color:var(--landing-border)_transparent] sm:[&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--landing-border)]"
-            style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}
+            style={{ backgroundColor: '#f3f4f6', borderColor: 'var(--landing-border)' }}
             role="tablist"
             aria-label="Dashboard sections"
           >
@@ -695,7 +695,7 @@ export default function Dashboard() {
                   id={`tab-${id}`}
                   onClick={() => scrollToHomeSection(id)}
                   className={`shrink-0 snap-start px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap min-h-[2.5rem] touch-manipulation first:ml-0 last:mr-0 ${isActive ? 'shadow-md' : 'opacity-90 hover:opacity-100'}`}
-                  style={isActive ? { backgroundColor: 'var(--landing-primary)', color: 'white' } : { color: 'var(--landing-text)' }}
+                  style={isActive ? { backgroundColor: '#3f3f46', color: 'white' } : { color: 'var(--landing-text)' }}
                 >
                   {label}
                 </button>
@@ -875,7 +875,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <CheckCircle2 className="h-6 w-6 sm:h-7 sm:w-7 shrink-0" style={{ color: 'var(--landing-primary)' }} />
                     <h3 className="text-xl sm:text-2xl font-semibold truncate" style={{ color: 'var(--landing-text)' }}>To-Do List</h3>
-                    <Badge className="shrink-0 text-xs hidden sm:inline-flex" style={{ backgroundColor: 'var(--landing-accent)', color: 'var(--landing-primary)' }}>+5 pts</Badge>
+                    <Badge className="shrink-0 text-xs hidden sm:inline-flex" style={{ backgroundColor: '#f3f4f6', color: 'var(--landing-primary)' }}>+5 pts</Badge>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <Button type="button" size="sm" variant="outline" onClick={() => handleAIGenerateTodos('today')} className="text-xs min-h-9 touch-manipulation" disabled={aiTodosLoading !== null}>
@@ -887,10 +887,10 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <Tabs value={todoListTab} onValueChange={setTodoListTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 mb-4" style={{ backgroundColor: 'var(--landing-accent)' }}>
-                    <TabsTrigger value="today">Today</TabsTrigger>
-                    <TabsTrigger value="tomorrow">Tomorrow</TabsTrigger>
-                    <TabsTrigger value="pending">Pending</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-3 mb-4" style={{ backgroundColor: '#f3f4f6' }}>
+                    <TabsTrigger className="data-[state=active]:bg-[#3f3f46] data-[state=active]:text-white" value="today">Today</TabsTrigger>
+                    <TabsTrigger className="data-[state=active]:bg-[#3f3f46] data-[state=active]:text-white" value="tomorrow">Tomorrow</TabsTrigger>
+                    <TabsTrigger className="data-[state=active]:bg-[#3f3f46] data-[state=active]:text-white" value="pending">Pending</TabsTrigger>
                   </TabsList>
                   <TabsContent value="today" className="space-y-3 mt-0">
                     {(() => {
@@ -1148,15 +1148,15 @@ addTodo({ title, completed: false, points: 5, scheduledDate: iso, timeSlot: newT
                     className="space-y-2 mt-4"
                   >
                     <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
-                      <Input placeholder="Add a task..." value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} className="flex-1 min-w-0 w-full sm:min-w-[140px]" style={{ borderColor: 'var(--landing-border)' }} />
+                      <Input placeholder="Add a task..." value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} className="flex-1 min-w-0 w-full sm:min-w-[140px]" style={{ borderColor: 'var(--landing-border)', backgroundColor: '#f3f4f6' }} />
                       <div className="flex flex-wrap gap-2">
-                        <Input placeholder="Group" value={newTaskGroup} onChange={(e) => setNewTaskGroup(e.target.value)} className="w-full sm:w-[130px] min-w-0" style={{ borderColor: 'var(--landing-border)' }} title="Group: Studying, Exercise, Other, etc." />
+                        <Input placeholder="Group" value={newTaskGroup} onChange={(e) => setNewTaskGroup(e.target.value)} className="w-full sm:w-[130px] min-w-0" style={{ borderColor: 'var(--landing-border)', backgroundColor: '#f3f4f6' }} title="Group: Studying, Exercise, Other, etc." />
                         <Select value={newTaskDay} onValueChange={(v: 'today' | 'tomorrow') => setNewTaskDay(v)}>
-                          <SelectTrigger className="w-[100px] sm:w-[110px] shrink-0" style={{ borderColor: 'var(--landing-border)' }}><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-[100px] sm:w-[110px] shrink-0" style={{ borderColor: 'var(--landing-border)', backgroundColor: '#f3f4f6' }}><SelectValue /></SelectTrigger>
                           <SelectContent><SelectItem value="today">Today</SelectItem><SelectItem value="tomorrow">Tomorrow</SelectItem></SelectContent>
                         </Select>
-                        <Input placeholder="Time" value={newTaskTimeSlot} onChange={(e) => setNewTaskTimeSlot(e.target.value)} className="w-[80px] sm:w-[100px] shrink-0" style={{ borderColor: 'var(--landing-border)' }} />
-                        <Button type="submit" size="sm" className="hero-cta-primary min-h-9 touch-manipulation shrink-0" disabled={!newTaskTitle.trim()}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+                        <Input placeholder="Time" value={newTaskTimeSlot} onChange={(e) => setNewTaskTimeSlot(e.target.value)} className="w-[80px] sm:w-[100px] shrink-0" style={{ borderColor: 'var(--landing-border)', backgroundColor: '#f3f4f6' }} />
+                        <Button type="submit" size="sm" className="min-h-9 touch-manipulation shrink-0" style={{ backgroundColor: '#3f3f46', color: 'white' }} disabled={!newTaskTitle.trim()}><Plus className="h-4 w-4 mr-1" /> Add</Button>
                       </div>
                     </div>
                   </form>
@@ -1225,19 +1225,19 @@ addTodo({ title, completed: false, points: 5, scheduledDate: iso, timeSlot: newT
               </Button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: '#f3f4f6', borderColor: 'var(--landing-border)' }}>
                 <div className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{activeGoals.length}</div>
                 <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Active Goals</div>
               </Card>
-              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: '#f3f4f6', borderColor: 'var(--landing-border)' }}>
                 <div className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{todos.filter((t) => t.completed).length}/{todos.length}</div>
                 <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Tasks Done</div>
               </Card>
-              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: '#f3f4f6', borderColor: 'var(--landing-border)' }}>
                 <div className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{totalPoints}</div>
                 <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Points</div>
               </Card>
-              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: 'var(--landing-accent)', borderColor: 'var(--landing-border)' }}>
+              <Card className="p-3 sm:p-4 rounded-lg sm:rounded-xl border" style={{ backgroundColor: '#f3f4f6', borderColor: 'var(--landing-border)' }}>
                 <div className="text-xl sm:text-2xl font-bold mb-0.5 sm:mb-1" style={{ color: 'var(--landing-primary)' }}>{streak} days</div>
                 <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--landing-text)' }}>Streak</div>
               </Card>

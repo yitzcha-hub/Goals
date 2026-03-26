@@ -543,10 +543,10 @@ export const LandingContent: React.FC = () => {
                       Mind, body and soul - faith, prayer, meditation, and living your calling with consistency.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      <span className="text-xs px-2.5 py-1 rounded-full border" style={{ borderColor: 'var(--landing-border)', color: 'var(--landing-primary)', backgroundColor: 'var(--landing-accent)' }}>
+                      <span className="text-xs px-2.5 py-1 rounded-full border" style={{ borderColor: 'var(--landing-border)', color: 'var(--landing-text)', backgroundColor: '#f3f4f6' }}>
                         Spiritual
                       </span>
-                      <span className="text-xs px-2.5 py-1 rounded-full border" style={{ borderColor: 'var(--landing-border)', color: 'var(--landing-primary)', backgroundColor: 'var(--landing-accent)' }}>
+                      <span className="text-xs px-2.5 py-1 rounded-full border" style={{ borderColor: 'var(--landing-border)', color: 'var(--landing-text)', backgroundColor: '#f3f4f6' }}>
                         90 Days
                       </span>
                     </div>
@@ -554,7 +554,7 @@ export const LandingContent: React.FC = () => {
                       type="button"
                       className="mt-4"
                       onClick={() => navigate('/demo', { state: { selectedGoalId: '8' } })}
-                      style={{ backgroundColor: 'var(--landing-primary)', color: 'white' }}
+                      style={{ backgroundColor: '#3f3f46', color: 'white' }}
                     >
                       View Detail
                     </Button>
@@ -601,7 +601,7 @@ export const LandingContent: React.FC = () => {
 
                   <div>
                     <p className="text-xs uppercase tracking-wider font-semibold mb-2 opacity-70" style={{ color: 'var(--landing-text)' }}>Journey</p>
-                    <div className="rounded-xl border p-3 text-sm" style={{ borderColor: 'var(--landing-border)', backgroundColor: 'var(--landing-accent)', color: 'var(--landing-text)' }}>
+                    <div className="rounded-xl border p-3 text-sm" style={{ borderColor: 'var(--landing-border)', backgroundColor: '#f3f4f6', color: 'var(--landing-text)' }}>
                       Added notes and photo milestones over time to track how the goal evolves.
                     </div>
                   </div>
@@ -984,7 +984,7 @@ export const LandingContent: React.FC = () => {
         ref={ctaSectionRef}
         id="cta"
         className="py-24 px-4 text-white overflow-hidden"
-        style={{ backgroundColor: 'var(--landing-primary)', perspective: '1200px' }}
+        style={{ backgroundColor: '#3f3f46', perspective: '1200px' }}
       >
         <div className="max-w-2xl mx-auto text-center" style={{ transformStyle: 'preserve-3d' }}>
           <motion.div
